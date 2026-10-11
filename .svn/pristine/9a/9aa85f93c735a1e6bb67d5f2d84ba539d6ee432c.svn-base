@@ -1,0 +1,153 @@
+﻿@using DNTPersianUtils.Core
+@model MyFirstCoreApp.Domain.Entities.Invoicing.Invoice
+@{
+    ViewData["Title"] = $"مشاهده فاکتور شماره {Model.Number}";
+}
+
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-file-invoice"></i>
+            فاکتور شماره @Model.Number
+        </h3>
+        <div class="card-tools">
+            @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
+            {
+                <span class="badge badge-success"><i class="fa fa-check"></i> قطعی</span>
+            }
+            else
+            {
+                <span class="badge badge-warning"><i class="fa fa-clock"></i> پیش‌نویس</span>
+            }
+        </div>
+    </div>
+    <div class="card-body">
+
+        <!-- اطلاعات فاکتور -->
+        <div class="row">
+            <div class="col-md-3">
+                <strong>شماره:</strong>
+                <span class="persian-number">@Model.Number</span>
+            </div>
+            <div class="col-md-3">
+                <strong>تاریخ:</strong>
+                <span>@Model.Date.ToShortPersianDateString()</span>
+            </div>
+            <div class="col-md-3">
+                <strong>نوع:</strong>
+                <span>
+                    @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale)
+                    {
+                        <span>فروش</span>
+                    }
+                    else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase)
+                    {
+                        <span>خرید</span>
+                    }
+                    else
+                    {
+                        <span>پیش‌فاکتور</span>
+                    }
+                </span>
+            </div>
+            <div class="col-md-3">
+                <strong>طرف حساب:</strong>
+                <span>@Model.Contact?.Name</span>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <strong>شرح:</strong>
+                    <span>@Model.Description</span>
+                </div>
+            </div>
+        }
+
+        <hr />
+
+        <!-- اقلام -->
+        <h5><i class="fa fa-list"></i> اقلام فاکتور</h5>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">#</th>
+                    <th>کالا</th>
+                    <th>تعداد</th>
+                    <th>قیمت واحد</th>
+                    <th>تخفیف</th>
+                    <th>مالیات</th>
+                    <th>جمع</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var i = 1;
+                }
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td class="persian-number">@i</td>
+                        <td>@item.Product?.Name</td>
+                        <td class="persian-number">@item.Quantity</td>
+                        <td class="persian-number-comma">@item.UnitPrice.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.DiscountAmount.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.TaxAmount.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.LineTotal.ToString("N0")</td>
+                    </tr>
+                    i++;
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="6" class="text-left">جمع اقلام:</th>
+                    <th class="persian-number-comma">@Model.SubTotal.ToString("N0")</th>
+                </tr>
+                <tr>
+                    <th colspan="6" class="text-left">جمع تخفیف:</th>
+                    <th class="persian-number-comma">@Model.DiscountAmount.ToString("N0")</th>
+                </tr>
+                <tr>
+                    <th colspan="6" class="text-left">جمع مالیات:</th>
+                    <th class="persian-number-comma">@Model.TaxAmount.ToString("N0")</th>
+                </tr>
+                <tr class="bg-info">
+                    <th colspan="6" class="text-left">مبلغ نهایی:</th>
+                    <th class="persian-number-comma"><strong>@Model.TotalAmount.ToString("N0")</strong></th>
+                </tr>
+            </tfoot>
+        </table>
+
+        @if (Model.TransactionId.HasValue)
+        {
+            <div class="alert alert-success">
+                <i class="fa fa-check"></i>
+                سند حسابداری مرتبط:
+                <a asp-area="Accounting" asp-controller="Transactions"
+                   asp-action="Details" asp-route-id="@Model.TransactionId">
+                    مشاهده سند
+                </a>
+            </div>
+        }
+    </div>
+
+    <div class="card-footer">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa fa-arrow-right"></i> بازگشت
+        </a>
+
+        @if (Model.Status != MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                <i class="fa fa-edit"></i> ویرایش
+            </a>
+
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                <i class="fa fa-trash"></i> حذف
+            </a>
+        }
+    </div>
+</div>

@@ -1,0 +1,38 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace MyFirstCoreApp.Data.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddUniquePrimaryProfileImage : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_UserProfileImages_UserId",
+                table: "UserProfileImages");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserProfileImages_UserId_IsPrimary",
+                table: "UserProfileImages",
+                columns: new[] { "UserId", "IsPrimary" },
+                unique: true,
+                filter: "[IsPrimary] = 1");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_UserProfileImages_UserId_IsPrimary",
+                table: "UserProfileImages");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserProfileImages_UserId",
+                table: "UserProfileImages",
+                column: "UserId");
+        }
+    }
+}

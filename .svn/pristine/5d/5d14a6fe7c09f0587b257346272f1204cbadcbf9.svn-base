@@ -1,0 +1,39 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MyFirstCoreApp.Models.ViewModels
+{
+    public class EditUserViewModel
+    {
+        [Required]
+        public string Id { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "نام و نام خانوادگی الزامی است.")]
+        [Display(Name = "نام و نام خانوادگی")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "ایمیل الزامی است.")]
+        [EmailAddress(ErrorMessage = "ایمیل وارد شده صحیح نیست.")]
+        [Display(Name = "ایمیل")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "نام کاربری الزامی است.")]
+        [Display(Name = "نام کاربری")]
+        public string UserName { get; set; } = string.Empty;
+
+        [Display(Name = "شماره موبایل")]
+        public string? PhoneNumber { get; set; }
+
+        public List<string> SelectedRoles { get; set; } = new();
+
+        public List<RoleViewModel> Roles { get; set; } = new();
+    }
+
+    public class RoleViewModel
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string Name { get; set; } = string.Empty;
+
+        public bool Selected { get; set; }
+    }
+}

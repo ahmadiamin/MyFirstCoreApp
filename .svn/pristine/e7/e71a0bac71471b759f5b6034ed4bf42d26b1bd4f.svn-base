@@ -1,0 +1,124 @@
+﻿@model List<MyFirstCoreApp.Domain.Entities.Tenancy.Tenant>
+@{
+    ViewData["Title"] = "شرکت‌ها";
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <button type="button"
+                class="close"
+                data-dismiss="alert">
+            &times;
+        </button>
+
+        <i class="fa fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <button type="button"
+                class="close"
+                data-dismiss="alert">
+            &times;
+        </button>
+
+        <i class="fa fa-exclamation-circle"></i>
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="card-body">
+
+    <div class="card card-primary">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fa fa-building"></i>
+                لیست شرکت‌ها
+            </h3>
+
+            <div class="card-tools">
+
+                <a asp-action="Create" class="btn btn-success btn-sm">
+                    <i class="fa fa-plus"></i>
+                    ثبت شرکت جدید
+                </a>
+
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                @if (Model.Any())
+                {
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>نام شرکت</th>
+                                <th>نام حقوقی</th>
+                                <th>تلفن</th>
+                                <th>وضعیت</th>
+                                <th style="width: 200px;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var i = 1;
+                            }
+                            @foreach (var tenant in Model)
+                            {
+                                <tr>
+                                    <td>@i</td>
+                                    <td>
+                                        <i class="fa fa-building"></i>
+                                        <strong>@tenant.Name</strong>
+                                    </td>
+                                    <td>@tenant.LegalName</td>
+                                    <td>@tenant.Phone</td>
+                                    <td>
+                                        @if (tenant.IsActive)
+                                        {
+                                            <span class="badge badge-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-danger">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <form asp-action="Select" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="tenantId" value="@tenant.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                <i class="fa fa-sign-in"></i>
+                                                ورود
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                i++;
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fa fa-building" style="font-size: 4rem; color: #ccc;"></i>
+                        <h5 class="mt-3 text-muted">هنوز هیچ شرکتی ثبت نکرده‌اید</h5>
+                        <a asp-action="Create" class="btn btn-primary mt-2">
+                            <i class="fa fa-plus"></i>
+                            ثبت اولین شرکت
+                        </a>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>

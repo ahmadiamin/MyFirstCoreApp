@@ -1,0 +1,158 @@
+﻿@model List<MyFirstCoreApp.Models.ViewModels.MenuTreeViewModel>
+
+@using MyFirstCoreApp.Services.Interfaces
+@inject IPermissionService PermissionService
+
+@{
+    ViewData["Title"] = "مدیریت منوها";
+}
+
+<div class="card card-primary">
+
+    <!-- Header -->
+    <div class="card-header">
+
+        <h3 class="card-title">
+            <i class="fa fa-bars"></i>
+            مدیریت منوها
+        </h3>
+
+        <div class="card-tools">
+
+            @if (await PermissionService.HasPermissionAsync(User, "Menu.Create"))
+            {
+                <a asp-area="Admin"
+                   asp-controller="Menus"
+                   asp-action="Create"
+                   class="btn btn-success btn-sm">
+
+                    <i class="fa fa-plus"></i>
+                    ایجاد منو
+
+                </a>
+            }
+
+        </div>
+
+    </div>
+
+    <!-- Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success m-3 mb-0">
+
+            <i class="fa fa-check-circle"></i>
+
+            @TempData["Success"]
+
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger m-3 mb-0">
+
+            <i class="fa fa-exclamation-circle"></i>
+
+            @TempData["Error"]
+
+        </div>
+    }
+
+    <!-- Table -->
+    <div class="card-body p-0">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover table-striped mb-0 menu-table">
+
+                <thead>
+                    <tr>
+
+                        <th>
+                            <i class="fa fa-bars"></i>
+                            عنوان
+                        </th>
+
+                        <th>
+                            آدرس
+                        </th>
+
+                        <th>
+                            آیکون
+                        </th>
+
+                        <th>
+                            دسترسی
+                        </th>
+
+                        <th class="text-center">
+                            ترتیب
+                        </th>
+
+                        <th class="text-center">
+                            وضعیت
+                        </th>
+
+                        <th class="text-center"
+                            style="width: 150px;">
+                            عملیات
+                        </th>
+
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <partial name="_MenuRow"
+                                     model="item" />
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+
+                            <td colspan="7"
+                                class="text-center text-muted py-4">
+
+                                <i class="fa fa-info-circle fa-2x mb-2"></i>
+
+                                <br />
+
+                                هنوز هیچ منویی ثبت نشده است.
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="card-footer">
+
+        <span class="text-muted">
+
+            <i class="fa fa-list"></i>
+
+            تعداد منوهای اصلی:
+
+            <strong>
+                @Model.Count
+            </strong>
+
+        </span>
+
+    </div>
+
+</div>

@@ -1,0 +1,58 @@
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using MyFirstCoreApp.Domain.Enums;
+
+namespace MyFirstCoreApp.Areas.Invoicing.ViewModels.Invoice;
+
+public class InvoiceFormViewModel
+{
+    public int Id { get; set; }
+
+    [Display(Name = "شماره فاکتور")]
+    public int Number { get; set; }
+
+    [Required(ErrorMessage = "تاریخ الزامی است")]
+    [Display(Name = "تاریخ")]
+    public string Date { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "نوع فاکتور الزامی است")]
+    [Display(Name = "نوع فاکتور")]
+    public InvoiceType InvoiceType { get; set; } = InvoiceType.Sale;
+
+    [Display(Name = "طرف حساب")]
+    public int? ContactId { get; set; }
+
+    [Display(Name = "نام طرف حساب")]
+    [MaxLength(200)]
+    public string? ContactName { get; set; }   // 🆕 nullable
+
+    [Display(Name = "شرح")]
+    [MaxLength(2000)]
+    public string? Description { get; set; }
+
+    // ---- مالی ----
+
+    [Display(Name = "جمع اقلام")]
+    public decimal SubTotal { get; set; }
+
+    [Display(Name = "جمع تخفیف")]
+    public decimal DiscountAmount { get; set; }
+
+    [Display(Name = "جمع مالیات")]
+    public decimal TaxAmount { get; set; }
+
+    [Display(Name = "مبلغ نهایی")]
+    public decimal TotalAmount { get; set; }
+
+    [Display(Name = "پرداخت‌شده")]
+    public decimal PaidAmount { get; set; }
+
+    // ---- خطوط ----
+
+    public List<InvoiceItemViewModel> Items { get; set; } = new();
+
+    // ---- Dropdown ----
+
+    public List<SelectListItem> ContactOptions { get; set; } = new();
+    public List<SelectListItem> InvoiceTypeOptions { get; set; } = new();
+}

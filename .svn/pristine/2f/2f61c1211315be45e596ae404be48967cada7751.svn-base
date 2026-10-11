@@ -1,0 +1,58 @@
+﻿@model MyFirstCoreApp.Domain.Entities.Accounting.AccountCategory
+
+@{
+    ViewData["Title"] = "حذف دسته‌بندی حساب";
+}
+
+<div class="card card-danger">
+
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-trash"></i>
+            حذف دسته‌بندی حساب
+        </h3>
+    </div>
+
+    <div class="card-body">
+
+        <div class="alert alert-warning">
+            <i class="fa fa-exclamation-triangle"></i>
+            آیا از حذف این دسته‌بندی مطمئن هستید؟
+        </div>
+
+        <dl class="row">
+            <dt class="col-sm-3">نام:</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">کد:</dt>
+            <dd class="col-sm-9">@Model.Code</dd>
+
+            <dt class="col-sm-3">توضیحات:</dt>
+            <dd class="col-sm-9">@Model.Description</dd>
+        </dl>
+
+    </div>
+
+    <form asp-area="Accounting"
+          asp-controller="AccountCategories"
+          asp-action="Delete"
+          asp-route-id="@Model.Id"
+          method="post">
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-danger">
+                <i class="fa fa-trash"></i>
+                حذف
+            </button>
+            <a asp-area="Accounting"
+               asp-controller="AccountCategories"
+               asp-action="Index"
+               class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i>
+                انصراف
+            </a>
+        </div>
+
+    </form>
+
+</div>

@@ -1,0 +1,71 @@
+﻿using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Data;
+using System.Security.Claims;
+
+namespace MyFirstCoreApp.Authorization
+{
+    public class PermissionService
+    {
+        private readonly ApplicationDbContext _context;
+
+        private HashSet<string>? _permissions;
+
+        public PermissionService(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<bool> HasPermissionAsync(
+            ClaimsPrincipal user,
+            string permission)
+        {
+            if (user.Identity?.IsAuthenticated != true)
+                return false;
+
+            await LoadPermissionsAsync(user);
+
+            return _permissions!.Contains(permission);
+        }
+
+        private async Task LoadPermissionsAsync(
+            ClaimsPrincipal user)
+        {
+            // اگر قبلاً در همین Request خوانده شده،
+            // دوباره از دیتابیس نخوان
+            if (_permissions != null)
+                return;
+
+            _permissions = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
+            var userId = user.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+                return;
+
+            var permissions = await _context.UserRoles
+                .Where(x => x.UserId == userId)
+                .Join(
+                    _context.RolePermissions,
+                    userRole => userRole.RoleId,
+                    rolePermission => rolePermission.RoleId,
+                    (userRole, rolePermission) =>
+                        rolePermission.PermissionId)
+                .Join(
+                    _context.Permissions,
+                    permissionId => permissionId,
+                    permission => permission.Id,
+                    (permissionId, permission) => permission)
+                .Where(x => x.IsActive)
+                .Select(x => x.Name)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var permission in permissions)
+            {
+                _permissions.Add(permission);
+            }
+        }
+    }
+}

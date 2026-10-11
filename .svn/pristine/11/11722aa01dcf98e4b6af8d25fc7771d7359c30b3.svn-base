@@ -1,0 +1,20 @@
+﻿@model MyFirstCoreApp.Domain.Entities.Banking.Payment
+@{
+    ViewData["Title"] = $"حذف پرداخت {Model.Number}";
+    var confirmModel = new MyFirstCoreApp.Models.ViewModels.DeleteConfirmViewModel
+    {
+        Title = "حذف پرداخت",
+        Message = "آیا از حذف این پرداخت مطمئن هستید؟",
+        Area = "Banking",
+        Controller = "Payments",
+        Id = Model.Id,
+        Items = new()
+        {
+            new() { Label = "شماره", Value = Model.Number.ToString() },
+            new() { Label = "مبلغ", Value = Model.Amount.ToString("N0") },
+            new() { Label = "طرف حساب", Value = Model.Contact?.Name }
+        }
+    };
+}
+
+<partial name="_DeleteConfirm" model="confirmModel" />

@@ -1,0 +1,5 @@
+﻿@using MyFirstCoreApp
+@using MyFirstCoreApp.Models
+@using MyFirstCoreApp.Models.ViewModels
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using MyFirstCoreApp.Authorization

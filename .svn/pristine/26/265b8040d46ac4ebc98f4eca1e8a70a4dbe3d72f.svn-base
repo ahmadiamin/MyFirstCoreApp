@@ -1,0 +1,37 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Infrastructure.Persistence;
+using MyFirstCoreApp.Models.ViewModels;
+
+namespace MyFirstCoreApp.Controllers
+{
+    [Authorize]
+    public class DashboardController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+
+        public DashboardController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var model = new DashboardViewModel
+            {
+                UserCount = await _context.Users.CountAsync(),
+
+                RoleCount = await _context.Roles.CountAsync(),
+
+                PermissionCount = await _context.Permissions
+                    .CountAsync(x => x.IsActive),
+
+                MenuCount = await _context.Menus
+                    .CountAsync(x => x.IsActive)
+            };
+
+            return View(model);
+        }
+    }
+}

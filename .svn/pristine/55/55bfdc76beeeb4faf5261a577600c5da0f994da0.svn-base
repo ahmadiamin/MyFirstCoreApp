@@ -1,0 +1,23 @@
+﻿@using DNTPersianUtils.Core
+@model MyFirstCoreApp.Domain.Entities.Banking.Cheque
+@{
+    ViewData["Title"] = $"حذف چک {Model.ChequeNumber}";
+
+    var confirmModel = new MyFirstCoreApp.Models.ViewModels.DeleteConfirmViewModel
+    {
+        Title = "حذف چک",
+        Message = "آیا از حذف این چک مطمئن هستید؟",
+        Area = "Banking",
+        Controller = "Cheques",
+        Id = Model.Id,
+        Items = new()
+        {
+            new() { Label = "شماره چک", Value = Model.ChequeNumber },
+            new() { Label = "مبلغ", Value = Model.Amount.ToString("N0") },
+            new() { Label = "طرف حساب", Value = Model.Contact?.Name },
+            new() { Label = "سررسید", Value = Model.DueDate.ToShortPersianDateString() }
+        }
+    };
+}
+
+<partial name="_DeleteConfirm" model="confirmModel" />

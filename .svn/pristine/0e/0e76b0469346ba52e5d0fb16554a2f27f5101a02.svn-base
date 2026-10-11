@@ -1,0 +1,292 @@
+﻿@{
+    ViewData["Title"] = "چک‌ها";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-money-check"></i>
+            لیست چک‌ها
+        </h3>
+        <div class="card-tools">
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+                    <i class="fa fa-plus"></i> چک جدید
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" asp-action="Create" asp-route-direction="1">
+                        <i class="fa fa-arrow-down text-success"></i> چک دریافتنی
+                    </a>
+                    <a class="dropdown-item" asp-action="Create" asp-route-direction="2">
+                        <i class="fa fa-arrow-up text-danger"></i> چک پرداختنی
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa fa-search"></i></span>
+                    </div>
+                    <input type="text" id="txtSearch" class="form-control"
+                           placeholder="جستجو در شماره چک، بانک، صاحب چک..." />
+                </div>
+            </div>
+            <div class="col-md-7 text-left">
+                <span class="text-muted" id="lblCount"></span>
+            </div>
+        </div>
+
+        <div id="chequesGrid" class="ag-theme-alpine"
+             style="height: 600px; width: 100%;">
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            // 🆕 فیلتر جهت از URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const direction = urlParams.get('direction');
+
+            let dataUrl = '/Banking/Cheques/GetData';
+            if (direction) dataUrl += '?direction=' + direction;
+
+            const columnDefs = [
+                AgGridHelper.rowNumberColumn(),
+                { field: 'chequeNumber', headerName: 'شماره چک', width: 120 },
+                {
+                    field: 'directionName',
+                    headerName: 'جهت',
+                    width: 100,
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const span = document.createElement('span');
+                        span.className = params.data.direction === 1 ? 'badge badge-success' : 'badge badge-danger';
+                        span.textContent = params.value;
+                        return span;
+                    }
+                },
+                { field: 'contactName', headerName: 'طرف حساب', width: 180, flex: 1 },
+                { field: 'drawerName', headerName: 'صاحب چک', width: 150 },
+                { field: 'bankName', headerName: 'بانک', width: 130 },
+                AgGridHelper.moneyColumn('amount', 'مبلغ', 140),
+                {
+                    field: 'dueDate',
+                    headerName: 'سررسید',
+                    width: 110,
+                    valueFormatter: function (params) {
+                        if (!params.value) return '';
+                        const d = new Date(params.value);
+                        return d.toLocaleDateString('fa-IR');
+                    }
+                },
+                {
+                    field: 'statusName',
+                    headerName: 'وضعیت',
+                    width: 120,
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const span = document.createElement('span');
+                        const s = params.data.status;
+                        if (s === 1) span.className = 'badge badge-primary';      // در جریان
+                        else if (s === 2) span.className = 'badge badge-success'; // پاس
+                        else if (s === 3) span.className = 'badge badge-danger';  // برگشت
+                        else if (s === 4) span.className = 'badge badge-warning'; // عودت
+                        else if (s === 5) span.className = 'badge badge-info';    // مجدد
+                        else if (s === 6) span.className = 'badge badge-dark';    // ابطال
+                        else if (s === 7) span.className = 'badge badge-warning'; // ارجاع
+                        else if (s === 8) span.className = 'badge badge-success'; // نقد
+                        else span.className = 'badge badge-secondary';
+                        span.textContent = params.value;
+                        return span;
+                    }
+                },
+                {
+                    field: 'nextFollowUpDate',
+                    headerName: 'پیگیری',
+                    width: 110,
+                    minWidth: 110,
+                    maxWidth: 110,
+                    cellRenderer: function (params) {
+                        if (!params.value) return '<span class="text-muted">—</span>';
+                        const date = new Date(params.value);
+                        const today = new Date(); today.setHours(0,0,0,0);
+                        const f = new Date(date); f.setHours(0,0,0,0);
+                        const diff = Math.ceil((f - today) / (1000*60*60*24));
+                        let label = '', cls = 'badge-info';
+                        if (diff < 0) { label = `${Math.abs(diff)} روز گذشته`; cls = 'badge-danger'; }
+                        else if (diff === 0) { label = 'امروز'; cls = 'badge-warning'; }
+                        else if (diff === 1) { label = 'فردا'; cls = 'badge-warning'; }
+                        else if (diff <= 7) { label = `${diff} روز آینده`; }
+                        else { label = date.toLocaleDateString('fa-IR'); }
+                        return `<span class="badge ${cls}" title="${date.toLocaleDateString('fa-IR')}">${label}</span>`;
+                    }
+                },
+                                       {
+            headerName: 'عملیات',
+            colId: 'actions',
+            width: 280,
+            minWidth: 280,
+            sortable: false,
+            filter: false,
+            pinned: 'left',
+            cellRenderer: function (params) {
+                if (!params.data) return '';
+                const div = document.createElement('div');
+                div.className = 'action-buttons';
+                const d = params.data;
+
+                // 👁 مشاهده
+                div.appendChild(btnLink(`/Banking/Cheques/Details/${d.id}`, 'fa-solid fa-eye', 'outline-info', 'مشاهده'));
+
+                if (d.status === 1 || d.status === 5) {
+                    div.appendChild(btnWorkflow(d.id, 'deposited', 'fa-solid fa-building-columns', 'outline-secondary', 'ارائه به بانک'));
+                    div.appendChild(btnWorkflow(d.id, 'cleared', 'fa-solid fa-circle-check', 'outline-success', 'پاس شد'));
+                    div.appendChild(btnWorkflow(d.id, 'bounced', 'fa-solid fa-circle-xmark', 'outline-danger', 'برگشت خورد'));
+                    div.appendChild(btnWorkflow(d.id, 'cashed', 'fa-solid fa-money-bill-wave', 'outline-success', 'نقد شد'));
+                    div.appendChild(btnLink(`/Banking/Cheques/Edit/${d.id}`, 'fa-solid fa-pen-to-square', 'outline-primary', 'ویرایش'));
+                    div.appendChild(btnLink(`/Banking/Cheques/Delete/${d.id}`, 'fa-solid fa-trash', 'outline-danger', 'حذف'));
+                }
+                else if (d.status === 3) {
+                    div.appendChild(btnWorkflow(d.id, 'returned', 'fa-solid fa-rotate-left', 'outline-warning', 'عودت'));
+                    div.appendChild(btnWorkflow(d.id, 'represented', 'fa-solid fa-rotate-right', 'outline-primary', 'ارائه مجدد'));
+                    div.appendChild(btnWorkflow(d.id, 'referred', 'fa-solid fa-gavel', 'outline-warning', 'ارجاع'));
+                }
+                else if (d.status === 7) {
+                    div.appendChild(btnWorkflow(d.id, 'cleared', 'fa-solid fa-circle-check', 'outline-success', 'پاس شد'));
+                    div.appendChild(btnWorkflow(d.id, 'returned', 'fa-solid fa-rotate-left', 'outline-warning', 'عودت'));
+                }
+
+                return div;
+            }
+        }
+            ];
+
+            AgGridHelper.create('chequesGrid', columnDefs, dataUrl, 'txtSearch', 'lblCount');
+
+            // 🆕 توابع کمکی
+            function btnLink(href, icon, cls, title) {
+                const a = document.createElement('a');
+                a.href = href;
+                a.className = `btn btn-sm btn-${cls}`;
+                a.title = title;
+                a.innerHTML = `<i class="fa ${icon}"></i>`;
+                return a;
+            }
+
+            function btnWorkflow(id, action, icon, cls, title) {
+                const a = document.createElement('a');
+                a.href = 'javascript:void(0)';
+                a.className = `btn btn-sm btn-${cls} wf-btn`;
+                a.dataset.id = id;
+                a.dataset.action = action;
+                a.title = title;
+                a.innerHTML = `<i class="fa ${icon}"></i>`;
+                return a;
+            }
+
+            // 🆕 رویداد دکمه‌های گردش کار
+            $(document).on('click', '.wf-btn', function () {
+                const id = $(this).data('id');
+                const action = $(this).data('action');
+                handleWorkflow(id, action);
+            });
+
+            function handleWorkflow(id, action) {
+                let url = '', data = { id: id, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() };
+
+                if (action === 'deposited') {
+                    const desc = prompt('توضیحات (اختیاری):');
+                    if (desc === null) return;
+                    url = '/Banking/Cheques/MarkAsDeposited';
+                    data.description = desc;
+                }
+                else if (action === 'cleared') {
+                    if (!confirm('آیا چک پاس شد؟')) return;
+                    const date = prompt('تاریخ پاس (اختیاری - مثلاً 1405/08/15):');
+                    const tracking = prompt('شماره پیگیری بانک (اختیاری):');
+                    url = '/Banking/Cheques/MarkAsCleared';
+                    data.clearedDate = date;
+                    data.bankTrackingNumber = tracking;
+                }
+                else if (action === 'bounced') {
+                    const reason = prompt('دلیل برگشت:');
+                    if (reason === null) return;
+                    const date = prompt('تاریخ برگشت (اختیاری):');
+                    url = '/Banking/Cheques/MarkAsBounced';
+                    data.bounceReason = reason;
+                    data.bouncedDate = date;
+                }
+                else if (action === 'returned') {
+                    const desc = prompt('توضیحات (اختیاری):');
+                    if (desc === null) return;
+                    url = '/Banking/Cheques/MarkAsReturned';
+                    data.description = desc;
+                }
+                else if (action === 'represented') {
+                    const newDate = prompt('تاریخ سررسید جدید (مثلاً 1405/09/15):');
+                    if (!newDate) return;
+                    const desc = prompt('توضیحات (اختیاری):');
+                    url = '/Banking/Cheques/MarkAsRePresented';
+                    data.newDueDate = newDate;
+                    data.description = desc;
+                }
+                else if (action === 'referred') {
+                    const desc = prompt('توضیحات (اختیاری):');
+                    if (desc === null) return;
+                    url = '/Banking/Cheques/MarkAsReferred';
+                    data.description = desc;
+                }
+                else if (action === 'cashed') {
+                    if (!confirm('آیا چک نقد شد؟')) return;
+                    const date = prompt('تاریخ نقد (اختیاری):');
+                    const desc = prompt('توضیحات (اختیاری):');
+                    url = '/Banking/Cheques/MarkAsCashed';
+                    data.cashedDate = date;
+                    data.description = desc;
+                }
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: data,
+                    success: function (r) {
+                        if (r.success) {
+                            alert(r.message || 'عملیات انجام شد');
+                            location.reload();
+                        } else {
+                            alert(r.message);
+                        }
+                    },
+                    error: function () { alert('خطا'); }
+                });
+            }
+
+        });
+    </script>
+}

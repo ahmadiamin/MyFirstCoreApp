@@ -1,0 +1,119 @@
+﻿@using MyFirstCoreApp.Areas.Accounting.ViewModels.Account
+@model List<AccountListViewModel>
+@{
+    ViewData["Title"] = "حساب‌ها";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i>
+        @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-triangle"></i>
+        @TempData["Error"]
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-university"></i>
+            لیست حساب‌ها
+        </h3>
+        <div class="card-tools">
+            <a asp-area="Accounting" asp-controller="Accounts" asp-action="Create"
+               class="btn btn-primary btn-sm">
+                <i class="fa fa-plus"></i>
+                حساب جدید
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>نام</th>
+                        <th>کد</th>
+                        <th>دسته</th>
+                        <th>نوع</th>
+                        <th>بانک</th>
+                        <th>شماره حساب</th>
+                        <th>مانده</th>
+                        <th>وضعیت</th>
+                        <th style="width: 120px;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var i = 1;
+                    }
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@i</td>
+                            <td>
+                                <i class="fa fa-university text-primary"></i>
+                                <strong>@item.Name</strong>
+                                @if (item.IsDefault)
+                                {
+                                    <span class="badge badge-info">پیش‌فرض</span>
+                                }
+                            </td>
+                            <td>@item.Code</td>
+                            <td>@item.CategoryName</td>
+                            <td>@item.AccountTypeName</td>
+                            <td>@item.BankName</td>
+                            <td>@item.AccountNumber</td>
+                            <td>@item.CurrentBalance.ToString("N0")</td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge badge-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger">غیرفعال</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-area="Accounting" asp-controller="Accounts"
+                                   asp-action="Edit" asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-outline-primary" title="ویرایش">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <a asp-area="Accounting" asp-controller="Accounts"
+                                   asp-action="Delete" asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-outline-danger" title="حذف">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        i++;
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fa fa-university" style="font-size: 4rem; color: #ccc;"></i>
+                <h5 class="mt-3 text-muted">هنوز حسابی ثبت نشده</h5>
+                <a asp-area="Accounting" asp-controller="Accounts" asp-action="Create"
+                   class="btn btn-primary mt-2">
+                    <i class="fa fa-plus"></i>
+                    ثبت اولین حساب
+                </a>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,21 @@
+﻿@model MyFirstCoreApp.Domain.Entities.Inventory.ProductCategory
+@{
+    ViewData["Title"] = "حذف دسته‌بندی کالا";
+
+    var confirmModel = new MyFirstCoreApp.Models.ViewModels.DeleteConfirmViewModel
+    {
+        Title = "حذف دسته‌بندی کالا",
+        Message = "آیا از حذف این دسته‌بندی کالا مطمئن هستید؟",
+        Area = "Inventory",
+        Controller = "ProductCategories",
+        Id = Model.Id,
+        Items = new()
+        {
+            new() { Label = "نام", Value = Model.Name?.ToString() },
+            new() { Label = "کد", Value = Model.Code?.ToString() },
+            new() { Label = "ترتیب", Value = Model.SortOrder.ToString() }
+        }
+    };
+}
+
+<partial name="_DeleteConfirm" model="confirmModel" />

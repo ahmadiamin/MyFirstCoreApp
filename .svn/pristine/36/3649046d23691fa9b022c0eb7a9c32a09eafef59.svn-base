@@ -1,0 +1,338 @@
+﻿@using DNTPersianUtils.Core
+@model MyFirstCoreApp.Domain.Entities.Invoicing.Invoice
+@{
+    ViewData["Title"] = $"مشاهده فاکتور شماره {Model.Number}";
+}
+
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-file-invoice"></i>
+            فاکتور شماره @Model.Number
+        </h3>
+        <div class="card-tools">
+            @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
+            {
+                <span class="badge badge-success"><i class="fa fa-check"></i> قطعی</span>
+            }
+            else
+            {
+                <span class="badge badge-warning"><i class="fa fa-clock"></i> پیش‌نویس</span>
+            }
+        </div>
+    </div>
+    <div class="card-body">
+
+        <!-- اطلاعات فاکتور -->
+        <div class="row">
+            <div class="col-md-3">
+                <strong>شماره:</strong>
+                <span class="persian-number">@Model.Number</span>
+            </div>
+            <div class="col-md-3">
+                <strong>تاریخ:</strong>
+                <span>@Model.Date.ToShortPersianDateString()</span>
+            </div>
+            <div class="col-md-3">
+                <strong>نوع:</strong>
+                <span>
+                    @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale)
+                    {
+                        <span>فروش</span>
+                    }
+                    else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase)
+                    {
+                        <span>خرید</span>
+                    }
+                    else
+                    {
+                        <span>پیش‌فاکتور</span>
+                    }
+                </span>
+            </div>
+            <div class="col-md-3">
+                <strong>طرف حساب:</strong>
+                <span>@Model.Contact?.Name</span>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <strong>شرح:</strong>
+                    <span>@Model.Description</span>
+                </div>
+            </div>
+        }
+
+        <hr />
+
+        <!-- اقلام -->
+        <h5><i class="fa fa-list"></i> اقلام فاکتور</h5>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">#</th>
+                    <th>کالا</th>
+                    <th>تعداد</th>
+                    <th>قیمت واحد</th>
+                    <th>تخفیف</th>
+                    <th>مالیات</th>
+                    <th>جمع</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var i = 1;
+                }
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td class="persian-number">@i</td>
+                        <td>@item.Product?.Name</td>
+                        <td class="persian-number">@item.Quantity</td>
+                        <td class="persian-number-comma">@item.UnitPrice.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.DiscountAmount.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.TaxAmount.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.LineTotal.ToString("N0")</td>
+                    </tr>
+                    i++;
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="6" class="text-left">جمع اقلام:</th>
+                    <th class="persian-number-comma">@Model.SubTotal.ToString("N0")</th>
+                </tr>
+                <tr>
+                    <th colspan="6" class="text-left">جمع تخفیف:</th>
+                    <th class="persian-number-comma">@Model.DiscountAmount.ToString("N0")</th>
+                </tr>
+                <tr>
+                    <th colspan="6" class="text-left">جمع مالیات:</th>
+                    <th class="persian-number-comma">@Model.TaxAmount.ToString("N0")</th>
+                </tr>
+                <tr class="bg-info">
+                    <th colspan="6" class="text-left">مبلغ نهایی:</th>
+                    <th class="persian-number-comma"><strong>@Model.TotalAmount.ToString("N0")</strong></th>
+                </tr>
+            </tfoot>
+        </table>
+
+        @if (Model.TransactionId.HasValue)
+        {
+            <div class="alert alert-success">
+                <i class="fa fa-check"></i>
+                سند حسابداری مرتبط:
+                <a asp-area="Accounting" asp-controller="Transactions"
+                   asp-action="Details" asp-route-id="@Model.TransactionId">
+                    مشاهده سند
+                </a>
+            </div>
+        }
+        <!-- 🆕 تاریخچه -->
+        @if (Model.Histories != null && Model.Histories.Any())
+        {
+            <hr />
+            <h5><i class="fa fa-history"></i> تاریخچه</h5>
+
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 130px;">تاریخ</th>
+                        <th style="width: 130px;">از وضعیت</th>
+                        <th style="width: 130px;">به وضعیت</th>
+                        <th>توضیحات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var hi = 1;
+                    }
+                    @foreach (var h in Model.Histories.OrderBy(x => x.Date))
+                    {
+                        <tr>
+                            <td class="persian-number">@hi</td>
+                            <td>@h.Date.ToShortPersianDateString()</td>
+                            <td>
+                                @if (h.FromStatus.HasValue)
+                                {
+                                    <span>@GetStatusName(h.FromStatus.Value)</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge badge-info">@GetStatusName(h.ToStatus)</span>
+                            </td>
+                            <td>@h.Description</td>
+                        </tr>
+                        hi++;
+                    }
+                </tbody>
+            </table>
+        }
+
+        @functions {
+            string GetStatusName(MyFirstCoreApp.Domain.Enums.InvoiceStatus status)
+            {
+                return status switch
+                {
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft => "پیش‌نویس",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Sent => "ارسال شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised => "اصلاح شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Approved => "تایید شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Rejected => "رد شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Postponed => "به تعویق",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Converted => "تبدیل شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Cancelled => "لغو شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted => "قطعی",
+                    _ => "نامشخص"
+                };
+            }
+        }
+    </div>
+
+    <div class="card-footer">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa fa-arrow-right"></i> بازگشت
+        </a>
+
+        @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.PreInvoice)
+        {
+            // 🆕 گردش کار پیش‌فاکتور
+            if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft ||
+            Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised)
+            {
+                <button type="button" class="btn btn-primary workflow-details-btn" data-id="@Model.Id" data-action="sent">
+                    <i class="fa fa-paper-plane"></i> ارسال به مشتری
+                </button>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-info">
+                    <i class="fa fa-edit"></i> ویرایش
+                </a>
+            }
+
+            @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Sent ||
+                    Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised)
+            {
+                <button type="button" class="btn btn-success workflow-details-btn" data-id="@Model.Id" data-action="approved">
+                    <i class="fa fa-check"></i> تایید مشتری
+                </button>
+                <button type="button" class="btn btn-danger workflow-details-btn" data-id="@Model.Id" data-action="rejected">
+                    <i class="fa fa-times"></i> رد مشتری
+                </button>
+                <button type="button" class="btn btn-warning workflow-details-btn" data-id="@Model.Id" data-action="postponed">
+                    <i class="fa fa-clock"></i> به تعویق
+                </button>
+            }
+
+            @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Approved)
+            {
+                <button type="button" class="btn btn-success convert-details-btn" data-id="@Model.Id">
+                    <i class="fa fa-exchange-alt"></i> تبدیل به فاکتور فروش
+                </button>
+            }
+        }
+        else
+        {
+            // 🆕 فاکتور فروش/خرید
+            if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft)
+            {
+                <button type="button" class="btn btn-success post-details-btn" data-id="@Model.Id">
+                    <i class="fa fa-check"></i> قطعی کردن
+                </button>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-info">
+                    <i class="fa fa-edit"></i> ویرایش
+                </a>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                    <i class="fa fa-trash"></i> حذف
+                </a>
+            }
+            else if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
+            {
+                <button type="button" class="btn btn-warning unpost-details-btn" data-id="@Model.Id">
+                    <i class="fa fa-undo"></i> برگشت به پیش‌نویس
+                </button>
+            }
+        }
+    </div>
+
+    @section Scripts {
+        <script>
+            $(document).ready(function () {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+                function ajaxCall(url, data, successUrl) {
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: $.extend({ __RequestVerificationToken: token }, data),
+                        success: function (r) {
+                            if (r.success) {
+                                alert(r.message);
+                                location.href = successUrl || location.href;
+                            } else {
+                                alert(r.message);
+                            }
+                        },
+                        error: function () { alert('خطا'); }
+                    });
+                }
+
+                $('.workflow-details-btn').on('click', function () {
+                    var id = $(this).data('id');
+                    var action = $(this).data('action');
+
+                    if (action === 'sent') {
+                        if (!confirm('ارسال به مشتری؟')) return;
+                        ajaxCall('/Invoicing/Invoices/MarkAsSent', { id: id });
+                    } else if (action === 'approved') {
+                        var desc = prompt('توضیحات تایید:');
+                        if (desc === null) return;
+                        ajaxCall('/Invoicing/Invoices/MarkAsApproved', { id: id, description: desc });
+                    } else if (action === 'rejected') {
+                        var reason = prompt('دلیل رد:');
+                        if (reason === null) return;
+                        ajaxCall('/Invoicing/Invoices/MarkAsRejected', { id: id, reason: reason });
+                    } else if (action === 'postponed') {
+                        var date = prompt('تاریخ پیگیری (1405/08/15):');
+                        if (!date) return;
+                        var reason = prompt('دلیل (اختیاری):');
+                        ajaxCall('/Invoicing/Invoices/MarkAsPostponed', { id: id, nextFollowUpDate: date, reason: reason });
+                    }
+                });
+
+                $('.convert-details-btn').on('click', function () {
+                    var id = $(this).data('id');
+                    if (!confirm('تبدیل به فاکتور فروش؟')) return;
+                    $.ajax({
+                        url: '/Invoicing/Invoices/Convert',
+                        type: 'POST',
+                        data: { id: id, __RequestVerificationToken: token },
+                        success: function (r) {
+                            if (r.success) {
+                                alert(r.message);
+                                location.href = '/Invoicing/Invoices/Edit/' + r.newId;
+                            } else {
+                                alert(r.message);
+                            }
+                        }
+                    });
+                });
+
+                $('.post-details-btn').on('click', function () {
+                    var id = $(this).data('id');
+                    if (!confirm('قطعی کردن؟')) return;
+                    ajaxCall('/Invoicing/Invoices/Post', { id: id });
+                });
+
+                $('.unpost-details-btn').on('click', function () {
+                    var id = $(this).data('id');
+                    if (!confirm('برگشت به پیش‌نویس؟')) return;
+                    ajaxCall('/Invoicing/Invoices/Unpost', { id: id });
+                });
+            });
+        </script>
+    }
+</div>

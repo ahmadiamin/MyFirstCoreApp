@@ -1,0 +1,118 @@
+﻿@page
+@model ConfirmEmailModel
+
+@{
+    ViewData["Title"] = "تأیید ایمیل";
+}
+
+<div class="row justify-content-center">
+
+    <div class="col-md-6 col-lg-5">
+
+        @if (Model.IsConfirmed)
+        {
+            <div class="card card-success">
+
+                <div class="card-header text-center">
+
+                    <h3 class="card-title float-none">
+
+                        <i class="fa fa-check-circle"></i>
+
+                        تأیید ایمیل
+
+                    </h3>
+
+                </div>
+
+                <div class="card-body text-center">
+
+                    <i class="fa fa-check-circle text-success fa-4x mb-3"></i>
+
+                    <h5 class="text-success">
+                        ایمیل شما با موفقیت تأیید شد
+                    </h5>
+
+                    <p class="text-muted mt-3">
+                        آدرس ایمیل حساب کاربری شما با موفقیت تأیید شد.
+                    </p>
+
+                    <div class="mt-4">
+
+                        <a asp-page="./Login"
+                           class="btn btn-success">
+
+                            <i class="fa fa-sign-in"></i>
+
+                            ورود به سیستم
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <div class="card card-danger">
+
+                <div class="card-header text-center">
+
+                    <h3 class="card-title float-none">
+
+                        <i class="fa fa-exclamation-circle"></i>
+
+                        تأیید ایمیل
+
+                    </h3>
+
+                </div>
+
+                <div class="card-body text-center">
+
+                    <i class="fa fa-exclamation-circle text-danger fa-4x mb-3"></i>
+
+                    <h5 class="text-danger">
+                        تأیید ایمیل انجام نشد
+                    </h5>
+
+                    <p class="text-muted mt-3">
+                        لینک تأیید ایمیل معتبر نیست یا منقضی شده است.
+                    </p>
+
+                    <div class="mt-4">
+
+                        <a asp-page="./ResendEmailConfirmation"
+                           class="btn btn-primary">
+
+                            <i class="fa fa-paper-plane"></i>
+
+                            ارسال مجدد لینک تأیید
+
+                        </a>
+
+                    </div>
+
+                    <div class="mt-3">
+
+                        <a asp-page="./Login">
+
+                            <i class="fa fa-arrow-right"></i>
+
+                            بازگشت به صفحه ورود
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+

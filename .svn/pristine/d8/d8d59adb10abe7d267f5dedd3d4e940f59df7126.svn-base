@@ -1,0 +1,9 @@
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Domain.Entities.Identity;
+using MyFirstCoreApp.Infrastructure.Persistence;
+
+namespace MyFirstCoreApp.Data
+{
+    
+}

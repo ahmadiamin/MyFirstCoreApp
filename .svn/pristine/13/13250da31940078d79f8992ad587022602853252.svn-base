@@ -1,0 +1,398 @@
+﻿@model MyFirstCoreApp.Areas.Invoicing.ViewModels.Invoice.InvoiceFormViewModel
+@{
+    ViewData["Title"] = "ثبت فاکتور جدید";
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-plus"></i>
+            ثبت فاکتور جدید
+        </h3>
+    </div>
+
+    <form asp-area="Invoicing" asp-controller="Invoices" asp-action="Create" method="post" id="invoiceForm">
+        @Html.AntiForgeryToken()
+
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <partial name="_Form" model="Model" />
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> ذخیره فاکتور
+            </button>
+            <a asp-area="Invoicing" asp-controller="Invoices" asp-action="Index" class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i> انصراف
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+
+            function initSelect2(selector) {
+                $(selector).not('.select2-hidden-accessible').each(function () {
+                    $(this).select2({
+                        dir: 'rtl',
+                        placeholder: '-- انتخاب کنید --',
+                        allowClear: true,
+                        width: '100%',
+                        language: 'fa'
+                    });
+                });
+            }
+
+            initSelect2('select.select2');
+
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                },
+                toolbox: {
+                    calendarSwitch: { enabled: false }
+                }
+            });
+
+            let itemIndex = @Model.Items.Count;
+
+            // 🆕 افزودن قلم
+            $('#addItem').on('click', function () {
+                const productOptions = `@Html.Raw(string.Join("", Model.Items[0].ProductOptions.Select(o => $"<option value='{o.Value}'>{o.Text}</option>")))`;
+
+                const newRow = `
+                    <tr class="item-row">
+                        <td class="item-number"></td>
+                        <td>
+                            <select name="Items[${itemIndex}].ProductId" class="form-control select2 product-select">
+                                <option value="">-- انتخاب کالا --</option>
+                                ${productOptions}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" name="Items[${itemIndex}].Quantity"
+                                   class="form-control persian-number quantity-input" value="1" />
+                        </td>
+                        <td>
+                            <input type="text" name="Items[${itemIndex}].UnitPrice"
+                                   class="form-control persian-number persian-number-comma price-input" value="0" />
+                        </td>
+                        <td>
+                            <input type="text" name="Items[${itemIndex}].DiscountPercent"
+                                   class="form-control persian-number discount-input" value="0" />
+                        </td>
+                        <td>
+                            <input type="text" name="Items[${itemIndex}].TaxRate"
+                                   class="form-control persian-number tax-input" value="0" />
+                        </td>
+                        <td>
+                            <input type="text" name="Items[${itemIndex}].LineTotal"
+                                   class="form-control persian-number persian-number-comma line-total" readonly value="0" />
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger remove-item">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+                $('#itemsBody').append(newRow);
+                itemIndex++;
+                renumberItems();
+                initSelect2('#itemsBody tr:last-child select.select2');
+                updateTotals();
+            });
+
+            // حذف قلم
+            $(document).on('click', '.remove-item', function () {
+                if ($('#itemsBody tr').length <= 1) {
+                    alert('حداقل یک قلم لازم است.');
+                    return;
+                }
+                $(this).closest('tr').remove();
+                renumberItems();
+                updateTotals();
+            });
+
+            function renumberItems() {
+                $('#itemsBody tr').each(function (i) {
+                    $(this).find('.item-number').text(i + 1);
+                });
+            }
+
+            // 🆕 محاسبه جمع‌ها
+            function updateTotals() {
+                let subTotal = 0;
+                let discountTotal = 0;
+                let taxTotal = 0;
+
+                $('#itemsBody tr').each(function () {
+                    const $row = $(this);
+                    const qty = parseFloat(toEnglishNumber($row.find('.quantity-input').val()).replace(/,/g, '')) || 0;
+                    const price = parseFloat(toEnglishNumber($row.find('.price-input').val()).replace(/,/g, '')) || 0;
+                    const discount = parseFloat(toEnglishNumber($row.find('.discount-input').val()).replace(/,/g, '')) || 0;
+                    const tax = parseFloat(toEnglishNumber($row.find('.tax-input').val()).replace(/,/g, '')) || 0;
+
+                    const lineBase = qty * price;
+                    const discountAmount = lineBase * (discount / 100);
+                    const afterDiscount = lineBase - discountAmount;
+                    const taxAmount = afterDiscount * (tax / 100);
+                    const lineTotal = afterDiscount + taxAmount;
+
+                    $row.find('.line-total').val(formatNumberWithComma(lineTotal.toFixed(0)));
+
+                    subTotal += lineBase;
+                    discountTotal += discountAmount;
+                    taxTotal += taxAmount;
+                });
+
+                const totalAmount = subTotal - discountTotal + taxTotal;
+
+                $('#subTotal').text(formatNumberWithComma(subTotal.toFixed(0)));
+                $('#discountAmount').text(formatNumberWithComma(discountTotal.toFixed(0)));
+                $('#taxAmount').text(formatNumberWithComma(taxTotal.toFixed(0)));
+                $('#totalAmount').text(formatNumberWithComma(totalAmount.toFixed(0)));
+            }
+
+            $(document).on('input', '.quantity-input, .price-input, .discount-input, .tax-input', updateTotals);
+
+            // 🆕 موقع انتخاب کالا، قیمت فروش رو خودکار پر کن
+            $(document).on('change', '.product-select', function () {
+                const $row = $(this).closest('tr');
+                const productId = $(this).val();
+                if (!productId) return;
+
+                $.ajax({
+                    url: '/Invoicing/Invoices/GetProductPrice',
+                    type: 'GET',
+                    data: { id: productId },
+                    success: function (r) {
+                        if (r.success) {
+                            $row.find('.price-input').val(formatNumberWithComma(r.salePrice));
+                            updateTotals();
+                        }
+                    }
+                });
+            });
+
+            updateTotals();
+
+            // 🆕 موقع submit
+            $('#invoiceForm').on('submit', function () {
+            // 🆕 تبدیل اعداد
+            $('.persian-number').each(function () {
+                const $input = $(this);
+                let val = $input.val();
+                if (val) {
+                    val = toEnglishNumber(val).replace(/,/g, '');
+                    $input.val(val);
+                }
+            });
+
+            // 🆕 Select2 sync
+            $('select.select2').each(function () {
+                if ($(this).data('select2')) {
+                    $(this).trigger('change.select2');
+                }
+            });
+
+            // 🆕 اگه ContactId خالیه، 0 بذار
+            var contactId = $('#ContactId_Hidden').val();
+            var contactName = $('#ContactName_Hidden').val();
+
+            if (!contactId && contactName) {
+                $('#ContactId_Hidden').val('0');
+            }
+
+            console.log('=== SUBMIT ===');
+            console.log('ContactId:', $('#ContactId_Hidden').val());
+            console.log('ContactName:', $('#ContactName_Hidden').val());
+        });
+
+        });
+
+        // ============================================
+        // 🆕 MagicSuggest برای طرف حساب
+        // ============================================
+        var contactType = @((int)(Model.InvoiceType == InvoiceType.Purchase ? ContactType.Supplier : ContactType.Customer));
+
+        // 🆕 متغیر global برای MagicSuggest
+        var msContact;
+
+        // بارگذاری اولیه
+        $.ajax({
+            url: '/Invoicing/Invoices/SearchContacts',
+            type: 'GET',
+            data: { type: contactType },
+            success: function (r) {
+                var initialData = r.data.map(function (c) {
+                    return { id: c.id, name: c.name, mobile: c.mobile };
+                });
+
+                // 🆕 ساخت MagicSuggest
+                msContact = $('#contactSelect').magicSuggest({
+                    data: initialData,
+                    valueField: 'id',
+                    displayField: 'name',
+                    allowFreeEntries: true,
+                    maxSelection: 1,
+                    resultAsString: false,
+
+                    selectionRenderer: function (item) {
+                        return item.name;
+                    },
+                    renderer: function (item) {
+                        if (item.mobile) {
+                            return item.name + ' <small style="color: #000; direction: ltr; unicode-bidi: embed; display: inline-block; font-weight: 500;">' + item.mobile + '</small>';
+                        }
+                        return item.name;
+                    },
+                    placeholder: 'نام طرف حساب را تایپ کنید یا انتخاب کنید...',
+                    noSuggestionText: 'موردی یافت نشد. Enter بزنید تا جدید اضافه شود.',
+                    minChars: 0,
+                    typeDelay: 200,
+                    maxSuggestions: 50,
+                    maxSelectionRenderer: function () {
+                        return 'فقط یک مورد می‌توانید انتخاب کنید.';
+                    }
+                });
+
+                // 🆕 مقدار اولیه (اگه ویرایش هست)
+                var initialContactId = @(Model.ContactId ?? 0);
+                var initialContactName = '@Html.Raw((Model.ContactName ?? "").Replace("'", "\\'"))';
+
+                if (initialContactId && initialContactId > 0 && initialContactName) {
+                    msContact.addToSelection([{ id: initialContactId, name: initialContactName }]);
+                }
+
+                // 🆕 **مهم:** موقع انتخاب، از `getSelection` استفاده کن
+                $(msContact).on('selectionchange', function (e, items) {
+                    console.log('=== Selection Changed ===');
+
+                    // 🆕 از API درست استفاده کن
+                    var selection = msContact.getSelection();
+                    console.log('Selection:', selection);
+
+                    if (selection && selection.length > 0) {
+                        var item = selection[0];
+                        console.log('Item:', item);
+
+                        if (item.id && item.id > 0) {
+                            // آیتم موجود
+                            $('#ContactId_Hidden').val(item.id);
+                            $('#ContactName_Hidden').val(item.name);
+                        } else {
+                            // 🆕 tag جدید (id = 0)
+                            $('#ContactId_Hidden').val('0');
+                            $('#ContactName_Hidden').val(item.name);
+                        }
+                    } else {
+                        $('#ContactId_Hidden').val('');
+                        $('#ContactName_Hidden').val('');
+                    }
+
+                    console.log('ContactId_Hidden:', $('#ContactId_Hidden').val());
+                    console.log('ContactName_Hidden:', $('#ContactName_Hidden').val());
+                });
+
+                // 🆕 Enter برای ورود آزاد
+                $(msContact).on('keydown', function (e) {
+                    if (e.key === 'Enter' || e.keyCode === 13) {
+                        var inputEl = $('#contactSelect').find('input')[0];   // 🆕 دسترسی به input
+                        var text = inputEl && inputEl.value ? inputEl.value.trim() : '';
+
+                        if (text) {
+                            var selection = msContact.getSelection();
+                            var isDuplicate = selection.some(function (i) {
+                                return i.name === text;
+                            });
+
+                            if (!isDuplicate) {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                // 🆕 پاک کردن input
+                                inputEl.value = '';
+
+                                // 🆕 اضافه به انتخاب
+                                msContact.addToSelection([{ id: 0, name: text }]);
+
+                                return false;
+                            }
+                        }
+                    }
+                });
+
+                // 🆕 جستجو توی سرور موقع تایپ
+                var searchTimeout;
+                $(msContact).on('keyup', function (e) {
+                    if (e.key === 'Enter' || e.keyCode === 13) return;
+
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(function () {
+                        var inputEl = $('#contactSelect').find('input')[0];
+                        var query = inputEl && inputEl.value ? inputEl.value.trim() : '';
+
+                        $.ajax({
+                            url: '/Invoicing/Invoices/SearchContacts',
+                            type: 'GET',
+                            data: { q: query, type: contactType },
+                            success: function (r) {
+                                var data = r.data.map(function (c) {
+                                    return { id: c.id, name: c.name, mobile: c.mobile };
+                                });
+                                msContact.setData(data);
+                            }
+                        });
+                    }, 300);
+                });
+            }
+        });
+
+        // 🆕 موقع Submit، مطمئن شو ContactId و ContactName پر شدن
+        $('#invoiceForm').on('submit', function () {
+            // تبدیل اعداد
+            $('.persian-number').each(function () {
+                const $input = $(this);
+                let val = $input.val();
+                if (val) {
+                    val = toEnglishNumber(val).replace(/,/g, '');
+                    $input.val(val);
+                }
+            });
+
+            // Select2 sync
+            $('select.select2').each(function () {
+                if ($(this).data('select2')) {
+                    $(this).trigger('change.select2');
+                }
+            });
+
+            // 🆕 اگه ContactId خالیه ولی ContactName هست، 0 بذار
+            var contactId = $('#ContactId_Hidden').val();
+            var contactName = $('#ContactName_Hidden').val();
+
+            if ((!contactId || contactId === '') && contactName) {
+                $('#ContactId_Hidden').val('0');
+            }
+
+            console.log('=== SUBMIT ===');
+            console.log('ContactId:', $('#ContactId_Hidden').val());
+            console.log('ContactName:', $('#ContactName_Hidden').val());
+        });
+    </script>
+}

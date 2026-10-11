@@ -1,0 +1,5 @@
+﻿@using MyFirstCoreApp
+@using MyFirstCoreApp.Areas.Accounting
+@using MyFirstCoreApp.Areas.Accounting.ViewModels.AccountCategory
+@using MyFirstCoreApp.Domain.Enums
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

@@ -1,0 +1,62 @@
+﻿@model MyFirstCoreApp.Domain.Entities.Contacts.Contact
+@{
+    ViewData["Title"] = "حذف طرف حساب";
+}
+
+<div class="card card-danger">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-trash"></i>
+            حذف طرف حساب
+        </h3>
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="fa fa-exclamation-triangle"></i>
+            آیا از حذف این طرف حساب مطمئن هستید؟
+        </div>
+
+        <dl class="row">
+            <dt class="col-sm-3">نام:</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">کد:</dt>
+            <dd class="col-sm-9">@Model.Code</dd>
+
+            <dt class="col-sm-3">نوع:</dt>
+            <dd class="col-sm-9">
+                @switch (Model.ContactType)
+                {
+                    case MyFirstCoreApp.Domain.Enums.ContactType.Customer:
+                        <span class="badge badge-info">مشتری</span>
+                        break;
+                    case MyFirstCoreApp.Domain.Enums.ContactType.Supplier:
+                        <span class="badge badge-warning">فروشنده</span>
+                        break;
+                    case MyFirstCoreApp.Domain.Enums.ContactType.Both:
+                        <span class="badge badge-success">مشتری و فروشنده</span>
+                        break;
+                }
+            </dd>
+
+            <dt class="col-sm-3">موبایل:</dt>
+            <dd class="col-sm-9" dir="ltr">@Model.Mobile</dd>
+
+            <dt class="col-sm-3">مانده:</dt>
+            <dd class="col-sm-9">@Model.CurrentBalance.ToString("N0")</dd>
+        </dl>
+    </div>
+
+    <form asp-area="Contacts" asp-controller="Contacts" asp-action="Delete"
+          asp-route-id="@Model.Id" method="post">
+        <div class="card-footer">
+            <button type="submit" class="btn btn-danger">
+                <i class="fa fa-trash"></i> حذف
+            </button>
+            <a asp-area="Contacts" asp-controller="Contacts" asp-action="Index" class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i> انصراف
+            </a>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,110 @@
+﻿@{
+    ViewData["Title"] = "شرکت‌ها";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-building"></i>
+            لیست شرکت‌ها
+        </h3>
+        <div class="card-tools">
+            <a asp-area="Tenancy" asp-controller="Tenant" asp-action="Create"
+               class="btn btn-primary btn-sm">
+                <i class="fa fa-plus"></i> شرکت جدید
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa fa-search"></i></span>
+                    </div>
+                    <input type="text" id="txtSearch" class="form-control"
+                           placeholder="جستجو در نام، شناسه ملی، تلفن..." />
+                </div>
+            </div>
+            <div class="col-md-7 text-left">
+                <span class="text-muted" id="lblCount"></span>
+            </div>
+        </div>
+
+        <div id="tenantsGrid" class="ag-theme-alpine"
+             style="height: 600px; width: 100%;">
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            const columnDefs = [
+                AgGridHelper.rowNumberColumn(),
+                { field: 'name', headerName: 'نام شرکت', flex: 2, minWidth: 200 },
+                { field: 'legalName', headerName: 'نام حقوقی', width: 180 },
+                { field: 'nationalId', headerName: 'شناسه ملی', width: 130 },
+                { field: 'phone', headerName: 'تلفن', width: 130 },
+                AgGridHelper.statusColumn('isActive'),
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 140,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const div = document.createElement('div');
+                        div.className = 'action-buttons';
+
+                        const selectBtn = document.createElement('a');
+                        selectBtn.href = `/Tenancy/Tenant/SelectById?tenantId=${params.data.id}`;
+                        selectBtn.className = 'btn btn-sm btn-outline-success';
+                        selectBtn.title = 'ورود به شرکت';
+                        selectBtn.innerHTML = '<i class="fa fa-sign-in"></i>';
+
+                        const editBtn = document.createElement('a');
+                        editBtn.href = `/Tenancy/Tenant/Edit/${params.data.id}`;
+                        editBtn.className = 'btn btn-sm btn-outline-primary';
+                        editBtn.title = 'ویرایش';
+                        editBtn.innerHTML = '<i class="fa fa-edit"></i>';
+
+                        div.appendChild(selectBtn);
+                        div.appendChild(editBtn);
+
+                        return div;
+                    }
+                }
+            ];
+
+            AgGridHelper.create(
+                'tenantsGrid',
+                columnDefs,
+                '/Tenancy/Tenant/GetData',
+                'txtSearch',
+                'lblCount'
+            );
+
+        });
+    </script>
+}

@@ -1,0 +1,21 @@
+﻿@model MyFirstCoreApp.Domain.Entities.Contacts.Contact
+@{
+    ViewData["Title"] = "حذف طرف حساب";
+
+    var confirmModel = new MyFirstCoreApp.Models.ViewModels.DeleteConfirmViewModel
+    {
+        Title = "حذف طرف حساب",
+        Message = "آیا از حذف این طرف حساب مطمئن هستید؟",
+        Area = "Contacts",
+        Controller = "Contacts",
+        Id = Model.Id,
+        Items = new()
+        {
+            new() { Label = "نام", Value = Model.Name },
+            new() { Label = "کد", Value = Model.Code },
+            new() { Label = "موبایل", Value = Model.Mobile }
+        }
+    };
+}
+
+<partial name="_DeleteConfirm" model="confirmModel" />

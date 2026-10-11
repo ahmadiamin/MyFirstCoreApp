@@ -1,0 +1,264 @@
+﻿@model MyFirstCoreApp.Areas.Banking.ViewModels.Payment.PaymentFormViewModel
+@{
+    ViewData["Title"] = Model.PaymentType == MyFirstCoreApp.Domain.Enums.PaymentType.Received
+        ? "ثبت دریافت"
+        : "ثبت پرداخت";
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+            @ViewData["Title"]
+        </h3>
+    </div>
+
+    <form asp-area="Banking" asp-controller="Payments" asp-action="Create" method="post" id="paymentForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Number" />
+        <input type="hidden" asp-for="PaymentType" id="PaymentType_Hidden" />
+
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <partial name="_Form" model="Model" />
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> ذخیره
+            </button>
+            <a asp-action="Index" asp-route-paymentType="@((int)Model.PaymentType)" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-right"></i> انصراف
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+         $(document).ready(function () {
+                    // 🆕 متغیر global
+        let currentInvoices = [];
+            // ============================================
+            // ۱. DatePicker
+            // ============================================
+            $('.datepicker').each(function () {
+                var $input = $(this);
+                var val = $input.val();
+                $input.persianDatepicker({
+                    format: 'YYYY/MM/DD',
+                    initialValue: false,
+                    autoClose: true,
+                    observer: true,
+                    calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                    toolbox: { calendarSwitch: { enabled: false } }
+                });
+                if (val) $input.persianDatepicker('setDate', val);
+            });
+
+            // ============================================
+            // ۲. Select2
+            // ============================================
+            $('select.select2').select2({
+                dir: 'rtl',
+                placeholder: '-- انتخاب --',
+                allowClear: true,
+                width: '100%',
+                language: 'fa'
+            });
+
+            // ============================================
+            // ۳. توابع کمکی
+            // ============================================
+
+            // 🆕 محاسبه مجموع
+            function updateTotals() {
+                let amount = parseFloat($('#Amount_Hidden').val()) || 0;
+                if (isNaN(amount)) amount = 0;
+
+                let total = 0;
+                $('.allocation-amount').each(function () {
+                    const v = $(this).val();
+                    const num = parseFloat(toEnglishNumber(v).replace(/,/g, '')) || 0;
+                    total += num;
+                });
+
+                const remaining = amount - total;
+
+                $('#totalAmount').text(formatNumberWithComma(amount.toString()));
+                $('#totalAllocated').text(formatNumberWithComma(total.toString()));
+                $('#remainingAmount').text(formatNumberWithComma(remaining.toString()));
+
+                if (remaining < 0) {
+                    $('#remainingAmount').addClass('text-danger');
+                } else {
+                    $('#remainingAmount').removeClass('text-danger');
+                }
+            }
+
+            // 🆕 sync Amount
+            function syncAmount() {
+                var displayVal = $('#Amount_Display').val();
+                var hiddenVal = toEnglishNumber(displayVal).replace(/,/g, '').split('.')[0];
+                $('#Amount_Hidden').val(hiddenVal);
+
+                // 🆕 اگه فاکتورها لود شدن، دوباره تخصیص بده
+                if ($('#allocationsBody tr.allocation-row').length > 0) {
+                    // 🆕 جمع‌آوری فاکتورهای فعلی از جدول
+                    let invoices = [];
+                    $('#allocationsBody tr.allocation-row').each(function () {
+                        const $row = $(this);
+                        const invoiceId = $row.data('invoice-id');
+                        const invoiceNumberText = $row.find('td:eq(1)').text().trim();
+                        const invoiceNumber = parseInt(invoiceNumberText.replace(/\D/g, '')) || 0;
+                        const invoiceTotal = parseFloat(toEnglishNumber($row.find('td:eq(3)').text()).replace(/,/g, '')) || 0;
+                        const invoiceRemaining = parseFloat(toEnglishNumber($row.find('td:eq(4)').text()).replace(/,/g, '')) || 0;
+                        const invoiceDate = $row.find('td:eq(2)').text().trim();
+
+                        invoices.push({
+                            id: invoiceId,
+                            number: invoiceNumber,
+                            total: invoiceTotal,
+                            remaining: invoiceRemaining,
+                            date: invoiceDate
+                        });
+                    });
+
+                    // 🆕 تخصیص مجدد
+                    renderAllocations(invoices);
+                } else {
+                    updateTotals();
+                }
+            }
+
+            // 🆕 رندر جدول تخصیص‌ها
+            function renderAllocations(invoices) {
+                currentInvoices = invoices;   // 🆕 ذخیره
+                const tbody = $('#allocationsBody');
+                tbody.empty();
+
+                if (invoices.length === 0) {
+                    tbody.append('<tr><td colspan="6" class="text-center text-muted">فاکتور بازی برای این طرف حساب وجود ندارد.</td></tr>');
+                    updateTotals();
+                    return;
+                }
+
+                // 🆕 مبلغ کل قابل تخصیص
+                let amountToAllocate = parseFloat($('#Amount_Hidden').val()) || 0;
+                if (isNaN(amountToAllocate)) amountToAllocate = 0;
+
+                // 🆕 تخصیص خودکار
+                let allocations = [];
+                let remainingToAllocate = amountToAllocate;
+
+                invoices.forEach(function (inv) {
+                    let allocate = 0;
+
+                    if (remainingToAllocate > 0) {
+                        // 🆕 تخصیص به اندازه‌ی باقی‌مانده یا کمتر
+                        allocate = Math.min(remainingToAllocate, inv.remaining);
+                        remainingToAllocate -= allocate;
+                    }
+
+                    allocations.push({
+                        invoice: inv,
+                        amount: allocate
+                    });
+            });
+
+            // 🆕 رندر
+            let html = '';
+            allocations.forEach(function (item, idx) {
+                const inv = item.invoice;
+                const amount = item.amount;
+
+                html += '<tr class="allocation-row" data-invoice-id="' + inv.id + '">';
+                html += '  <td class="text-center">' + (idx + 1) + '</td>';
+                html += '  <td>فاکتور شماره ' + inv.number;
+                html += '    <input type="hidden" name="Allocations[' + idx + '].InvoiceId" value="' + inv.id + '" />';
+                html += '  </td>';
+                html += '  <td>' + new Date(inv.date).toLocaleDateString('fa-IR') + '</td>';
+                html += '  <td class="persian-number-comma">' + Number(inv.total).toLocaleString('en-US') + '</td>';
+                html += '  <td class="persian-number-comma text-warning">' + Number(inv.remaining).toLocaleString('en-US') + '</td>';
+                html += '  <td>';
+                html += '    <input type="text" name="Allocations[' + idx + '].Amount" class="form-control form-control-sm allocation-amount persian-number persian-number-comma" data-remaining="' + inv.remaining + '" value="' + (amount > 0 ? formatNumberWithComma(amount.toString()) : '0') + '" />';
+                html += '  </td>';
+                html += '</tr>';
+            });
+
+            tbody.html(html);
+            updateTotals();
+        }
+            // ============================================
+            // ۴. رویدادها
+            // ============================================
+
+            // 🆕 تایپ مبلغ کل
+            $(document).on('input', '#Amount_Display', function () {
+                var val = $(this).val();
+                if (val) {
+                    var formatted = formatNumberWithComma(toEnglishNumber(val).replace(/,/g, '').split('.')[0]);
+                    $(this).val(formatted);
+                }
+                syncAmount();
+            });
+
+            // 🆕 تایپ مبلغ تخصیص
+            $(document).on('input', '.allocation-amount', function () {
+                var val = $(this).val();
+                if (val) {
+                    $(this).val(formatNumberWithComma(toEnglishNumber(val).replace(/,/g, '').split('.')[0]));
+                }
+                updateTotals();
+            });
+
+            // 🆕 تغییر طرف حساب
+            $('#ContactId').on('change', function () {
+                const contactId = $(this).val();
+                const paymentType = $('#PaymentType_Hidden').val();
+
+                if (!contactId) {
+                    $('#allocationsBody').empty();
+                    updateTotals();
+                    return;
+                }
+
+                $.ajax({
+                    url: '/Banking/Payments/GetInvoices',
+                    type: 'GET',
+                    data: { contactId: contactId, paymentType: paymentType },
+                    success: function (r) {
+                        if (r.success) renderAllocations(r.data);
+                    }
+                });
+            });
+
+            // 🆕 Submit
+            $('#paymentForm').on('submit', function () {
+                syncAmount();
+
+                $('.persian-number').each(function () {
+                    const $input = $(this);
+                    let val = $input.val();
+                    if (val) {
+                        val = toEnglishNumber(val).replace(/,/g, '').split('.')[0];
+                        $input.val(val);
+                    }
+                });
+
+                console.log('=== SUBMIT ===');
+                console.log('Amount:', $('#Amount_Hidden').val());
+                $('input[name^="Allocations"]').each(function () {
+                    console.log($(this).attr('name'), '=', $(this).val());
+                });
+            });
+
+            // ============================================
+            // ۵. بارگذاری اولیه
+            // ============================================
+            syncAmount();
+
+        });
+    </script>
+}

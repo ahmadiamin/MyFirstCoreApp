@@ -1,0 +1,50 @@
+﻿@using MyFirstCoreApp.Areas.Inventory.ViewModels.ProductCategory
+@model ProductCategoryFormViewModel
+
+<div class="row">
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Code"></label>
+            <input asp-for="Code" class="form-control" />
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="SortOrder"></label>
+            <input asp-for="SortOrder" type="text" class="form-control ltr input-mask-money" />
+            <span asp-validation-for="SortOrder" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label>وضعیت</label>
+            <div class="custom-control custom-checkbox mt-2">
+                <input asp-for="IsActive" class="custom-control-input" id="IsActive" />
+                <label asp-for="IsActive" class="custom-control-label" for="IsActive">
+                    فعال
+                </label>
+            </div>
+        </div>
+    </div>
+
+</div>

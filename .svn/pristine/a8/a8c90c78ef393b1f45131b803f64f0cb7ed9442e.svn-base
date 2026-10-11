@@ -1,0 +1,45 @@
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Models.Invoicing;
+
+namespace MyFirstCoreApp.Data.ModelConfigurations
+{
+    public static class InvoicingModelConfig
+    {
+        public static void Configure(ModelBuilder builder)
+        {
+            // ---------- Invoice ----------
+            builder.Entity<Invoice>()
+                .HasOne(inv => inv.Account)
+                .WithMany(a => a.Invoices)
+                .HasForeignKey(inv => inv.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // مهم‌ترین ایندکس‌ها برای گزارش معین و لیست فاکتورها با صفحه‌بندی:
+            builder.Entity<Invoice>()
+                .HasIndex(inv => new { inv.UserId, inv.Date });
+
+            builder.Entity<Invoice>()
+                .HasIndex(inv => new { inv.UserId, inv.AccountId, inv.Date });
+
+            builder.Entity<Invoice>()
+                .HasIndex(inv => inv.InvoiceNumber);
+
+            // ---------- InvoiceDetail ----------
+            builder.Entity<InvoiceDetail>()
+                .HasOne(d => d.Invoice)
+                .WithMany(inv => inv.Details)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade); // حذف فاکتور یعنی حذف ردیف‌هایش
+
+            builder.Entity<InvoiceDetail>()
+                .HasOne(d => d.Item)
+                .WithMany(i => i.InvoiceDetails)
+                .HasForeignKey(d => d.ItemId)
+                .OnDelete(DeleteBehavior.Restrict); // نباید بشود کالایی که در فاکتور استفاده شده حذف شود
+
+            // مهم‌ترین ایندکس برای "آخرین قیمت کالا از آخرین فاکتور"
+            builder.Entity<InvoiceDetail>()
+                .HasIndex(d => new { d.ItemId, d.InvoiceId });
+        }
+    }
+}

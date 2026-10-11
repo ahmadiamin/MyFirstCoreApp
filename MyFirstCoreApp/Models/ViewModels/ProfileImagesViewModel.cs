@@ -1,0 +1,17 @@
+﻿using MyFirstCoreApp.Domain.Entities.Identity;
+
+namespace MyFirstCoreApp.Models.ViewModels
+{
+    public class ProfileImagesViewModel
+    {
+        public string UserId { get; set; } = string.Empty;
+
+        public string FullName { get; set; } = string.Empty;
+
+        public List<UserProfileImage> Images { get; set; }
+            = new();
+
+        public List<IFormFile> NewImages { get; set; }
+            = new();
+    }
+}

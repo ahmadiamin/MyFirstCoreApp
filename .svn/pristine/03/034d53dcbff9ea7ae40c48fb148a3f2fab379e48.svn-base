@@ -1,0 +1,13 @@
+﻿namespace MyFirstCoreApp.Domain.Enums;
+
+public enum InvoiceStatus
+{
+    /// <summary>پیش‌نویس</summary>
+    Draft = 1,
+
+    /// <summary>قطعی</summary>
+    Posted = 2,
+
+    /// <summary>لغو شده</summary>
+    Cancelled = 3
+}

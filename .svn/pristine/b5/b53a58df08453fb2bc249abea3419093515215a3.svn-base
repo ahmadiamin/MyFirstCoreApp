@@ -1,0 +1,40 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using MyFirstCoreApp.Models.Accounting;
+
+namespace MyFirstCoreApp.Models.Invoicing
+{
+    // فاکتور (خرید یا فروش)
+    public class Invoice
+    {
+        public int Id { get; set; }
+
+        [Required, MaxLength(50)]
+        public string InvoiceNumber { get; set; } // شماره فاکتور - می‌تواند خودکار تولید شود
+
+        [Required]
+        public DateTime Date { get; set; }
+
+        [Required]
+        public InvoiceType Type { get; set; } // خرید یا فروش - روی بدهکار/بستانکار شدن حساب تاثیر دارد
+
+        [Required]
+        public int AccountId { get; set; } // طرف حساب (مشتری/تامین‌کننده)
+
+        [ForeignKey(nameof(AccountId))]
+        public Account Account { get; set; }
+
+        [MaxLength(1000)]
+        public string? Description { get; set; }
+
+        // جمع کل فاکتور - عدد صحیح چون واحد پول اعشار ندارد (ریال/تومان)
+        public long TotalAmount { get; set; }
+
+        public ICollection<InvoiceDetail> Details { get; set; } = new List<InvoiceDetail>();
+
+        [Required, MaxLength(450)]
+        public string UserId { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    }
+}

@@ -1,0 +1,81 @@
+﻿@model MyFirstCoreApp.Areas.Tenancy.ViewModels.CreateTenantViewModel
+@{
+    ViewData["Title"] = "ویرایش شرکت";
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-edit"></i>
+            ویرایش شرکت
+        </h3>
+    </div>
+
+    <form asp-area="Tenancy" asp-controller="Tenant" asp-action="Edit"
+          asp-route-id="@ViewBag.TenantId" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Name"></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Phone"></label>
+                        <input asp-for="Phone" class="form-control ltr" dir="ltr" />
+                        <span asp-validation-for="Phone" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="LegalName"></label>
+                        <input asp-for="LegalName" class="form-control" />
+                        <span asp-validation-for="LegalName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="NationalId"></label>
+                        <input asp-for="NationalId" class="form-control ltr" dir="ltr" />
+                        <span asp-validation-for="NationalId" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="EconomicCode"></label>
+                        <input asp-for="EconomicCode" class="form-control ltr" dir="ltr" />
+                        <span asp-validation-for="EconomicCode" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label asp-for="Address"></label>
+                        <textarea asp-for="Address" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> ذخیره تغییرات
+            </button>
+            <a asp-area="Tenancy" asp-controller="Tenant" asp-action="Index"
+               class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i> انصراف
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

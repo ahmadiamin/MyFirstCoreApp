@@ -1,0 +1,33 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using MyFirstCoreApp.Models.Inventory;
+
+namespace MyFirstCoreApp.Models.Invoicing
+{
+    // ردیف‌های اقلام هر فاکتور
+    public class InvoiceDetail
+    {
+        public int Id { get; set; }
+
+        public int InvoiceId { get; set; }
+
+        [ForeignKey(nameof(InvoiceId))]
+        public Invoice Invoice { get; set; }
+
+        public int ItemId { get; set; }
+
+        [ForeignKey(nameof(ItemId))]
+        public Item Item { get; set; }
+
+        // مقدار - اعشاری می‌ماند چون کالاهای متراژی/وزنی/حجمی می‌توانند اعشار داشته باشند (مثلا 2.5 متر)
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal Quantity { get; set; }
+
+        // قیمت واحد و جمع ردیف - عدد صحیح چون واحد پول اعشار ندارد
+        public long UnitPrice { get; set; }
+
+        public long LineTotal { get; set; }
+
+        [NotMapped]
+        public int RowOrder { get; set; } // فقط برای نمایش ترتیب ردیف‌ها در گرید، در دیتابیس ذخیره نمی‌شود
+    }
+}

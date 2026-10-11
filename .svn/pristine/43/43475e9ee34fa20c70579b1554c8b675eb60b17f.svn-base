@@ -1,0 +1,762 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Amin\\MyFirstCoreApp\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\wwwroot\\plugins\\ag-grid\\ag-grid-helper.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\wwwroot\\plugins\\ag-grid\\ag-grid-helper.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\products\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\products\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\viewmodels\\product\\productformviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\viewmodels\\product\\productformviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\viewmodels\\product\\productlistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\viewmodels\\product\\productlistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\productcategories\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\productcategories\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\controllers\\productcategoriescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\controllers\\productcategoriescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\productcategories\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\productcategories\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\productcategories\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\productcategories\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\productcategories\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\productcategories\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\productcategories\\_form.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\productcategories\\_form.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\viewmodels\\productcategory\\productcategoryformviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\viewmodels\\productcategory\\productcategoryformviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\units\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\units\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\wwwroot\\dist\\css\\custom-style.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\wwwroot\\dist\\css\\custom-style.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\wwwroot\\css\\site.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\wwwroot\\css\\site.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\units\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\units\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\controllers\\unitscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\controllers\\unitscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B914B26E-29DC-4CA4-9AC9-0C899464C299}|MyFirstCoreApp.Domain\\MyFirstCoreApp.Domain.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp.domain\\entities\\inventory\\unit.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B914B26E-29DC-4CA4-9AC9-0C899464C299}|MyFirstCoreApp.Domain\\MyFirstCoreApp.Domain.csproj|solutionrelative:myfirstcoreapp.domain\\entities\\inventory\\unit.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\viewmodels\\unit\\unitlistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\viewmodels\\unit\\unitlistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\viewmodels\\unit\\unitformviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\viewmodels\\unit\\unitformviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\_viewstart.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\_viewstart.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\units\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\units\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\units\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\units\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\units\\_form.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\units\\_form.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\accounting\\views\\accounts\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\accounting\\views\\accounts\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\accounting\\views\\accountcategories\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\accounting\\views\\accountcategories\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\views\\contacts\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\views\\contacts\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\shared\\_deleteconfirm.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\shared\\_deleteconfirm.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\views\\contacts\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\views\\contacts\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\controllers\\contactscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\controllers\\contactscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DBF25C9F-CE14-48F5-922D-32B3907D8F6B}|MyFirstCoreApp.Application\\MyFirstCoreApp.Application.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp.application\\common\\models\\aggridrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DBF25C9F-CE14-48F5-922D-32B3907D8F6B}|MyFirstCoreApp.Application\\MyFirstCoreApp.Application.csproj|solutionrelative:myfirstcoreapp.application\\common\\models\\aggridrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\wwwroot\\js\\site.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\wwwroot\\js\\site.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\views\\contacts\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\views\\contacts\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\views\\contacts\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\views\\contacts\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\views\\contacts\\_form.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\views\\contacts\\_form.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CEE417CF-C33B-4CB4-A20A-6F0FBA7572A9}|MyFirstCoreApp.Infrastructure\\MyFirstCoreApp.Infrastructure.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp.infrastructure\\persistence\\seed\\identityseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CEE417CF-C33B-4CB4-A20A-6F0FBA7572A9}|MyFirstCoreApp.Infrastructure\\MyFirstCoreApp.Infrastructure.csproj|solutionrelative:myfirstcoreapp.infrastructure\\persistence\\seed\\identityseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\viewmodels\\contact\\contactformviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\viewmodels\\contact\\contactformviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\viewmodels\\contact\\contactlistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\viewmodels\\contact\\contactlistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\views\\_viewstart.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\views\\_viewstart.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\contacts\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\contacts\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CEE417CF-C33B-4CB4-A20A-6F0FBA7572A9}|MyFirstCoreApp.Infrastructure\\MyFirstCoreApp.Infrastructure.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp.infrastructure\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CEE417CF-C33B-4CB4-A20A-6F0FBA7572A9}|MyFirstCoreApp.Infrastructure\\MyFirstCoreApp.Infrastructure.csproj|solutionrelative:myfirstcoreapp.infrastructure\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 80,
+          "SelectedChildIndex": 15,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:14:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:16:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:17:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:18:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:21:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:20:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:24:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ProductListViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Product\\ProductListViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Product\\ProductListViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Product\\ProductListViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Product\\ProductListViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T10:07:34.533Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ProductFormViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Product\\ProductFormViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Product\\ProductFormViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Product\\ProductFormViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Product\\ProductFormViewModel.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAQwDEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T10:07:26.744Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ProductsController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Controllers\\ProductsController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Controllers\\ProductsController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Controllers\\ProductsController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Controllers\\ProductsController.cs",
+              "ViewState": "AgIAAOcAAAAAAAAAAAAQwBABAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T10:07:09.072Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "_ViewImports.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\_ViewImports.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\_ViewImports.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\_ViewImports.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\_ViewImports.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:19:51.677Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ProductCategoriesController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Controllers\\ProductCategoriesController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Controllers\\ProductCategoriesController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Controllers\\ProductCategoriesController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Controllers\\ProductCategoriesController.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAABsAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T08:43:51.067Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Create.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Create.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Create.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Create.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T08:38:54.714Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "_Form.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\_Form.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\_Form.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\_Form.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\_Form.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T08:38:54.234Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Index.cshtml",
+              "ViewState": "AgIAADMAAAAAAAAAAAAwwEAAAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T08:38:33.233Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ag-grid-helper.js",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\plugins\\ag-grid\\ag-grid-helper.js",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\wwwroot\\plugins\\ag-grid\\ag-grid-helper.js",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\plugins\\ag-grid\\ag-grid-helper.js",
+              "RelativeToolTip": "MyFirstCoreApp\\wwwroot\\plugins\\ag-grid\\ag-grid-helper.js",
+              "ViewState": "AgIAACsAAAAAAAAAAAAcwFMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-09-30T07:02:49.266Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Products\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Products\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Products\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Products\\Index.cshtml",
+              "ViewState": "AgIAACsAAAAAAAAAAAAAwFQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T10:09:41.607Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Edit.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Edit.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Edit.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Edit.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T08:38:27.873Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "ProductCategoryFormViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\ProductCategory\\ProductCategoryFormViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\ProductCategory\\ProductCategoryFormViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\ProductCategory\\ProductCategoryFormViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\ProductCategory\\ProductCategoryFormViewModel.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAhwBYAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T08:38:14.928Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "Delete.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Delete.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Delete.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Delete.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Delete.cshtml",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAgwBIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:54:04.352Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "_Form.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\_Form.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\_Form.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\_Form.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\_Form.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:54:02.633Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "UnitListViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Unit\\UnitListViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Unit\\UnitListViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Unit\\UnitListViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Unit\\UnitListViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T07:53:57.214Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Delete.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Delete.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Delete.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Delete.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\ProductCategories\\Delete.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T08:39:39.616Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "UnitFormViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Unit\\UnitFormViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Unit\\UnitFormViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Unit\\UnitFormViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\ViewModels\\Unit\\UnitFormViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T07:53:56.203Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "UnitsController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Controllers\\UnitsController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Controllers\\UnitsController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Controllers\\UnitsController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Controllers\\UnitsController.cs",
+              "ViewState": "AgIAAHMAAAAAAAAAAAAhwIAAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T07:53:42.738Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "custom-style.css",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\dist\\css\\custom-style.css",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\wwwroot\\dist\\css\\custom-style.css",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\dist\\css\\custom-style.css",
+              "RelativeToolTip": "MyFirstCoreApp\\wwwroot\\dist\\css\\custom-style.css",
+              "ViewState": "AgIAAA4CAAAAAAAAAAAUwDcCAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-09-30T06:07:01.888Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "site.css",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\css\\site.css",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\wwwroot\\css\\site.css",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\css\\site.css",
+              "RelativeToolTip": "MyFirstCoreApp\\wwwroot\\css\\site.css",
+              "ViewState": "AgIAAMgAAAAAAAAAAAAAAN4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-09-30T06:07:25.01Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Index.cshtml",
+              "ViewState": "AgIAACwAAAAAAAAAAAAwwEUAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:54:06.495Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Create.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Create.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Create.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Create.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:54:03.588Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Edit.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Edit.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Edit.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Units\\Edit.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:54:04.975Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Unit.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp.Domain\\Entities\\Inventory\\Unit.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp.Domain\\Entities\\Inventory\\Unit.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp.Domain\\Entities\\Inventory\\Unit.cs",
+              "RelativeToolTip": "MyFirstCoreApp.Domain\\Entities\\Inventory\\Unit.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAADwvxQAAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T07:56:30.388Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "_ViewStart.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\_ViewStart.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\_ViewStart.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\_ViewStart.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\_ViewStart.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:19:58.416Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "Delete.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Accounting\\Views\\Accounts\\Delete.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Accounting\\Views\\Accounts\\Delete.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Accounting\\Views\\Accounts\\Delete.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Accounting\\Views\\Accounts\\Delete.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:24:19.489Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "_DeleteConfirm.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\_DeleteConfirm.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Shared\\_DeleteConfirm.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\_DeleteConfirm.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Shared\\_DeleteConfirm.cshtml",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAQwCsAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:22:44.402Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "Delete.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Accounting\\Views\\AccountCategories\\Delete.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Accounting\\Views\\AccountCategories\\Delete.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Accounting\\Views\\AccountCategories\\Delete.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Accounting\\Views\\AccountCategories\\Delete.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAwBQAAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T07:24:09.55Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "Delete.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Delete.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Delete.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Delete.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Delete.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-29T20:46:32.699Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Edit.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Edit.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Edit.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Edit.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-29T20:46:05.723Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Create.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Create.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Create.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Create.cshtml",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABAAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-29T20:45:47.062Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "IdentitySeeder.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp.Infrastructure\\Persistence\\Seed\\IdentitySeeder.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp.Infrastructure\\Persistence\\Seed\\IdentitySeeder.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp.Infrastructure\\Persistence\\Seed\\IdentitySeeder.cs",
+              "RelativeToolTip": "MyFirstCoreApp.Infrastructure\\Persistence\\Seed\\IdentitySeeder.cs",
+              "ViewState": "AgIAAOAAAAAAAAAAAAAAAAIBAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-29T20:43:48.13Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "site.js",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "RelativeToolTip": "MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "ViewState": "AgIAAEsAAAAAAAAAAAAQwHQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-09-29T20:42:40.19Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "_Form.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\_Form.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\_Form.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\_Form.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\_Form.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-29T20:41:57.874Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "ContactsController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Controllers\\ContactsController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\Controllers\\ContactsController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Controllers\\ContactsController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\Controllers\\ContactsController.cs",
+              "ViewState": "AgIAACYBAAAAAAAAAAAQwEsBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-29T20:36:57.216Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\Views\\Contacts\\Index.cshtml",
+              "ViewState": "AgIAAEEAAAAAAAAAAAAAwF4AAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-29T20:41:44.743Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAANYAAAAAAAAAAAAAwPEAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-30T06:06:15.033Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "AgGridRequest.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp.Application\\Common\\Models\\AgGridRequest.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp.Application\\Common\\Models\\AgGridRequest.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp.Application\\Common\\Models\\AgGridRequest.cs",
+              "RelativeToolTip": "MyFirstCoreApp.Application\\Common\\Models\\AgGridRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:09:55.71Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 40,
+              "Title": "_ViewStart.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\_ViewStart.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\Views\\_ViewStart.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\_ViewStart.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\Views\\_ViewStart.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-29T20:39:22.154Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
+              "Title": "_ViewImports.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\_ViewImports.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\Views\\_ViewImports.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\Views\\_ViewImports.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\Views\\_ViewImports.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-29T20:38:56.711Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "ContactFormViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\ViewModels\\Contact\\ContactFormViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\ViewModels\\Contact\\ContactFormViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\ViewModels\\Contact\\ContactFormViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\ViewModels\\Contact\\ContactFormViewModel.cs",
+              "ViewState": "AgIAAEMAAAAAAAAAAAAIwFIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-29T20:38:19.308Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "ContactListViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\ViewModels\\Contact\\ContactListViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Contacts\\ViewModels\\Contact\\ContactListViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Contacts\\ViewModels\\Contact\\ContactListViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Contacts\\ViewModels\\Contact\\ContactListViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAIwA8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-29T20:38:02.146Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 42,
+              "Title": "DependencyInjection.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp.Infrastructure\\DependencyInjection.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp.Infrastructure\\DependencyInjection.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp.Infrastructure\\DependencyInjection.cs",
+              "RelativeToolTip": "MyFirstCoreApp.Infrastructure\\DependencyInjection.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-29T20:29:08.925Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+﻿@model List<SelectTenantViewModel>
+@{
+    ViewData["Title"] = "انتخاب شرکت";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fa fa-list"></i>
+                    انتخاب شرکت
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">لطفاً شرکتی که می‌خواهید وارد شوید را انتخاب کنید:</p>
+
+                <form asp-action="Select" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="list-group">
+                        @foreach (var tenant in Model)
+                        {
+                            <button type="submit" name="tenantId" value="@tenant.TenantId"
+                                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fa fa-building"></i>
+                                    <strong>@tenant.TenantName</strong>
+                                    @if (tenant.IsOwner)
+                                    {
+                                        <span class="badge bg-success ms-2">مالک</span>
+                                    }
+                                </span>
+                                <i class="fa fa-arrow-left"></i>
+                            </button>
+                        }
+                    </div>
+                </form>
+
+                <hr />
+                <a asp-action="Create" class="btn btn-outline-primary">
+                    <i class="fa fa-plus"></i> ثبت شرکت جدید
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

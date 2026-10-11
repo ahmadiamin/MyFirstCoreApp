@@ -1,0 +1,31 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using MyFirstCoreApp.Models
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <li class="nav-item">
+        <form asp-area="Identity"
+              asp-page="/Account/Logout"
+              method="post"
+              class="d-inline">
+            <button type="submit" class="nav-link btn btn-link">
+                <i class="fa fa-sign-out"></i>
+                <span>خروج</span>
+            </button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link"
+           asp-area="Identity"
+           asp-page="/Account/Login">
+            <i class="fa fa-sign-in"></i>
+            <span>ورود</span>
+        </a>
+    </li>
+}

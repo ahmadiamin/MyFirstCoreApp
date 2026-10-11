@@ -1,0 +1,151 @@
+﻿@model MyFirstCoreApp.Models.ViewModels.EditRoleViewModel
+
+@{
+    ViewData["Title"] = "ویرایش نقش";
+}
+
+<h1>ویرایش نقش</h1>
+
+<hr />
+
+<form asp-action="Edit" method="post">
+
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+
+        <input asp-for="Name"
+               class="form-control" />
+
+        <span asp-validation-for="Name"
+              class="text-danger"></span>
+    </div>
+
+    <h4 class="mt-4 mb-3">دسترسی‌ها</h4>
+
+    @for (int groupIndex = 0;
+        groupIndex < Model.PermissionGroups.Count;
+        groupIndex++)
+    {
+        var group = Model.PermissionGroups[groupIndex];
+
+        <div class="card mb-3 permission-group">
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+
+                <strong>
+                    @group.GroupName
+                </strong>
+
+                <div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary select-all"
+                            data-group="@groupIndex">
+                        انتخاب همه
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary deselect-all"
+                            data-group="@groupIndex">
+                        لغو همه
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="card-body">
+
+                @for (int permissionIndex = 0;
+                            permissionIndex < group.Permissions.Count;
+                            permissionIndex++)
+                {
+                    var permission =
+                    group.Permissions[permissionIndex];
+
+                    <div class="form-check mb-2">
+
+                        <input type="hidden"
+                               asp-for="PermissionGroups[groupIndex].Permissions[permissionIndex].Id" />
+
+                        <input type="hidden"
+                               asp-for="PermissionGroups[groupIndex].Permissions[permissionIndex].Name" />
+
+                        <input type="hidden"
+                               asp-for="PermissionGroups[groupIndex].Permissions[permissionIndex].DisplayName" />
+
+                        <input type="checkbox"
+                               asp-for="PermissionGroups[groupIndex].Permissions[permissionIndex].Selected"
+                               class="form-check-input permission-checkbox"
+                               data-group="@groupIndex" />
+
+                        <label class="form-check-label">
+                            @(permission.DisplayName ?? permission.Name)
+                        </label>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    }
+
+    <div class="mt-4">
+
+        <button type="submit"
+                class="btn btn-primary">
+            ذخیره
+        </button>
+
+        <a asp-action="Index"
+           class="btn btn-secondary">
+            انصراف
+        </a>
+
+    </div>
+
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            document.querySelectorAll(".select-all").forEach(function (button) {
+
+                button.addEventListener("click", function () {
+
+                    const group = this.closest(".permission-group");
+
+                    if (!group)
+                        return;
+
+                    group.querySelectorAll(".permission-checkbox")
+                        .forEach(function (checkbox) {
+                            checkbox.checked = true;
+                        });
+                });
+            });
+
+            document.querySelectorAll(".deselect-all").forEach(function (button) {
+
+                button.addEventListener("click", function () {
+
+                    const group = this.closest(".permission-group");
+
+                    if (!group)
+                        return;
+
+                    group.querySelectorAll(".permission-checkbox")
+                        .forEach(function (checkbox) {
+                            checkbox.checked = false;
+                        });
+                });
+            });
+
+        });
+    </script>
+}

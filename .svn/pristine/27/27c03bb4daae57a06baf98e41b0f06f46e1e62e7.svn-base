@@ -1,0 +1,33 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MyFirstCoreApp.Domain.Entities.Identity
+{
+    public class Menu
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Title { get; set; } = string.Empty;
+
+        [MaxLength(300)]
+        public string? Url { get; set; }
+
+        [MaxLength(100)]
+        public string? Icon { get; set; }
+
+        [MaxLength(100)]
+        public string? Permission { get; set; }
+
+        public int? ParentId { get; set; }
+
+        public int SortOrder { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
+        public Menu? Parent { get; set; }
+
+        public ICollection<Menu> Children { get; set; }
+            = new List<Menu>();
+    }
+}

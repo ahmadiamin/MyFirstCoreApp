@@ -1,0 +1,145 @@
+﻿using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Data;
+using MyFirstCoreApp.Models;
+using MyFirstCoreApp.Services.Interfaces;
+using System.Security.Claims;
+
+namespace MyFirstCoreApp.Authorization
+{
+    public class PermissionService : IPermissionService
+    {
+        private readonly ApplicationDbContext _context;
+
+        private HashSet<string>? _permissions;
+
+        public PermissionService(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        // =========================
+        // Authorization
+        // =========================
+
+        public async Task<bool> HasPermissionAsync(
+            ClaimsPrincipal user,
+            string permission)
+        {
+            if (user.Identity?.IsAuthenticated != true)
+                return false;
+
+            await LoadPermissionsAsync(user);
+
+            return _permissions!.Contains(permission);
+        }
+
+        private async Task LoadPermissionsAsync(
+            ClaimsPrincipal user)
+        {
+            // اگر قبلاً در همین Request خوانده شده،
+            // دوباره از دیتابیس نخوان
+            if (_permissions != null)
+                return;
+
+            _permissions = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
+            var userId = user.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+                return;
+
+            var permissions = await _context.UserRoles
+                .Where(x => x.UserId == userId)
+                .Join(
+                    _context.RolePermissions,
+                    userRole => userRole.RoleId,
+                    rolePermission => rolePermission.RoleId,
+                    (userRole, rolePermission) =>
+                        rolePermission.PermissionId)
+                .Join(
+                    _context.Permissions,
+                    permissionId => permissionId,
+                    permission => permission.Id,
+                    (permissionId, permission) => permission)
+                .Where(x => x.IsActive)
+                .Select(x => x.Name)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var item in permissions)
+            {
+                _permissions.Add(item);
+            }
+        }
+
+        // =========================
+        // Permission Management
+        // =========================
+
+        public async Task<List<Permission>> GetAllAsync()
+        {
+            return await _context.Permissions
+                .OrderBy(x => x.GroupName)
+                .ThenBy(x => x.Name)
+                .ToListAsync();
+        }
+
+        public async Task<Permission?> GetByIdAsync(int id)
+        {
+            return await _context.Permissions
+                .FindAsync(id);
+        }
+
+        public async Task<bool> ExistsAsync(
+            string name,
+            int? excludeId = null)
+        {
+            name = name.Trim();
+
+            return await _context.Permissions
+                .AnyAsync(x =>
+                    x.Name == name &&
+                    (!excludeId.HasValue ||
+                     x.Id != excludeId.Value));
+        }
+
+        public async Task CreateAsync(
+            Permission permission)
+        {
+            permission.Name = permission.Name.Trim();
+            permission.DisplayName =
+                permission.DisplayName?.Trim();
+            permission.GroupName =
+                permission.GroupName?.Trim();
+
+            _context.Permissions.Add(permission);
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(
+            Permission permission)
+        {
+            var existing = await _context.Permissions
+                .FindAsync(permission.Id);
+
+            if (existing == null)
+                throw new KeyNotFoundException(
+                    "Permission پیدا نشد.");
+
+            existing.Name = permission.Name.Trim();
+
+            existing.DisplayName =
+                permission.DisplayName?.Trim();
+
+            existing.GroupName =
+                permission.GroupName?.Trim();
+
+            existing.IsActive = permission.IsActive;
+
+            await _context.SaveChangesAsync();
+        }
+    }
+}

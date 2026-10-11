@@ -1,0 +1,603 @@
+﻿using DNTPersianUtils.Core;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Application.Common.Models;
+using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Areas.Banking.ViewModels.Payment;
+using MyFirstCoreApp.Domain.Entities.Banking;
+using MyFirstCoreApp.Domain.Enums;
+using MyFirstCoreApp.Infrastructure.Persistence;
+
+namespace MyFirstCoreApp.Areas.Banking.Controllers;
+
+[Area("Banking")]
+[Authorize]
+public class PaymentsController : Controller
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICurrentTenant _currentTenant;
+    private readonly IPaymentService _paymentService;
+
+    public PaymentsController(
+        ApplicationDbContext context,
+        ICurrentTenant currentTenant,
+        IPaymentService paymentService)
+    {
+        _context = context;
+        _currentTenant = currentTenant;
+        _paymentService = paymentService;
+    }
+
+    // ============================================
+    // Index
+    // ============================================
+
+    [Authorize(Policy = "Payment.View")]
+    public IActionResult Index(PaymentType? paymentType = null)
+    {
+        ViewBag.PaymentType = paymentType;
+        return View();
+    }
+
+    [HttpPost]
+    [Authorize(Policy = "Payment.View")]
+    public async Task<IActionResult> GetData([FromBody] AgGridRequest request, [FromQuery] PaymentType? paymentType = null)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false });
+
+        var query = _context.Payments
+            .Include(x => x.Contact)
+            .Include(x => x.BankAccount)
+            .Where(x => x.TenantId == tenantId.Value && !x.IsDeleted);   
+       
+        if (paymentType.HasValue)
+        {
+            query = query.Where(x => x.PaymentType == paymentType.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var s = request.Search.Trim();
+            query = query.Where(x =>
+                x.Number.ToString().Contains(s) ||
+                (x.Reference != null && x.Reference.Contains(s)) ||
+                (x.Description != null && x.Description.Contains(s)) ||
+                (x.Contact != null && x.Contact.Name.Contains(s)));
+        }
+
+        var total = await query.CountAsync();
+
+        query = request.SortBy switch
+        {
+            "number" => request.SortDir == "asc" ? query.OrderBy(x => x.Number) : query.OrderByDescending(x => x.Number),
+            "date" => request.SortDir == "asc" ? query.OrderBy(x => x.Date) : query.OrderByDescending(x => x.Date),
+            "amount" => request.SortDir == "asc" ? query.OrderBy(x => x.Amount) : query.OrderByDescending(x => x.Amount),
+            _ => query.OrderByDescending(x => x.Date)
+        };
+
+        var items = await query
+            .Skip(request.StartRow)
+            .Take(request.EndRow - request.StartRow)
+            .Select(x => new
+            {
+                id = x.Id,
+                number = x.Number,
+                date = x.Date.ToString("yyyy-MM-ddTHH:mm:ss"),
+                paymentType = (int)x.PaymentType,
+                paymentTypeName = x.PaymentType == PaymentType.Received ? "دریافت" : "پرداخت",
+                contactName = x.Contact != null ? x.Contact.Name : null,
+                bankAccountName = x.BankAccount != null ? x.BankAccount.Name : null,
+                amount = x.Amount,
+                allocatedAmount = x.AllocatedAmount,
+                unallocatedAmount = x.Amount - x.AllocatedAmount,
+                reference = x.Reference,
+                status = (int)x.Status,
+                statusName = x.Status == PaymentStatus.Draft ? "پیش‌نویس"
+                            : x.Status == PaymentStatus.Posted ? "قطعی"
+                            : "لغو شده"
+            })
+            .ToListAsync();
+
+        return Json(new { success = true, rows = items, lastRow = total });
+    }
+
+    // ============================================
+    // Create
+    // ============================================
+
+    [Authorize(Policy = "Payment.Create")]
+    public async Task<IActionResult> Create(PaymentType paymentType = PaymentType.Received)
+    {
+        var contactOptions = await GetContactOptionsAsync(paymentType);
+        var bankOptions = await GetBankAccountOptionsAsync();
+
+        var model = new PaymentFormViewModel
+        {
+            Number = await _paymentService.GetNextNumberAsync(_currentTenant.TenantId ?? 0),
+            PaymentType = paymentType,
+            Date = DateTime.Now.ToShortPersianDateString(),
+            ContactOptions = contactOptions,
+            BankAccountOptions = bankOptions
+        };
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Payment.Create")]
+    public async Task<IActionResult> Create(PaymentFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        if (!model.ContactId.HasValue || model.ContactId.Value == 0)
+            ModelState.AddModelError("", "لطفاً طرف حساب را انتخاب کنید.");
+
+        var validAllocations = model.Allocations
+            .Where(a => a.InvoiceId > 0 && a.Amount > 0)
+            .ToList();
+
+        if (validAllocations.Count == 0)
+            ModelState.AddModelError("", "حداقل یک تخصیص به فاکتور لازم است.");
+
+        var totalAllocated = validAllocations.Sum(a => a.Amount);
+        if (totalAllocated > model.Amount)
+            ModelState.AddModelError("", $"مجموع تخصیص ({totalAllocated:N0}) بیشتر از مبلغ کل ({model.Amount:N0}) است.");
+
+        if (!ModelState.IsValid)
+        {
+            await ReloadOptionsAsync(model);
+
+            // 🆕 اگه ContactId داره ولی Allocations خالی، دوباره لود کن
+            if (model.ContactId.HasValue && model.ContactId.Value > 0)
+            {
+                var invoiceType = model.PaymentType == PaymentType.Received ? InvoiceType.Sale : InvoiceType.Purchase;
+
+                var invoices = await _context.Invoices
+                    .Where(i => i.TenantId == tenantId.Value
+                             && i.ContactId == model.ContactId.Value
+                             && i.InvoiceType == invoiceType
+                             && i.Status == InvoiceStatus.Posted
+                             && i.TotalAmount > i.PaidAmount)
+                    .OrderBy(i => i.Date)
+                    .ToListAsync();
+
+                // 🆕 اگه Allocations خالی یا مبلغ صفر، از invoices بساز
+                var modelAllocDict = model.Allocations.ToDictionary(a => a.InvoiceId, a => a.Amount);
+
+                model.Allocations = invoices.Select(i => new PaymentAllocationViewModel
+                {
+                    InvoiceId = i.Id,
+                    InvoiceNumber = i.Number,
+                    InvoiceTotal = i.TotalAmount,
+                    InvoicePaid = i.PaidAmount,
+                    InvoiceRemaining = i.TotalAmount - i.PaidAmount,
+                    InvoiceDate = i.Date.ToShortPersianDateString(),
+                    Amount = modelAllocDict.TryGetValue(i.Id, out var amt) ? amt : 0
+                }).ToList();
+            }
+
+            return View(model);
+        }
+
+        var payment = new Payment
+        {
+            TenantId = tenantId.Value,
+            Number = model.Number,
+            PaymentType = model.PaymentType,
+            Date = ParsePersianDate(model.Date),
+            ContactId = model.ContactId,
+            BankAccountId = model.BankAccountId,
+            PaymentMethod = model.PaymentMethod,
+            Amount = model.Amount,
+            Reference = model.Reference?.Trim(),
+            Description = model.Description?.Trim(),
+            Allocations = validAllocations.Select(a => new PaymentAllocation
+            {
+                TenantId = tenantId.Value,
+                InvoiceId = a.InvoiceId,
+                Amount = a.Amount,
+                Description = a.Description?.Trim()
+            }).ToList()
+        };
+
+        try
+        {
+            await _paymentService.CreateAsync(payment);
+            TempData["Success"] = $"پرداخت شماره {payment.Number} با موفقیت ثبت شد.";
+            return RedirectToAction(nameof(Index), new { paymentType = (int)payment.PaymentType });
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", ex.Message);
+            await ReloadOptionsAsync(model);
+            return View(model);
+        }
+    }
+
+    // ============================================
+    // Edit
+    // ============================================
+
+    [Authorize(Policy = "Payment.Edit")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _context.Payments
+            .Include(p => p.Allocations)
+                .ThenInclude(a => a.Invoice)
+            .FirstOrDefaultAsync(p => p.Id == id && p.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        if (entity.Status != PaymentStatus.Draft)
+        {
+            TempData["Error"] = "فقط پرداخت پیش‌نویس قابل ویرایش است.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var model = new PaymentFormViewModel
+        {
+            Id = entity.Id,
+            Number = entity.Number,
+            PaymentType = entity.PaymentType,
+            Date = entity.Date.ToShortPersianDateString(),
+            ContactId = entity.ContactId,
+            BankAccountId = entity.BankAccountId,
+            PaymentMethod = entity.PaymentMethod,
+            Amount = entity.Amount,
+            Reference = entity.Reference,
+            Description = entity.Description,
+            ImagePath = entity.ImagePath,
+            ContactOptions = await GetContactOptionsAsync(entity.PaymentType),
+            BankAccountOptions = await GetBankAccountOptionsAsync(),
+            Allocations = entity.Allocations.Select(a => new PaymentAllocationViewModel
+            {
+                Id = a.Id,
+                InvoiceId = a.InvoiceId,
+                InvoiceNumber = a.Invoice.Number,
+                InvoiceTotal = a.Invoice.TotalAmount,
+                InvoicePaid = a.Invoice.PaidAmount,
+                InvoiceRemaining = a.Invoice.TotalAmount - a.Invoice.PaidAmount,
+                InvoiceDate = a.Invoice.Date.ToShortPersianDateString(),
+                Amount = a.Amount,
+                Description = a.Description
+            }).ToList()
+        };
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Payment.Edit")]
+    public async Task<IActionResult> Edit(int id, PaymentFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        if (id != model.Id) return BadRequest();
+
+        if (!model.ContactId.HasValue || model.ContactId.Value == 0)
+            ModelState.AddModelError("", "لطفاً طرف حساب را انتخاب کنید.");
+
+        // 🆕 validAllocations (چک کن ProductId نه، InvoiceId)
+        var validAllocations = model.Allocations
+            .Where(a => a.InvoiceId > 0 && a.Amount > 0)
+            .ToList();
+
+        if (validAllocations.Count == 0)
+            ModelState.AddModelError("", "حداقل یک تخصیص به فاکتور لازم است.");
+
+        var totalAllocated = validAllocations.Sum(a => a.Amount);
+        if (totalAllocated > model.Amount)
+            ModelState.AddModelError("", $"مجموع تخصیص ({totalAllocated:N0}) بیشتر از مبلغ کل ({model.Amount:N0}) است.");
+
+        if (!ModelState.IsValid)
+        {
+            await ReloadOptionsAsync(model);
+
+            // 🆕 اگه ContactId داره ولی Allocations خالی، دوباره لود کن
+            if (model.ContactId.HasValue && model.ContactId.Value > 0)
+            {
+                var invoiceType = model.PaymentType == PaymentType.Received ? InvoiceType.Sale : InvoiceType.Purchase;
+
+                var invoices = await _context.Invoices
+                    .Where(i => i.TenantId == tenantId.Value
+                             && i.ContactId == model.ContactId.Value
+                             && i.InvoiceType == invoiceType
+                             && i.Status == InvoiceStatus.Posted
+                             && i.TotalAmount > i.PaidAmount)
+                    .OrderBy(i => i.Date)
+                    .ToListAsync();
+
+                var modelAllocDict = model.Allocations.ToDictionary(a => a.InvoiceId, a => a.Amount);
+
+                model.Allocations = invoices.Select(i => new PaymentAllocationViewModel
+                {
+                    InvoiceId = i.Id,
+                    InvoiceNumber = i.Number,
+                    InvoiceTotal = i.TotalAmount,
+                    InvoicePaid = i.PaidAmount,
+                    InvoiceRemaining = i.TotalAmount - i.PaidAmount,
+                    InvoiceDate = i.Date.ToShortPersianDateString(),
+                    Amount = modelAllocDict.TryGetValue(i.Id, out var amt) ? amt : 0
+                }).ToList();
+            }
+
+            return View(model);
+        }
+
+        var payment = new Payment
+        {
+            Id = model.Id,
+            Date = ParsePersianDate(model.Date),
+            PaymentType = model.PaymentType,
+            ContactId = model.ContactId,
+            BankAccountId = model.BankAccountId,
+            PaymentMethod = model.PaymentMethod,
+            Amount = model.Amount,
+            Reference = model.Reference?.Trim(),
+            Description = model.Description?.Trim(),
+            Allocations = validAllocations.Select(a => new PaymentAllocation
+            {
+                Id = a.Id,
+                InvoiceId = a.InvoiceId,
+                Amount = a.Amount,
+                Description = a.Description?.Trim()
+            }).ToList()
+        };
+
+        try
+        {
+            await _paymentService.UpdateAsync(payment);
+            TempData["Success"] = "پرداخت با موفقیت ویرایش شد.";
+            return RedirectToAction(nameof(Index), new { paymentType = (int)payment.PaymentType });
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", ex.Message);
+            await ReloadOptionsAsync(model);
+            return View(model);
+        }
+    }
+
+    // ============================================
+    // Details
+    // ============================================
+
+    [Authorize(Policy = "Payment.View")]
+    public async Task<IActionResult> Details(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _context.Payments
+            .Include(p => p.Contact)
+            .Include(p => p.BankAccount)
+            .Include(p => p.Transaction)
+            .Include(p => p.Histories)
+            .Include(p => p.Allocations)
+                .ThenInclude(a => a.Invoice)
+            .FirstOrDefaultAsync(p => p.Id == id && p.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        return View(entity);
+    }
+
+    // ============================================
+    // Delete
+    // ============================================
+
+    // POST: /Banking/Payments/Delete
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Payment.Delete")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
+
+        try
+        {
+            var entity = await _context.Payments
+                .IgnoreQueryFilters()
+                .Include(p => p.Allocations)
+                .Include(p => p.Histories)
+                .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+            if (entity == null)
+                return Json(new { success = false, message = "پرداخت پیدا نشد." });
+
+            if (entity.IsDeleted)
+                return Json(new { success = false, message = "این پرداخت قبلاً حذف شده است." });
+
+            // 🆕 فقط پیش‌نویس
+            if (entity.Status != PaymentStatus.Draft)
+                return Json(new { success = false, message = "فقط پرداخت پیش‌نویس قابل حذف است." });
+
+            // 🆕 Soft Delete پرداخت
+            entity.IsDeleted = true;
+            entity.DeletedAt = DateTime.UtcNow;
+
+            // 🆕 Soft Delete تخصیص‌ها
+            foreach (var alloc in entity.Allocations)
+            {
+                alloc.IsDeleted = true;
+                alloc.DeletedAt = DateTime.UtcNow;
+            }
+
+            // 🆕 Soft Delete تاریخچه
+            foreach (var h in entity.Histories)
+            {
+                h.IsDeleted = true;
+                h.DeletedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "پرداخت با موفقیت حذف شد." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // ============================================
+    // Post / Unpost
+    // ============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Payment.Post")]
+    public async Task<IActionResult> Post(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
+
+        try
+        {
+            await _paymentService.PostAsync(id, tenantId.Value);
+            return Json(new { success = true, message = "پرداخت قطعی شد." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message + " | " + ex.InnerException?.Message });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Payment.Post")]
+    public async Task<IActionResult> Unpost(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
+
+        try
+        {
+            await _paymentService.UnpostAsync(id, tenantId.Value);
+            return Json(new { success = true, message = "پرداخت به پیش‌نویس برگشت." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // ============================================
+    // AJAX: فاکتورهای طرف حساب
+    // ============================================
+
+    [HttpGet]
+    [Authorize(Policy = "Payment.View")]
+    public async Task<IActionResult> GetInvoices(int contactId, PaymentType paymentType)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false });
+
+        var invoiceType = paymentType == PaymentType.Received ? InvoiceType.Sale : InvoiceType.Purchase;
+
+        var invoices = await _context.Invoices
+            .Where(i => i.TenantId == tenantId.Value
+                     && i.ContactId == contactId
+                     && i.InvoiceType == invoiceType
+                     && i.Status == InvoiceStatus.Posted              // 🆕 فقط قطعی
+                     && i.TotalAmount > i.PaidAmount)                  // 🆕 با باقی‌مانده
+            .OrderBy(i => i.Date)
+            .Select(i => new
+            {
+                id = i.Id,
+                number = i.Number,
+                date = i.Date.ToString("yyyy-MM-ddTHH:mm:ss"),
+                total = i.TotalAmount,
+                paid = i.PaidAmount,
+                remaining = i.TotalAmount - i.PaidAmount
+            })
+            .ToListAsync();
+
+        return Json(new { success = true, data = invoices });
+    }
+
+    // ============================================
+    // Helpers
+    // ============================================
+
+    private async Task ReloadOptionsAsync(PaymentFormViewModel model)
+    {
+        model.ContactOptions = await GetContactOptionsAsync(model.PaymentType);
+        model.BankAccountOptions = await GetBankAccountOptionsAsync();
+    }
+
+    private async Task<List<SelectListItem>> GetContactOptionsAsync(PaymentType paymentType)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return new();
+
+        var query = _context.Contacts.Where(c => c.TenantId == tenantId.Value && c.IsActive);
+
+        if (paymentType == PaymentType.Received)
+            query = query.Where(c => c.ContactType == ContactType.Customer || c.ContactType == ContactType.Both);
+        else
+            query = query.Where(c => c.ContactType == ContactType.Supplier || c.ContactType == ContactType.Both);
+
+        return await query
+            .OrderBy(c => c.Name)
+            .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Name })
+            .ToListAsync();
+    }
+
+    private async Task<List<SelectListItem>> GetBankAccountOptionsAsync()
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return new();
+
+        return await _context.Accounts
+            .Where(a => a.TenantId == tenantId.Value && a.IsActive && a.AccountType == AccountType.Bank)
+            .OrderBy(a => a.Name)
+            .Select(a => new SelectListItem
+            {
+                Value = a.Id.ToString(),
+                Text = a.Name + (a.BankName != null ? $" - {a.BankName}" : "")
+            })
+            .ToListAsync();
+    }
+
+    private DateTime ParsePersianDate(string persianDate)
+    {
+        if (string.IsNullOrWhiteSpace(persianDate)) return DateTime.UtcNow;
+        try
+        {
+            persianDate = ToEnglishNumber(persianDate);
+            var parts = persianDate.Split('/', '-');
+            if (parts.Length != 3) return DateTime.UtcNow;
+
+            var year = int.Parse(parts[0]);
+            var month = int.Parse(parts[1]);
+            var day = int.Parse(parts[2]);
+
+            var pc = new System.Globalization.PersianCalendar();
+            return pc.ToDateTime(year, month, day, 0, 0, 0, 0);
+        }
+        catch { return DateTime.UtcNow; }
+    }
+
+    private string ToEnglishNumber(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        return input
+            .Replace("۰", "0").Replace("۱", "1").Replace("۲", "2")
+            .Replace("۳", "3").Replace("۴", "4").Replace("۵", "5")
+            .Replace("۶", "6").Replace("۷", "7").Replace("۸", "8")
+            .Replace("۹", "9");
+    }
+}

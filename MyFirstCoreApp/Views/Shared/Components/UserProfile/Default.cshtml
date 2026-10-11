@@ -1,0 +1,42 @@
+﻿@model MyFirstCoreApp.Models.ViewModels.UserProfileViewModel
+
+<div class="user-panel mt-3 pb-3 mb-3 d-flex">
+
+    <div class="image">
+
+        @if (Model.PrimaryImageId.HasValue)
+        {
+            <img src="@Url.Action(
+                                          "ProfileImage",
+                                          "Users",
+                                          new
+                                          {
+                                              area = "Admin",
+                                              id = Model.PrimaryImageId.Value
+                                          })"
+             class="img-circle elevation-2"
+             alt="تصویر کاربر"
+             style="width:40px;height:40px;object-fit:cover;" />
+                }
+        else
+        {
+            <div class="user-avatar">
+                <i class="fa fa-user"></i>
+            </div>
+        }
+
+    </div>
+
+    <div class="info">
+
+        <a asp-area=""
+           asp-controller="Account"
+           asp-action="Profile"
+           class="d-block text-white"
+           style="cursor:pointer;">
+            @Model.FullName
+        </a>
+
+    </div>
+
+</div>

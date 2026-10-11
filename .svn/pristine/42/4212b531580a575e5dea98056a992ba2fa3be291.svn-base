@@ -1,0 +1,41 @@
+﻿using MyFirstCoreApp.Domain.Entities.Invoicing;
+
+namespace MyFirstCoreApp.Application.Interfaces;
+
+public interface IInvoiceService
+{
+    /// <summary>
+    /// تولید شماره فاکتور بعدی برای Tenant جاری
+    /// </summary>
+    Task<int> GetNextNumberAsync(int tenantId, Domain.Enums.InvoiceType invoiceType);
+
+    /// <summary>
+    /// ثبت فاکتور جدید
+    /// </summary>
+    Task<Invoice> CreateAsync(Invoice invoice);
+
+    /// <summary>
+    /// ویرایش فاکتور (فقط پیش‌نویس)
+    /// </summary>
+    Task UpdateAsync(Invoice invoice);
+
+    /// <summary>
+    /// حذف فاکتور (Soft Delete)
+    /// </summary>
+    Task DeleteAsync(int id, int tenantId);
+
+    /// <summary>
+    /// قطعی کردن فاکتور + ساخت سند حسابداری خودکار
+    /// </summary>
+    Task PostAsync(int invoiceId, int tenantId);
+
+    /// <summary>
+    /// برگشت فاکتور به پیش‌نویس (حذف سند حسابداری)
+    /// </summary>
+    Task UnpostAsync(int invoiceId, int tenantId);
+
+    /// <summary>
+    /// تبدیل پیش‌فاکتور به فاکتور فروش
+    /// </summary>
+    Task<Invoice> ConvertToInvoiceAsync(int preInvoiceId, int tenantId);
+}

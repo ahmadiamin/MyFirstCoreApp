@@ -1,0 +1,8 @@
+namespace MyFirstCoreApp.Models.Invoicing
+{
+    public enum InvoiceType
+    {
+        Purchase = 1, // خرید -> حساب طرف بستانکار می‌شود
+        Sale = 2      // فروش -> حساب طرف بدهکار می‌شود
+    }
+}

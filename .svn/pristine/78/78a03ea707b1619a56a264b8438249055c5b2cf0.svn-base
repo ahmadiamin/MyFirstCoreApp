@@ -1,0 +1,355 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Application.Common.Models;
+using MyFirstCoreApp.Areas.Contacts.ViewModels.Contact;
+using MyFirstCoreApp.Domain.Entities.Contacts;
+using MyFirstCoreApp.Domain.Enums;
+using MyFirstCoreApp.Infrastructure.Persistence;
+
+namespace MyFirstCoreApp.Areas.Contacts.Controllers;
+
+[Area("Contacts")]
+[Authorize]
+public class ContactsController : Controller
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICurrentTenant _currentTenant;
+
+    public ContactsController(
+        ApplicationDbContext context,
+        ICurrentTenant currentTenant)
+    {
+        _context = context;
+        _currentTenant = currentTenant;
+    }
+
+    // GET: /Contacts/Contacts?search=xxx&type=1&status=active
+    [Authorize(Policy = "Contact.View")]
+    public async Task<IActionResult> Index(
+        string? search = null,
+        ContactType? type = null,
+        string? status = null)   // "active" / "inactive" / null
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var query = _context.Contacts
+            .Where(x => x.TenantId == tenantId.Value);
+
+        // 🆕 جستجو
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim();
+            query = query.Where(x =>
+                x.Name.Contains(search) ||
+                (x.Code != null && x.Code.Contains(search)) ||
+                (x.Mobile != null && x.Mobile.Contains(search)) ||
+                (x.Phone != null && x.Phone.Contains(search)) ||
+                (x.NationalId != null && x.NationalId.Contains(search)));
+        }
+
+        // 🆕 فیلتر نوع
+        if (type.HasValue)
+        {
+            query = query.Where(x => x.ContactType == type.Value);
+        }
+
+        // 🆕 فیلتر وضعیت
+        if (status == "active")
+        {
+            query = query.Where(x => x.IsActive);
+        }
+        else if (status == "inactive")
+        {
+            query = query.Where(x => !x.IsActive);
+        }
+
+        var items = await query
+            .OrderBy(x => x.Name)
+            .Select(x => new ContactListViewModel
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Code = x.Code,
+                ContactType = x.ContactType,
+                ContactTypeName = GetContactTypeName(x.ContactType),
+                Mobile = x.Mobile,
+                Phone = x.Phone,
+                CurrentBalance = x.CurrentBalance,
+                IsActive = x.IsActive
+            })
+            .ToListAsync();
+
+        // 🆕 برای نمایش در View
+        ViewBag.Search = search;
+        ViewBag.Type = type;
+        ViewBag.Status = status;
+        ViewBag.TotalCount = await _context.Contacts
+            .CountAsync(x => x.TenantId == tenantId.Value);
+
+        return View(items);
+    }
+
+    // GET: /Contacts/Contacts/Create
+    [Authorize(Policy = "Contact.Create")]
+    public IActionResult Create()
+    {
+        var model = new ContactFormViewModel
+        {
+            ContactTypeOptions = GetContactTypeOptions()
+        };
+        return View(model);
+    }
+
+    // POST: /Contacts/Contacts/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Contact.Create")]
+    public async Task<IActionResult> Create(ContactFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        if (!ModelState.IsValid)
+        {
+            model.ContactTypeOptions = GetContactTypeOptions();
+            return View(model);
+        }
+
+        var entity = new Contact
+        {
+            TenantId = tenantId.Value,
+            Name = model.Name.Trim(),
+            Code = model.Code?.Trim(),
+            ContactType = model.ContactType,
+            Phone = model.Phone?.Trim(),
+            Mobile = model.Mobile?.Trim(),
+            Email = model.Email?.Trim(),
+            Address = model.Address?.Trim(),
+            PostalCode = model.PostalCode?.Trim(),
+            NationalId = model.NationalId?.Trim(),
+            EconomicCode = model.EconomicCode?.Trim(),
+            RegistrationNumber = model.RegistrationNumber?.Trim(),
+            CurrentBalance = model.CurrentBalance,
+            CreditLimit = model.CreditLimit,
+            IsActive = model.IsActive,
+            Notes = model.Notes?.Trim()
+        };
+
+        _context.Contacts.Add(entity);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "طرف حساب با موفقیت ثبت شد.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // GET: /Contacts/Contacts/Edit/5
+    [Authorize(Policy = "Contact.Edit")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _context.Contacts
+            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        var model = new ContactFormViewModel
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Code = entity.Code,
+            ContactType = entity.ContactType,
+            Phone = entity.Phone,
+            Mobile = entity.Mobile,
+            Email = entity.Email,
+            Address = entity.Address,
+            PostalCode = entity.PostalCode,
+            NationalId = entity.NationalId,
+            EconomicCode = entity.EconomicCode,
+            RegistrationNumber = entity.RegistrationNumber,
+            CurrentBalance = entity.CurrentBalance,
+            CreditLimit = entity.CreditLimit,
+            IsActive = entity.IsActive,
+            Notes = entity.Notes,
+            ContactTypeOptions = GetContactTypeOptions()
+        };
+
+        return View(model);
+    }
+
+    // POST: /Contacts/Contacts/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Contact.Edit")]
+    public async Task<IActionResult> Edit(int id, ContactFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        if (id != model.Id) return BadRequest();
+
+        if (!ModelState.IsValid)
+        {
+            model.ContactTypeOptions = GetContactTypeOptions();
+            return View(model);
+        }
+
+        var entity = await _context.Contacts
+            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        entity.Name = model.Name.Trim();
+        entity.Code = model.Code?.Trim();
+        entity.ContactType = model.ContactType;
+        entity.Phone = model.Phone?.Trim();
+        entity.Mobile = model.Mobile?.Trim();
+        entity.Email = model.Email?.Trim();
+        entity.Address = model.Address?.Trim();
+        entity.PostalCode = model.PostalCode?.Trim();
+        entity.NationalId = model.NationalId?.Trim();
+        entity.EconomicCode = model.EconomicCode?.Trim();
+        entity.RegistrationNumber = model.RegistrationNumber?.Trim();
+        entity.CurrentBalance = model.CurrentBalance;
+        entity.CreditLimit = model.CreditLimit;
+        entity.IsActive = model.IsActive;
+        entity.Notes = model.Notes?.Trim();
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "طرف حساب با موفقیت ویرایش شد.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // GET: /Contacts/Contacts/Delete/5
+    [Authorize(Policy = "Contact.Delete")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _context.Contacts
+            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        return View(entity);
+    }
+
+    // POST: /Contacts/Contacts/Delete/5
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Contact.Delete")]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _context.Contacts
+            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        // TODO: چک کن فاکتور یا تراکنشی به این طرف حساب وابسته نیست
+
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "طرف حساب با موفقیت حذف شد.";
+        return RedirectToAction(nameof(Index));
+    }
+    
+
+// POST: /Contacts/Contacts/GetData
+[HttpPost]
+[Authorize(Policy = "Contact.View")]
+public async Task<IActionResult> GetData([FromBody] AgGridRequest request)
+{
+    var tenantId = _currentTenant.TenantId;
+    if (!tenantId.HasValue)
+        return Json(new { success = false, message = "Tenant not found" });
+
+    var query = _context.Contacts
+        .Where(x => x.TenantId == tenantId.Value);
+
+    // 🆕 جستجو
+    if (!string.IsNullOrWhiteSpace(request.Search))
+    {
+        var s = request.Search.Trim();
+        query = query.Where(x =>
+            x.Name.Contains(s) ||
+            (x.Code != null && x.Code.Contains(s)) ||
+            (x.Mobile != null && x.Mobile.Contains(s)) ||
+            (x.Phone != null && x.Phone.Contains(s)) ||
+            (x.NationalId != null && x.NationalId.Contains(s)));
+    }
+
+    // 🆕 شمارش کل
+    var total = await query.CountAsync();
+
+    // 🆕 مرتب‌سازی
+    query = (request.SortBy, request.SortDir) switch
+    {
+        ("name", "asc") => query.OrderBy(x => x.Name),
+        ("name", "desc") => query.OrderByDescending(x => x.Name),
+        ("code", "asc") => query.OrderBy(x => x.Code),
+        ("code", "desc") => query.OrderByDescending(x => x.Code),
+        ("currentBalance", "asc") => query.OrderBy(x => x.CurrentBalance),
+        ("currentBalance", "desc") => query.OrderByDescending(x => x.CurrentBalance),
+        _ => query.OrderBy(x => x.Name)
+    };
+
+    // 🆕 صفحه‌بندی
+    var items = await query
+        .Skip(request.StartRow)
+        .Take(request.EndRow - request.StartRow)
+        .Select(x => new
+        {
+            id = x.Id,
+            name = x.Name,
+            code = x.Code,
+            contactType = GetContactTypeName(x.ContactType),
+            mobile = x.Mobile,
+            phone = x.Phone,
+            currentBalance = x.CurrentBalance,
+            isActive = x.IsActive
+        })
+        .ToListAsync();
+
+    return Json(new
+    {
+        success = true,
+        rows = items,
+        lastRow = total
+    });
+}
+
+// ---- Helper ----
+
+private static List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> GetContactTypeOptions()
+    {
+        return new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+        {
+            new() { Value = "1", Text = "مشتری" },
+            new() { Value = "2", Text = "فروشنده" },
+            new() { Value = "3", Text = "مشتری و فروشنده" }
+        };
+    }
+
+    private static string GetContactTypeName(ContactType type)
+    {
+        return type switch
+        {
+            ContactType.Customer => "مشتری",
+            ContactType.Supplier => "فروشنده",
+            ContactType.Both => "مشتری و فروشنده",
+            _ => "-"
+        };
+    }
+}

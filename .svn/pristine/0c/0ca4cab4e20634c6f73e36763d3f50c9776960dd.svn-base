@@ -1,0 +1,1220 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Amin\\MyFirstCoreApp\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\wwwroot\\js\\site.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\wwwroot\\js\\site.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\dashboard\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\dashboard\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\wwwroot\\css\\site.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\wwwroot\\css\\site.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\menus\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\menus\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\dashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\dashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\controllers\\menuscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\controllers\\menuscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\identity\\pages\\account\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\identity\\pages\\account\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\identity\\pages\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\identity\\pages\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\menus\\_menurow.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\menus\\_menurow.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\menutreeviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\menutreeviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\menulistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\menulistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\menus\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\menus\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\menus\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\menus\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\menus\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\menus\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\menueditviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\menueditviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\authorization\\menuservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\authorization\\menuservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\shared\\components\\adminmenu\\default.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\shared\\components\\adminmenu\\default.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\menuviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\menuviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\data\\identityseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\data\\identityseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\viewcomponents\\adminmenuviewcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\viewcomponents\\adminmenuviewcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260926075755_AddMenus.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:MyFirstCoreApp\\Data\\Migrations\\20260926075755_AddMenus.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\menu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\menu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\_viewstart.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\_viewstart.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\roles\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\roles\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\controllers\\rolescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\controllers\\rolescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\users\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\users\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\permissions\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\permissions\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\roles\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\roles\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\rolelistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\rolelistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\users\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\users\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\userlistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\userlistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ahmadi_a\\AppData\\Roaming\\Microsoft\\UserSecrets\\aspnet-MyFirstCoreApp-0ac0b1b5-6bc9-4b66-8138-85bb6f894f31\\secrets.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\authorization\\permissionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\authorization\\permissionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\controllers\\permissionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\controllers\\permissionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\permissions\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\permissions\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\permissions\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\permissions\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\account\\accessdenied.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\account\\accessdenied.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\authorization\\permissionauthorizationhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\authorization\\permissionauthorizationhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\authorization\\permissionpolicyprovider.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\authorization\\permissionpolicyprovider.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\authorization\\permissionrequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\authorization\\permissionrequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\editroleviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\editroleviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260926054814_AddPermissions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:MyFirstCoreApp\\Data\\Migrations\\20260926054814_AddPermissions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\data\\migrations\\applicationdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\data\\migrations\\applicationdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\rolepermission.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\rolepermission.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\permission.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\permission.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\viewmodels\\edituserviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\viewmodels\\edituserviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\users\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\users\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\admin\\views\\roles\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\admin\\views\\roles\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\models\\applicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\models\\applicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\identity\\pages\\account\\register.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\identity\\pages\\account\\register.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Amin\\ZomordNet\\ZomorodNet\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\data\\migrations\\20260922130404_initialidentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\data\\migrations\\20260922130404_initialidentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\data\\migrations\\00000000000000_createidentityschema.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\data\\migrations\\00000000000000_createidentityschema.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\identity\\pages\\account\\register.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\identity\\pages\\account\\register.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\scaffoldingreadme.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\scaffoldingreadme.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\home\\privacy.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\home\\privacy.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\shared\\_validationscriptspartial.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\shared\\_validationscriptspartial.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\shared\\error.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\shared\\error.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\data\\migrations\\20260923131221_addisactivetoapplicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\data\\migrations\\20260923131221_addisactivetoapplicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 80,
+          "SelectedChildIndex": 16,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:14:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:16:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:17:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:18:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:21:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:20:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:24:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "site.js",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "RelativeToolTip": "MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-09-26T10:51:48.622Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Index.cshtml",
+              "ViewState": "AgIAACUAAAAAAAAAAAAQwE4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T08:22:21.366Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "MenuViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\MenuViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\MenuViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\MenuViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\MenuViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T08:20:48.183Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "AdminMenuViewComponent.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\ViewComponents\\AdminMenuViewComponent.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\ViewComponents\\AdminMenuViewComponent.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\ViewComponents\\AdminMenuViewComponent.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\ViewComponents\\AdminMenuViewComponent.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T06:21:38.445Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Program.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Program.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Program.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Program.cs",
+              "ViewState": "AgIAACQAAAAAAAAAAAAAAD8AAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-22T13:02:36.595Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Login.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Login.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Login.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Login.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-23T05:27:52.22Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Login.cshtml.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Login.cshtml.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Login.cshtml.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Login.cshtml.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Login.cshtml.cs",
+              "ViewState": "AgIAAGYAAAAAAAAAAAAwwHgAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T13:16:46.982Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "DashboardController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Controllers\\DashboardController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Controllers\\DashboardController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Controllers\\DashboardController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Controllers\\DashboardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T10:36:24.447Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Dashboard\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Dashboard\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Dashboard\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Dashboard\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T10:37:07.041Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAADYAAAAAAAAAAAAMwFYAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-22T13:06:49.918Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "site.css",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\css\\site.css",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\wwwroot\\css\\site.css",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\css\\site.css",
+              "RelativeToolTip": "MyFirstCoreApp\\wwwroot\\css\\site.css",
+              "ViewState": "AgIAALUAAAAAAAAAAAAUwN4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-09-26T10:51:10.893Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "DashboardViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\DashboardViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\DashboardViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\DashboardViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\DashboardViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T10:49:08.834Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "MenusController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Controllers\\MenusController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Controllers\\MenusController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Controllers\\MenusController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Controllers\\MenusController.cs",
+              "ViewState": "AgIAAH8AAAAAAAAAAADwv5gAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T08:21:46.759Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "MenuTreeViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\MenuTreeViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\MenuTreeViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\MenuTreeViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\MenuTreeViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T10:26:15.238Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "_MenuRow.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\_MenuRow.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\_MenuRow.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\_MenuRow.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\_MenuRow.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T10:28:03.521Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "MenuService.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\MenuService.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Authorization\\MenuService.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\MenuService.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Authorization\\MenuService.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAowBUAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T08:01:08.54Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "Default.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\Components\\AdminMenu\\Default.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Shared\\Components\\AdminMenu\\Default.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\Components\\AdminMenu\\Default.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Shared\\Components\\AdminMenu\\Default.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T06:22:30.569Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "MenuEditViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\MenuEditViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\MenuEditViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\MenuEditViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\MenuEditViewModel.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAowCAAAABPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T08:08:12.284Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "MenuListViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\MenuListViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\MenuListViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\MenuListViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\MenuListViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T08:29:06.888Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "Delete.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Delete.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Delete.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Delete.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Delete.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T10:21:08.162Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Create.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Create.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Create.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Create.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T08:33:47.488Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Edit.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Edit.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Edit.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Menus\\Edit.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T10:17:19.172Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "20260926075755_AddMenus.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260926075755_AddMenus.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Data\\Migrations\\20260926075755_AddMenus.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260926075755_AddMenus.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Data\\Migrations\\20260926075755_AddMenus.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T07:57:55.573Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Edit.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Edit.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Edit.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Edit.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAE8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T05:50:13.787Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Edit.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Edit.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Edit.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Edit.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-25T21:09:30.846Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "IdentitySeeder.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\IdentitySeeder.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Data\\IdentitySeeder.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\IdentitySeeder.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Data\\IdentitySeeder.cs",
+              "ViewState": "AgIAAHkAAAAAAAAAAAAgwKgAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T07:58:41.888Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "UserListViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\UserListViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\UserListViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\UserListViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\UserListViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T06:54:26.063Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "RolesController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Controllers\\RolesController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Controllers\\RolesController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Controllers\\RolesController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Controllers\\RolesController.cs",
+              "ViewState": "AgIAAH0AAAAAAAAAAAAwwJcAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T07:34:43.563Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "_ViewStart.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\_ViewStart.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\_ViewStart.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\_ViewStart.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\_ViewStart.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T07:54:28.529Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "Menu.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\Menu.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\Menu.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\Menu.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\Menu.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T07:56:17.662Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Edit.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Edit.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Edit.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Edit.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEUAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-23T13:07:21.359Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "ApplicationDbContext.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\ApplicationDbContext.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Data\\ApplicationDbContext.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\ApplicationDbContext.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Data\\ApplicationDbContext.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAA1wCsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-22T12:39:17.263Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 40,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Create.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Create.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Create.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Create.cshtml",
+              "ViewState": "AgIAAC8AAAAAAAAAAAAMwEAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T05:49:59.401Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Controllers\\UsersController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAA1wBgAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T07:29:38.63Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Permissions\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAABGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T05:49:44.666Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-25T21:06:59.63Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "PermissionsController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Controllers\\PermissionsController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Controllers\\PermissionsController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Controllers\\PermissionsController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Controllers\\PermissionsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T07:34:51.215Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "secrets.json",
+              "DocumentMoniker": "C:\\Users\\ahmadi_a\\AppData\\Roaming\\Microsoft\\UserSecrets\\aspnet-MyFirstCoreApp-0ac0b1b5-6bc9-4b66-8138-85bb6f894f31\\secrets.json",
+              "ToolTip": "C:\\Users\\ahmadi_a\\AppData\\Roaming\\Microsoft\\UserSecrets\\aspnet-MyFirstCoreApp-0ac0b1b5-6bc9-4b66-8138-85bb6f894f31\\secrets.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-09-26T06:49:18.615Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "RoleListViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\RoleListViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\RoleListViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\RoleListViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\RoleListViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T07:18:30.675Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Index.cshtml",
+              "ViewState": "AgIAABUAAAAAAAAAAAAAADcAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-23T07:30:30.836Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "PermissionService.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\PermissionService.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Authorization\\PermissionService.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\PermissionService.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Authorization\\PermissionService.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAEYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T06:20:34.543Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
+              "Title": "_ViewImports.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\_ViewImports.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\_ViewImports.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\_ViewImports.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\_ViewImports.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-23T12:51:25.28Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 43,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Controllers\\AccountController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Controllers\\AccountController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T06:14:23.303Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 50,
+              "Title": "ApplicationDbContextModelSnapshot.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Data\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Data\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T05:47:02.008Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 49,
+              "Title": "20260926054814_AddPermissions.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260926054814_AddPermissions.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Data\\Migrations\\20260926054814_AddPermissions.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260926054814_AddPermissions.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Data\\Migrations\\20260926054814_AddPermissions.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T05:48:14.172Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 47,
+              "Title": "PermissionRequirement.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\PermissionRequirement.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Authorization\\PermissionRequirement.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\PermissionRequirement.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Authorization\\PermissionRequirement.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T06:04:15.874Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 44,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Controllers\\HomeController.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Controllers\\HomeController.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABEAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-22T13:06:05.286Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 42,
+              "Title": "AccessDenied.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Account\\AccessDenied.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Account\\AccessDenied.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Account\\AccessDenied.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Account\\AccessDenied.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-26T06:14:50.8Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 45,
+              "Title": "PermissionAuthorizationHandler.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\PermissionAuthorizationHandler.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Authorization\\PermissionAuthorizationHandler.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\PermissionAuthorizationHandler.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Authorization\\PermissionAuthorizationHandler.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAxwDYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T06:04:31.808Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 46,
+              "Title": "PermissionPolicyProvider.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\PermissionPolicyProvider.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Authorization\\PermissionPolicyProvider.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Authorization\\PermissionPolicyProvider.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Authorization\\PermissionPolicyProvider.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T06:05:21.5Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 48,
+              "Title": "EditRoleViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\EditRoleViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\EditRoleViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\EditRoleViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\EditRoleViewModel.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAgwCMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T05:55:14.878Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 52,
+              "Title": "Permission.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\Permission.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\Permission.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\Permission.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\Permission.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T05:45:58.449Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 54,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Create.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Create.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Create.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Users\\Create.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-23T13:04:10.541Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 56,
+              "Title": "ApplicationUser.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ApplicationUser.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ApplicationUser.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ApplicationUser.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ApplicationUser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T13:11:54.189Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 51,
+              "Title": "RolePermission.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\RolePermission.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\RolePermission.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\RolePermission.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\RolePermission.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T05:46:23.246Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 55,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Create.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Create.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Create.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Admin\\Views\\Roles\\Create.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-25T21:08:05.045Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 53,
+              "Title": "EditUserViewModel.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\EditUserViewModel.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Models\\ViewModels\\EditUserViewModel.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Models\\ViewModels\\EditUserViewModel.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Models\\ViewModels\\EditUserViewModel.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAAA1wCYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T13:06:02.219Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 69,
+              "Title": "20260923131221_AddIsActiveToApplicationUser.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260923131221_AddIsActiveToApplicationUser.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Data\\Migrations\\20260923131221_AddIsActiveToApplicationUser.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260923131221_AddIsActiveToApplicationUser.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Data\\Migrations\\20260923131221_AddIsActiveToApplicationUser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T13:12:22.052Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 57,
+              "Title": "Register.cshtml.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Register.cshtml.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Register.cshtml.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Register.cshtml.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Register.cshtml.cs",
+              "ViewState": "AgIAAGQAAAAAAAAAAAAvwHAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T05:34:17.107Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 58,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\appsettings.json",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\appsettings.json",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\appsettings.json",
+              "RelativeToolTip": "MyFirstCoreApp\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-09-22T12:41:30.635Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 61,
+              "Title": "00000000000000_CreateIdentitySchema.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\00000000000000_CreateIdentitySchema.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Data\\Migrations\\00000000000000_CreateIdentitySchema.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\00000000000000_CreateIdentitySchema.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Data\\Migrations\\00000000000000_CreateIdentitySchema.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAgwB0AAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-22T12:41:18.619Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 60,
+              "Title": "20260922130404_InitialIdentity.cs",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260922130404_InitialIdentity.cs",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Data\\Migrations\\20260922130404_InitialIdentity.cs",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Data\\Migrations\\20260922130404_InitialIdentity.cs",
+              "RelativeToolTip": "MyFirstCoreApp\\Data\\Migrations\\20260922130404_InitialIdentity.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAUwB0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-22T13:04:04.458Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 62,
+              "Title": "Register.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Register.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Register.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Register.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Identity\\Pages\\Account\\Register.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-23T05:27:54.343Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 59,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\Amin\\ZomordNet\\ZomorodNet\\appsettings.json",
+              "RelativeDocumentMoniker": "..\\ZomordNet\\ZomorodNet\\appsettings.json",
+              "ToolTip": "D:\\Amin\\ZomordNet\\ZomorodNet\\appsettings.json",
+              "RelativeToolTip": "..\\ZomordNet\\ZomorodNet\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-09-23T07:22:01.913Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 63,
+              "Title": "ScaffoldingReadMe.txt",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\ScaffoldingReadMe.txt",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\ScaffoldingReadMe.txt",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\ScaffoldingReadMe.txt",
+              "RelativeToolTip": "MyFirstCoreApp\\ScaffoldingReadMe.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2026-09-23T05:27:43.425Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 64,
+              "Title": "Privacy.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Home\\Privacy.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Home\\Privacy.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Home\\Privacy.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Home\\Privacy.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-22T13:08:12.309Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 66,
+              "Title": "Error.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\Error.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Shared\\Error.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\Error.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Shared\\Error.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-22T13:07:09.071Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 67,
+              "Title": "_ViewImports.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\_ViewImports.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\_ViewImports.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\_ViewImports.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\_ViewImports.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-22T13:07:12.428Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 68,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Home\\Index.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Home\\Index.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Home\\Index.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Home\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-22T13:08:05.561Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 65,
+              "Title": "_ValidationScriptsPartial.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\_ValidationScriptsPartial.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Views\\Shared\\_ValidationScriptsPartial.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Views\\Shared\\_ValidationScriptsPartial.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Views\\Shared\\_ValidationScriptsPartial.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-22T13:07:07.561Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

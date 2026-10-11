@@ -1,0 +1,82 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Amin\\MyFirstCoreApp\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\areas\\inventory\\views\\products\\_form.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\areas\\inventory\\views\\products\\_form.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|d:\\amin\\myfirstcoreapp\\myfirstcoreapp\\wwwroot\\js\\site.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{501679B4-F7B2-4363-99EA-A0262239AD53}|MyFirstCoreApp\\MyFirstCoreApp.csproj|solutionrelative:myfirstcoreapp\\wwwroot\\js\\site.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 80,
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:14:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:16:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:17:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:18:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:21:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:20:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:24:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "_Form.cshtml",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Products\\_Form.cshtml",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Products\\_Form.cshtml",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\Areas\\Inventory\\Views\\Products\\_Form.cshtml",
+              "RelativeToolTip": "MyFirstCoreApp\\Areas\\Inventory\\Views\\Products\\_Form.cshtml",
+              "ViewState": "AgIAACQAAAAAAAAAAAAAADAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-10-04T13:34:11.066Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "site.js",
+              "DocumentMoniker": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "RelativeDocumentMoniker": "MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "ToolTip": "D:\\Amin\\MyFirstCoreApp\\MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "RelativeToolTip": "MyFirstCoreApp\\wwwroot\\js\\site.js",
+              "ViewState": "AgIAAGQAAAAAAAAAAAAlwNAAAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-10-04T13:29:32.701Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

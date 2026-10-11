@@ -1,0 +1,31 @@
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Models.Accounting;
+
+namespace MyFirstCoreApp.Data.ModelConfigurations
+{
+    public static class AccountingModelConfig
+    {
+        public static void Configure(ModelBuilder builder)
+        {
+            // ---------- AccountCategory ----------
+            builder.Entity<AccountCategory>()
+                .HasOne(c => c.Parent)
+                .WithMany(c => c.Children)
+                .HasForeignKey(c => c.ParentId)
+                .OnDelete(DeleteBehavior.Restrict); // جلوگیری از حذف آبشاری در ساختار درختی
+
+            builder.Entity<AccountCategory>()
+                .HasIndex(c => c.UserId);
+
+            // ---------- Account ----------
+            builder.Entity<Account>()
+                .HasOne(a => a.AccountCategory)
+                .WithMany(c => c.Accounts)
+                .HasForeignKey(a => a.AccountCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Account>()
+                .HasIndex(a => a.UserId);
+        }
+    }
+}

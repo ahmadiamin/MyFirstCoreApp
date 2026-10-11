@@ -1,0 +1,293 @@
+﻿/* ============================================
+   AG Grid Helper - تنظیمات مشترک
+   ============================================ */
+
+const AgGridHelper = {
+
+    // ---------- Grid Options پیش‌فرض ----------
+  defaultOptions: function (url, searchInputId, countLabelId) {
+    return {
+        rowModelType: 'infinite',
+        cacheBlockSize: 50,
+        maxBlocksInCache: 10,
+
+        // صفحه‌بندی
+        pagination: true,
+        paginationPageSize: 50,
+        paginationPageSizeSelector: [25, 50, 100, 200],
+
+        enableRtl: true,
+        rowHeight: 52,
+        headerHeight: 52,
+        animateRows: false,
+        rowSelection: 'single',
+
+        localeText: {
+            // عمومی
+            noRowsToShow: 'داده‌ای یافت نشد',
+            loadingOoo: 'در حال بارگذاری...',
+            
+            // صفحه‌بندی
+            page: 'صفحه',
+            to: 'تا',
+            of: 'از',
+            next: 'بعدی',
+            last: 'آخرین',
+            first: 'اولین',
+            previous: 'قبلی',
+            pageSizeSelectorLabel: 'تعداد در صفحه:',
+            
+            // فیلترها
+            equals: 'برابر با',
+            notEqual: 'نابرابر با',
+            lessThan: 'کمتر از',
+            greaterThan: 'بیشتر از',
+            contains: 'شامل',
+            notContains: 'شامل نباشد',
+            startsWith: 'شروع با',
+            endsWith: 'پایان با',
+            blank: 'خالی',
+            notBlank: 'خالی نباشد',
+            filterOoo: 'فیلتر...',
+            applyFilter: 'اعمال فیلتر',
+            resetFilter: 'پاک کردن فیلتر',
+            clearFilter: 'پاک کردن',
+            cancelFilter: 'لغو',
+            
+            // مرتب‌سازی
+            sortAscending: 'مرتب صعودی',
+            sortDescending: 'مرتب نزولی',
+            sortUnSort: 'حذف مرتب',
+            
+            // انتخاب
+            selectAll: 'انتخاب همه',
+            searchOoo: 'جستجو...',
+            
+            // ستون‌ها
+            columns: 'ستون‌ها',
+            filters: 'فیلترها',
+            
+            // گروه‌بندی
+            group: 'گروه',
+            ungroup: 'حذف گروه',
+            
+            // Export
+            csvExport: 'خروجی CSV',
+            excelExport: 'خروجی Excel',
+        },
+
+        defaultColDef: {
+            sortable: true,
+            filter: false,
+            resizable: true
+        },
+
+
+            datasource: {
+                getRows: function (params) {
+                    const request = {
+                        startRow: params.startRow,
+                        endRow: params.endRow,
+                        search: searchInputId ? $('#' + searchInputId).val() : null,
+                        sortBy: params.sortModel.length > 0 ? params.sortModel[0].colId : null,
+                        sortDir: params.sortModel.length > 0 ? params.sortModel[0].sort : null
+                    };
+
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(request),
+                        success: function (response) {
+                            params.successCallback(response.rows, response.lastRow);
+                            if (countLabelId) {
+                                $('#' + countLabelId).text(`تعداد کل: ${response.lastRow}`);
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Error loading data:', xhr);
+                            params.failCallback();
+                        }
+                    });
+                }
+            }
+        };
+    },
+
+    // ---------- ایجاد گرید ----------
+    create: function (containerId, columnDefs, url, searchInputId, countLabelId) {
+        const options = this.defaultOptions(url, searchInputId, countLabelId);
+        options.columnDefs = columnDefs;
+
+        const gridDiv = document.querySelector('#' + containerId);
+        const gridApi = agGrid.createGrid(gridDiv, options);
+
+        if (searchInputId) {
+            let searchTimeout;
+            $('#' + searchInputId).on('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    gridApi.setGridOption('datasource', options.datasource);
+                }, 400);
+            });
+        }
+
+        return gridApi;
+    },
+
+    // ---------- Column Defs کمکی ----------
+
+    // ستون #
+    rowNumberColumn: function () {
+        return {
+            headerName: '#',
+            colId: 'rowNumber',
+            valueGetter: 'node.rowIndex + 1',
+            width: 60,
+            minWidth: 60,
+            maxWidth: 60,
+            sortable: false,
+            filter: false,
+            pinned: 'right'
+        };
+    },
+
+    // ستون وضعیت (badge) - بدون field، فقط colId
+    statusColumn: function (field = 'isActive', width = 110) {
+        return {
+            headerName: 'وضعیت',
+            colId: field,
+            width: width,
+            minWidth: width,
+            maxWidth: width,
+            sortable: false,
+            filter: false,
+            cellRenderer: function (params) {
+                if (!params.data) return '';
+                const span = document.createElement('span');
+                if (params.data[field]) {
+                    span.className = 'badge badge-success';
+                    span.textContent = 'فعال';
+                } else {
+                    span.className = 'badge badge-danger';
+                    span.textContent = 'غیرفعال';
+                }
+                return span;
+            }
+        };
+    },
+
+    // ستون مبلغ (با کاما)
+    moneyColumn: function (field, headerName = 'مبلغ', width = 130) {
+        return {
+            field: field,
+            headerName: headerName,
+            width: width,
+            minWidth: width,
+            maxWidth: width,
+            type: 'numericColumn',
+            valueFormatter: p => p.value ? Number(p.value).toLocaleString('en-US') : '0'
+        };
+    },
+
+    // ستون عددی (وسط‌چین)
+    numberColumn: function (field, headerName, width = 100) {
+        return {
+            field: field,
+            headerName: headerName,
+            width: width,
+            minWidth: width,
+            maxWidth: width,
+            type: 'numericColumn'
+        };
+    },
+
+    // ستون تاریخ (وسط‌چین)
+    dateColumn: function (field, headerName = 'تاریخ', width = 130) {
+        return {
+            field: field,
+            headerName: headerName,
+            width: width,
+            minWidth: width,
+            maxWidth: width,
+            type: 'numericColumn',
+            valueFormatter: p => p.value ? new Date(p.value).toLocaleDateString('fa-IR') : ''
+        };
+    },
+
+    // ستون عملیات (ویرایش + حذف)
+    actionColumn: function (editUrl, deleteUrl, width = 120) {
+        return {
+            headerName: 'عملیات',
+            colId: 'actions',
+            width: width,
+            minWidth: width,
+            maxWidth: width,
+            sortable: false,
+            filter: false,
+            pinned: 'left',
+            cellRenderer: function (params) {
+                if (!params.data) return '';
+                const div = document.createElement('div');
+                div.className = 'action-buttons';
+
+                const editLink = document.createElement('a');
+                editLink.href = editUrl.replace('{id}', params.data.id);
+                editLink.className = 'btn btn-sm btn-outline-primary';
+                editLink.title = 'ویرایش';
+                editLink.innerHTML = '<i class="fa fa-edit"></i>';
+
+                const deleteLink = document.createElement('a');
+                deleteLink.href = deleteUrl.replace('{id}', params.data.id);
+                deleteLink.className = 'btn btn-sm btn-outline-danger';
+                deleteLink.title = 'حذف';
+                deleteLink.innerHTML = '<i class="fa fa-trash"></i>';
+
+                div.appendChild(editLink);
+                div.appendChild(deleteLink);
+
+                return div;
+            }
+        };
+    },
+
+    // ستون عملیات دلخواه
+    customActionColumn: function (headerName, width, renderFn) {
+        return {
+            headerName: headerName,
+            colId: 'customActions',
+            width: width,
+            minWidth: width,
+            maxWidth: width,
+            sortable: false,
+            filter: false,
+            pinned: 'left',
+            cellRenderer: function (params) {
+                if (!params.data) return '';
+                const div = document.createElement('div');
+                div.className = 'action-buttons';
+                div.innerHTML = renderFn(params.data);
+                return div;
+            }
+        };
+    },
+    textColumn: function (field, headerName, options = {}) {
+    return {
+        field: field,
+        headerName: headerName,
+        width: options.width,
+        minWidth: options.minWidth || 100,
+        maxWidth: options.maxWidth,
+        flex: options.flex,
+        cellStyle: {
+            width: '100%',
+            height: '100%',
+            boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            padding: '0 8px'
+        }
+    };
+},
+};

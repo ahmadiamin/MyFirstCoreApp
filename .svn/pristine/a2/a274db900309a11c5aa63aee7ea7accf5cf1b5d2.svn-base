@@ -1,0 +1,119 @@
+﻿@model MyFirstCoreApp.Models.ViewModels.MenuListViewModel
+
+@{
+    ViewData["Title"] = "حذف منو";
+}
+
+<div class="container-fluid">
+
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h1>حذف منو</h1>
+
+        <a asp-area="Admin"
+           asp-controller="Menus"
+           asp-action="Index"
+           class="btn btn-secondary">
+            بازگشت
+        </a>
+
+    </div>
+
+    <div class="card border-danger">
+
+        <div class="card-header text-danger">
+            تأیید حذف
+        </div>
+
+        <div class="card-body">
+
+            <p class="mb-4">
+                آیا از حذف منوی زیر مطمئن هستید؟
+            </p>
+
+            <dl class="row">
+
+                <dt class="col-sm-3">
+                    عنوان
+                </dt>
+
+                <dd class="col-sm-9">
+                    @Model.Title
+                </dd>
+
+                <dt class="col-sm-3">
+                    آدرس
+                </dt>
+
+                <dd class="col-sm-9">
+                    @(Model.Url ?? "-")
+                </dd>
+
+                <dt class="col-sm-3">
+                    آیکون
+                </dt>
+
+                <dd class="col-sm-9">
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Icon))
+                    {
+                        <i class="bi @Model.Icon me-1"></i>
+                    }
+
+                    @(Model.Icon ?? "-")
+
+                </dd>
+
+                <dt class="col-sm-3">
+                    دسترسی
+                </dt>
+
+                <dd class="col-sm-9">
+                    @(Model.Permission ?? "-")
+                </dd>
+
+                <dt class="col-sm-3">
+                    والد
+                </dt>
+
+                <dd class="col-sm-9">
+                    @(Model.ParentTitle ?? "ریشه")
+                </dd>
+
+            </dl>
+
+            <div class="alert alert-warning">
+                توجه: این عملیات قابل بازگشت نیست.
+            </div>
+
+            <form asp-area="Admin"
+                  asp-controller="Menus"
+                  asp-action="DeleteConfirmed"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       asp-for="Id" />
+
+                <button type="submit"
+                        class="btn btn-danger">
+                    حذف منو
+                </button>
+
+                <a asp-area="Admin"
+                   asp-controller="Menus"
+                   asp-action="Index"
+                   class="btn btn-secondary">
+                    انصراف
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+    
+
+</div>

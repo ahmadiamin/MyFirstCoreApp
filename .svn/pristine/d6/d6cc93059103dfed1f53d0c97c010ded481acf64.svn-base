@@ -1,0 +1,146 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace MyFirstCoreApp.Infrastructure.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddTransactions : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "Transactions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Number = table.Column<int>(type: "int", nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    TransactionGroupId = table.Column<int>(type: "int", nullable: true),
+                    Reference = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    AttachmentPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    TransactionType = table.Column<int>(type: "int", nullable: false),
+                    IsPosted = table.Column<bool>(type: "bit", nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,0)", precision: 18, scale: 0, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TenantId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Transactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Transactions_TransactionGroups_TransactionGroupId",
+                        column: x => x.TransactionGroupId,
+                        principalTable: "TransactionGroups",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TransactionLines",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LineNumber = table.Column<int>(type: "int", nullable: false),
+                    TransactionId = table.Column<int>(type: "int", nullable: false),
+                    AccountId = table.Column<int>(type: "int", nullable: false),
+                    ContactId = table.Column<int>(type: "int", nullable: true),
+                    Debit = table.Column<decimal>(type: "decimal(18,0)", precision: 18, scale: 0, nullable: false),
+                    Credit = table.Column<decimal>(type: "decimal(18,0)", precision: 18, scale: 0, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TenantId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TransactionLines", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TransactionLines_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_TransactionLines_Contacts_ContactId",
+                        column: x => x.ContactId,
+                        principalTable: "Contacts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_TransactionLines_Transactions_TransactionId",
+                        column: x => x.TransactionId,
+                        principalTable: "Transactions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TransactionLines_AccountId",
+                table: "TransactionLines",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TransactionLines_ContactId",
+                table: "TransactionLines",
+                column: "ContactId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TransactionLines_TenantId_AccountId",
+                table: "TransactionLines",
+                columns: new[] { "TenantId", "AccountId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TransactionLines_TransactionId",
+                table: "TransactionLines",
+                column: "TransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Transactions_IsPosted",
+                table: "Transactions",
+                column: "IsPosted");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Transactions_TenantId_Date",
+                table: "Transactions",
+                columns: new[] { "TenantId", "Date" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Transactions_TenantId_Number",
+                table: "Transactions",
+                columns: new[] { "TenantId", "Number" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Transactions_TransactionGroupId",
+                table: "Transactions",
+                column: "TransactionGroupId");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "TransactionLines");
+
+            migrationBuilder.DropTable(
+                name: "Transactions");
+        }
+    }
+}

@@ -1,0 +1,55 @@
+﻿@model MyFirstCoreApp.Models.ViewModels.CreateUserViewModel
+
+@{
+    ViewData["Title"] = "ایجاد کاربر";
+}
+
+<h2>ایجاد کاربر</h2>
+
+<form asp-action="Create" method="post">
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="FullName" class="form-control" />
+        <label asp-for="FullName"></label>
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="Email" class="form-control" />
+        <label asp-for="Email"></label>
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="PhoneNumber" class="form-control" />
+        <label asp-for="PhoneNumber"></label>
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="Password" class="form-control" />
+        <label asp-for="Password"></label>
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="ConfirmPassword" class="form-control" />
+        <label asp-for="ConfirmPassword"></label>
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        ذخیره
+    </button>
+
+    <a asp-action="Index" class="btn btn-secondary">
+        انصراف
+    </a>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

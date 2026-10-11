@@ -1,0 +1,587 @@
+﻿@font-face {
+    font-family: Vazir;
+    src: url('../fonts/Vazir.eot');
+    src: url('../fonts/Vazir.eot?#iefix') format('embedded-opentype'), url('../fonts/Vazir.woff2') format('woff2'), url('../fonts/Vazir.woff') format('woff'), url('../fonts/Vazir.ttf') format('truetype');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: Vazir;
+    src: url('../fonts/Vazir-Bold.eot');
+    src: url('../fonts/Vazir-Bold.eot?#iefix') format('embedded-opentype'), url('../fonts/Vazir-Bold.woff2') format('woff2'), url('../fonts/Vazir-Bold.woff') format('woff'), url('../fonts/Vazir-Bold.ttf') format('truetype');
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: Vazir;
+    src: url('../fonts/Vazir-Light.eot');
+    src: url('../fonts/Vazir-Light.eot?#iefix') format('embedded-opentype'), url('../fonts/Vazir-Light.woff2') format('woff2'), url('../fonts/Vazir-Light.woff') format('woff'), url('../fonts/Vazir-Light.ttf') format('truetype');
+    font-weight: 300;
+}
+
+@font-face {
+    font-family: Vazir;
+    src: url('../fonts/Vazir-Medium.eot');
+    src: url('../fonts/Vazir-Medium.eot?#iefix') format('embedded-opentype'), url('../fonts/Vazir-Medium.woff2') format('woff2'), url('../fonts/Vazir-Medium.woff') format('woff'), url('../fonts/Vazir-Medium.ttf') format('truetype');
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: Vazir;
+    src: url('../fonts/Vazir-Thin.eot');
+    src: url('../fonts/Vazir-Thin.eot?#iefix') format('embedded-opentype'), url('../fonts/Vazir-Thin.woff2') format('woff2'), url('../fonts/Vazir-Thin.woff') format('woff'), url('../fonts/Vazir-Thin.ttf') format('truetype');
+    font-weight: 100;
+}
+
+@font-face {
+    font-family: Vazir;
+    src: url('../fonts/Vazir-Black.eot');
+    src: url('../fonts/Vazir-Black.eot?#iefix') format('embedded-opentype'), url('../fonts/Vazir-Black.woff2') format('woff2'), url('../fonts/Vazir-Black.woff') format('woff'), url('../fonts/Vazir-Black.ttf') format('truetype');
+    font-weight: 900;
+}
+
+/*---------------------------------- End of fonts ---------------------------------- */
+
+body {
+    font-family: 'Vazir', sans-serif !important;
+}
+
+.ltr {
+    direction: ltr;
+}
+
+
+ul {
+    padding-inline-start: 0px;
+}
+
+.dropdown-item {
+    text-align: right;
+}
+
+.dropdown-footer, .dropdown-header {
+    text-align: center;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    padding-left: .5rem;
+}
+
+
+/*------------------------------------ contacts-list ------------------------------------*/
+
+.contacts-list-img {
+    float: right;
+}
+
+.contacts-list-info {
+    margin-right: 45px;
+    margin-left: 0;
+}
+
+
+/* sidebar */
+
+.sidebar {
+    direction: ltr;
+}
+
+    .sidebar > div:first-child {
+        direction: rtl;
+    }
+
+.control-sidebar, .control-sidebar:before {
+    left: -250px;
+    right: auto;
+    transition: left .3s ease-in-out;
+}
+
+.control-sidebar-slide-open .control-sidebar, .control-sidebar-slide-open .control-sidebar:before {
+    left: 0;
+    right: auto;
+}
+
+.small-box .icon {
+    right: auto;
+    left: 10px;
+}
+
+.nav-sidebar .nav-link > p > .right {
+    left: 1rem;
+    right: auto;
+}
+
+.nav-sidebar > .nav-item .nav-icon {
+    margin-right: 0;
+    margin-left: .2rem;
+}
+
+@media (min-width: 992px) {
+    .sidebar-mini.sidebar-collapse .content-wrapper, .sidebar-mini.sidebar-collapse .main-footer, .sidebar-mini.sidebar-collapse .main-header {
+        margin-right: 4.6rem;
+        margin-left: 0;
+    }
+}
+
+@media (min-width: 992px) {
+    .sidebar-mini.sidebar-collapse .content-wrapper, .sidebar-mini.sidebar-collapse .main-footer, .sidebar-mini.sidebar-collapse .main-header {
+        margin-left: 0rem !important;
+        margin-right: 4.6rem !important;
+        z-index: 100;
+    }
+
+    .sidebar-mini.sidebar-collapse .main-sidebar, .sidebar-mini.sidebar-collapse .main-sidebar:before {
+        margin-right: 0;
+        width: 4.6rem;
+    }
+}
+
+
+@media (min-width: 768px) {
+    .content-wrapper, .main-footer, .main-header {
+        transition: margin-right .3s ease-in-out;
+        margin-right: 250px;
+        margin-left: 0;
+        z-index: 3000;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .main-sidebar, .main-sidebar:before {
+        box-shadow: none !important;
+        margin-right: -250px;
+        margin-left: 0;
+    }
+
+    .content-wrapper, .content-wrapper:before, .main-footer, .main-footer:before, .main-header, .main-header:before {
+        margin-right: 0;
+    }
+
+    .sidebar-open .main-sidebar, .sidebar-open .main-sidebar:before {
+        margin-right: 0;
+        z-index: 4000;
+    }
+}
+
+.sidebar-collapse .main-sidebar, .sidebar-collapse .main-sidebar:before {
+    margin-right: -250px;
+}
+
+.main-sidebar {
+    left: auto;
+    right: 0;
+}
+
+/* Cards */
+
+.card-header > .card-tools {
+    right: auto;
+    left: 1rem;
+}
+
+.user-block img {
+    float: right;
+}
+
+.attachment-block .attachment-img {
+    float: right;
+}
+
+.attachment-block .attachment-pushed {
+    margin-left: 0px;
+    margin-right: 110px;
+}
+
+.card-comments .card-comment img, .img-lg, .img-md, .img-sm, .user-block.user-block-sm img {
+    float: right;
+}
+
+.card-comments .comment-text {
+    margin-right: 40px;
+    margin-left: 0;
+}
+
+.card-comments .card-comment img + .img-push, .img-sm + .img-push, .user-block.user-block-sm img + .img-push {
+    margin-left: 0px;
+    margin-right: 40px;
+}
+
+.user-block .comment, .user-block .description, .user-block .username {
+    margin-right: 50px;
+    margin-left: 0px;
+}
+
+.btn-group-vertical {
+    align-items: center;
+}
+
+
+/*------------------------- Form ----------------------------*/
+.select2-container .select2-search--inline {
+    float: right;
+}
+
+.select2-container--default .select2-search--inline .select2-search__field {
+    text-align: right;
+}
+
+/*----------------------- Extra Page ---------------------------*/
+.error-page > .headline {
+    float: right;
+}
+
+.error-page > .error-content {
+    margin-right: 190px;
+    margin-left: 0;
+}
+
+.lockscreen-image {
+    left: auto;
+    right: -10px;
+}
+
+.lockscreen-credentials {
+    margin-left: 0px;
+    margin-right: 70px;
+}
+
+.nav {
+    padding-inline-start: 0px !important;
+}
+
+/*---------------------------------- Persian Date Picker ---------------------------------- */
+
+.datepicker-plot-area {
+    font-family: 'Vazir', sans-serif;
+}
+
+html {
+    direction: rtl;
+}
+
+body {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Sidebar */
+.nav-sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    direction: rtl;
+}
+
+    .nav-sidebar .nav-link .nav-icon {
+        margin-left: 0.5rem;
+        margin-right: 0;
+    }
+
+    .nav-sidebar .nav-link p {
+        margin: 0;
+    }
+
+
+/* ================================
+   Menu Management
+   ================================ */
+
+.menu-table {
+    margin-bottom: 0;
+}
+
+    .menu-table thead th {
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .menu-table tbody td {
+        vertical-align: middle;
+    }
+
+.menu-row {
+    transition: background-color 0.15s ease;
+}
+
+    .menu-row:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+
+/* Parent menu */
+
+.menu-parent {
+    font-weight: 500;
+}
+
+    .menu-parent .menu-name {
+        font-weight: 600;
+    }
+
+/* Child menu */
+
+.menu-child .menu-title {
+    position: relative;
+}
+
+.menu-tree-line {
+    display: inline-block;
+    width: 22px;
+    color: #adb5bd;
+    text-align: center;
+}
+
+.menu-root-icon {
+    display: inline-block;
+    width: 22px;
+    color: #6c757d;
+    text-align: center;
+}
+
+/* Menu icon */
+
+.menu-icon {
+    display: inline-block;
+    width: 24px;
+    margin-left: 5px;
+    text-align: center;
+}
+
+    .menu-icon i {
+        font-size: 15px;
+    }
+
+.menu-name {
+    white-space: nowrap;
+}
+
+/* URL */
+
+.menu-url {
+    direction: ltr;
+    display: inline-block;
+    font-size: 12px;
+}
+
+/* Action buttons */
+
+.menu-table .btn-group .btn {
+    min-width: 34px;
+}
+
+/* Badges */
+
+.menu-table .badge {
+    font-weight: 400;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+
+    .menu-table {
+        min-width: 900px;
+    }
+
+    .menu-title {
+        white-space: nowrap;
+    }
+}
+
+
+/* ================================
+    Layout
+    ================================ */
+
+.brand-link {
+    display: flex;
+    align-items: center;
+}
+
+.brand-image {
+    font-size: 20px;
+    margin-left: 10px;
+    margin-right: 0;
+    width: 25px;
+    text-align: center;
+}
+
+.user-panel .image {
+    display: flex;
+    align-items: center;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+}
+
+.user-panel .info {
+    padding-right: 8px;
+    padding-left: 0;
+}
+
+.content-header h1 {
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+
+/* ============================================
+   AG Grid - استایل کامل RTL
+   ============================================ */
+
+.ag-theme-alpine {
+    direction: rtl !important;
+    --ag-font-family: 'Tahoma', 'Arial', sans-serif !important;
+    --ag-font-size: 13px !important;
+    --ag-header-height: 46px !important;
+    --ag-row-height: 46px !important;
+    /* حذف border های پیش‌فرض AG Grid */
+    --ag-borders: none !important;
+    --ag-border-color: transparent !important;
+    --ag-cell-horizontal-border: none !important;
+    --ag-header-column-separator-display: none !important;
+}
+
+    /* ---------- کانتینر گرید: یه border دورش ---------- */
+    .ag-theme-alpine .ag-root-wrapper {
+        border: 1px solid #dee2e6 !important;
+        border-radius: 4px;
+    }
+
+    /* ---------- هدر ---------- */
+    .ag-theme-alpine .ag-header {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6 !important;
+    }
+
+    /* ---------- خطوط عمودی بین سلول‌ها (هدر و بدنه) ---------- */
+    .ag-theme-alpine .ag-header-cell,
+    .ag-theme-alpine .ag-cell {
+        border-left: 1px solid #dee2e6 !important;
+    }
+
+    /* آخرین ستون هر ردیف: بدون border چپ (چون RTL هست، آخرین ستون سمت چپه) */
+    .ag-theme-alpine .ag-header-row .ag-header-cell:last-child,
+    .ag-theme-alpine .ag-row .ag-cell:last-child {
+        border-left: none !important;
+    }
+
+    /* ---------- خطوط افقی بین ردیف‌ها ---------- */
+    .ag-theme-alpine .ag-row {
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+
+    /* ---------- هدر سلول‌ها ---------- */
+    .ag-theme-alpine .ag-header-cell-label {
+        justify-content: flex-start !important;
+        text-align: right !important;
+        font-weight: bold;
+        padding: 4px 8px;
+    }
+
+    /* ---------- سلول‌ها ---------- */
+    .ag-theme-alpine .ag-cell {
+        display: flex;
+        align-items: center;
+        line-height: 1.6;
+        padding: 6px 8px;
+        justify-content: flex-start;
+        text-align: right;
+        overflow: hidden;
+    }
+
+        /* ---------- سلول‌های عددی (وسط‌چین) ---------- */
+        .ag-theme-alpine .ag-cell.ag-numeric-cell,
+        .ag-theme-alpine .ag-cell.ag-right-aligned-cell,
+        .ag-theme-alpine .ag-cell.ag-cell-number {
+            justify-content: center !important;
+            text-align: center !important;
+        }
+
+    /* ---------- ستون‌های pinned (وسط‌چین) ---------- */
+    .ag-theme-alpine .ag-pinned-left-cols-container .ag-cell,
+    .ag-theme-alpine .ag-pinned-right-cols-container .ag-cell,
+    .ag-theme-alpine .ag-pinned-left-header .ag-header-cell-label,
+    .ag-theme-alpine .ag-pinned-right-header .ag-header-cell-label {
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    /* ---------- حذف border اضافه از viewport ---------- */
+    .ag-theme-alpine .ag-center-cols-viewport,
+    .ag-theme-alpine .ag-center-cols-container,
+    .ag-theme-alpine .ag-body-viewport {
+        border: none !important;
+    }
+
+    /* ---------- پس‌زمینه‌ی ردیف‌های زوج و hover ---------- */
+    .ag-theme-alpine .ag-row-odd {
+        background-color: #fcfcfc !important;
+    }
+
+    .ag-theme-alpine .ag-row-hover {
+        background-color: #e9ecef !important;
+    }
+
+    /* ---------- ستون‌های عددی (وسط‌چین) ---------- */
+    .ag-theme-alpine .ag-cell[col-id="sortOrder"],
+    .ag-theme-alpine .ag-cell[col-id="currentBalance"],
+    .ag-theme-alpine .ag-cell[col-id="creditLimit"],
+    .ag-theme-alpine .ag-cell.ag-numeric-cell {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+
+    /* ---------- ستون وضعیت (وسط‌چین) ---------- */
+    .ag-theme-alpine .ag-cell[col-id="isActive"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    /* ---------- ستون عملیات (وسط‌چین) ---------- */
+    .ag-theme-alpine .ag-cell[col-id="actions"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+        .ag-theme-alpine .ag-cell[col-id="actions"] .action-buttons {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+    /* ---------- ستون # (وسط‌چین) ---------- */
+    .ag-theme-alpine .ag-cell[col-id="rowNumber"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+/* ============================================
+   اعداد فارسی (فقط برای فونت وزیرمتن)
+   ============================================ */
+
+.farsi-digits {
+    font-feature-settings: "ss01" !important;
+    -webkit-font-feature-settings: "ss01" !important;
+    -moz-font-feature-settings: "ss01" !important;
+}
+
+/* AG Grid - اعداد فارسی */
+.ag-theme-alpine,
+.ag-theme-alpine .ag-cell,
+.ag-theme-alpine .ag-header-cell,
+.ag-theme-alpine .ag-header-cell-label {
+    font-feature-settings: "ss01" !important;
+    -webkit-font-feature-settings: "ss01" !important;
+}

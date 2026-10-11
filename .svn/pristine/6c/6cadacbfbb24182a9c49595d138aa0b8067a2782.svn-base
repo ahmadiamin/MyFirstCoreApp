@@ -1,0 +1,188 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Areas.Tenancy.ViewModels;
+using MyFirstCoreApp.Domain.Entities.Identity;
+using MyFirstCoreApp.Domain.Entities.Tenancy;
+using System.Security.Claims;
+
+namespace MyFirstCoreApp.Areas.Tenancy.Controllers;
+
+[Area("Tenancy")]
+[Authorize]
+public class TenantController : Controller
+{
+    private readonly ITenantService _tenantService;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly ICurrentUser _currentUser;
+
+    public TenantController(
+        ITenantService tenantService,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        ICurrentUser currentUser)
+    {
+        _tenantService = tenantService;
+        _userManager = userManager;
+        _signInManager = signInManager;
+        _currentUser = currentUser;
+    }
+
+    // GET: /Tenancy/Tenant
+    [HttpGet]
+    [Authorize(Policy = "Tenancy.View")]
+    public async Task<IActionResult> Index()
+    {
+        var userId = _currentUser.UserId;
+        if (string.IsNullOrEmpty(userId))
+            return Challenge();
+
+        var tenants = await _tenantService.GetUserTenantsAsync(userId);
+        return View(tenants);
+    }
+
+    // GET: /Tenancy/Tenant/Create
+    [HttpGet]
+    [Authorize]
+    public IActionResult Create()
+    {
+        return View(new CreateTenantViewModel());
+    }
+
+    // POST: /Tenancy/Tenant/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize]
+    public async Task<IActionResult> Create(CreateTenantViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var userId = _currentUser.UserId;
+        if (string.IsNullOrEmpty(userId))
+            return Challenge();
+
+        var tenant = new Tenant
+        {
+            Name = model.Name.Trim(),
+            LegalName = model.LegalName?.Trim(),
+            NationalId = model.NationalId?.Trim(),
+            EconomicCode = model.EconomicCode?.Trim(),
+            Phone = model.Phone?.Trim(),
+            Address = model.Address?.Trim(),
+            IsActive = true,
+            DefaultCurrency = "IRR",
+            TimeZone = "Iran Standard Time"
+        };
+
+        await _tenantService.CreateAsync(tenant, userId);
+
+        // 🆕 بعد از ساخت، Claim رو ست کن و SignIn مجدد
+        await SetCurrentTenantAndSignIn(userId, tenant.Id);
+
+        return RedirectToAction("Index", "Dashboard", new { area = "" });
+    }
+
+    // GET: /Tenancy/Tenant/Select
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> Select()
+    {
+        var userId = _currentUser.UserId;
+        if (string.IsNullOrEmpty(userId))
+            return Challenge();
+
+        var tenants = await _tenantService.GetUserTenantsAsync(userId);
+
+        // حالت ۱: هیچ Tenant نداره → Create
+        if (!tenants.Any())
+            return RedirectToAction(nameof(Create));
+
+        // حالت ۲: فقط یک Tenant داره → خودکار انتخاب
+        if (tenants.Count == 1)
+        {
+            await SetCurrentTenantAndSignIn(userId, tenants[0].Id);
+            return RedirectToAction("Index", "Dashboard", new { area = "" });
+        }
+
+        // حالت ۳: چند Tenant داره → ببین پیش‌فرض داره؟
+        var userTenants = await _tenantService.GetUserTenantRelationsAsync(userId);
+        var defaultRelation = userTenants.FirstOrDefault(ut => ut.IsDefault);
+
+        if (defaultRelation != null)
+        {
+            // پیش‌فرض داره → خودکار انتخاب
+            await SetCurrentTenantAndSignIn(userId, defaultRelation.TenantId);
+            return RedirectToAction("Index", "Dashboard", new { area = "" });
+        }
+
+        // حالت ۴: چند Tenant داره ولی پیش‌فرض نداره → Select View
+        var vm = new List<SelectTenantViewModel>();
+        foreach (var t in tenants)
+        {
+            var isOwner = await _tenantService.IsUserOwnerAsync(t.Id, userId);
+            vm.Add(new SelectTenantViewModel
+            {
+                TenantId = t.Id,
+                TenantName = t.Name,
+                IsOwner = isOwner
+            });
+        }
+
+        return View(vm);
+    }
+
+    // POST: /Tenancy/Tenant/Select
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize]
+    public async Task<IActionResult> Select(int tenantId)
+    {
+        var userId = _currentUser.UserId;
+        if (string.IsNullOrEmpty(userId))
+            return Challenge();
+
+        if (!await _tenantService.IsUserMemberAsync(tenantId, userId))
+            return Forbid();
+
+        // ست کردن به‌عنوان پیش‌فرض
+        await _tenantService.SetDefaultTenantAsync(userId, tenantId);
+
+        // ست کردن Claim + SignIn مجدد
+        await SetCurrentTenantAndSignIn(userId, tenantId);
+
+        return RedirectToAction("Index", "Dashboard", new { area = "" });
+    }
+
+    /// <summary>
+    /// بعد از انتخاب Tenant، Claim رو ست می‌کنه و SignIn مجدد می‌کنه
+    /// </summary>
+    private async Task SetCurrentTenantAndSignIn(string userId, int tenantId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return;
+
+        var tenant = await _tenantService.GetByIdAsync(tenantId);
+        if (tenant == null) return;
+
+        // حذف Claim های قدیمی
+        var claims = await _userManager.GetClaimsAsync(user);
+        var oldTenantId = claims.FirstOrDefault(c => c.Type == "TenantId");
+        if (oldTenantId != null)
+            await _userManager.RemoveClaimAsync(user, oldTenantId);
+
+        var oldTenantName = claims.FirstOrDefault(c => c.Type == "TenantName");
+        if (oldTenantName != null)
+            await _userManager.RemoveClaimAsync(user, oldTenantName);
+
+        // اضافه کردن Claim های جدید
+        await _userManager.AddClaimAsync(user, new Claim("TenantId", tenantId.ToString()));
+        await _userManager.AddClaimAsync(user, new Claim("TenantName", tenant.Name));
+
+        // 🆕 SignIn مجدد (کوکی با Claim های جدید بازسازی می‌شه)
+        await _signInManager.RefreshSignInAsync(user);
+    }
+}

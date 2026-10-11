@@ -1,0 +1,93 @@
+﻿@model ProductFormViewModel
+
+<div class="row">
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" class="form-control" placeholder="مثلاً لپ‌تاپ ایسوس" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Code"></label>
+            <input asp-for="Code" class="form-control" placeholder="1001" />
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Barcode"></label>
+            <input asp-for="Barcode" class="form-control ltr" placeholder="1234567890123" />
+            <span asp-validation-for="Barcode" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="UnitId"></label>
+            <select asp-for="UnitId" class="form-control" asp-items="Model.UnitOptions">
+                <option value="">-- انتخاب واحد --</option>
+            </select>
+            <span asp-validation-for="UnitId" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="ProductCategoryId"></label>
+            <select asp-for="ProductCategoryId" class="form-control" asp-items="Model.CategoryOptions">
+                <option value="">-- بدون دسته --</option>
+            </select>
+            <span asp-validation-for="ProductCategoryId" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="TaxRate"></label>
+            <input asp-for="TaxRate" type="number" step="0.01" class="form-control ltr" />
+            <span asp-validation-for="TaxRate" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="LastPurchasePrice"></label>
+            <input asp-for="LastPurchasePrice" type="text" class="form-control ltr input-mask-money" />
+            <span asp-validation-for="LastPurchasePrice" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="SalePrice"></label>
+            <input asp-for="SalePrice" type="text" class="form-control ltr input-mask-money" />
+            <span asp-validation-for="SalePrice" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label>وضعیت</label>
+            <div class="custom-control custom-checkbox mt-2">
+                <input asp-for="IsActive" class="custom-control-input" id="IsActive" />
+                <label asp-for="IsActive" class="custom-control-label" for="IsActive">
+                    فعال
+                </label>
+            </div>
+        </div>
+    </div>
+
+</div>

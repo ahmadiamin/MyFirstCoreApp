@@ -1,0 +1,125 @@
+﻿@using DNTPersianUtils.Core
+@model MyFirstCoreApp.Domain.Entities.Banking.Cheque
+@{
+    ViewData["Title"] = $"مشاهده چک {Model.ChequeNumber}";
+    var isReceived = Model.Direction == MyFirstCoreApp.Domain.Enums.ChequeDirection.Received;
+}
+
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-money-check"></i>
+            چک شماره @Model.ChequeNumber
+        </h3>
+        <div class="card-tools">
+            <span class="badge @(isReceived ? "badge-success" : "badge-danger")">
+                @(isReceived ? "دریافتنی" : "پرداختنی")
+            </span>
+            <span class="badge badge-info">@GetStatusName(Model.Status)</span>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <div class="row">
+            <div class="col-md-3"><strong>شماره چک:</strong> @Model.ChequeNumber</div>
+            <div class="col-md-3"><strong>مبلغ:</strong> <span class="persian-number-comma">@Model.Amount.ToString("N0")</span></div>
+            <div class="col-md-3"><strong>تاریخ صدور:</strong> @Model.IssueDate.ToShortPersianDateString()</div>
+            <div class="col-md-3"><strong>سررسید:</strong> @Model.DueDate.ToShortPersianDateString()</div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-3"><strong>طرف حساب:</strong> @Model.Contact?.Name</div>
+            <div class="col-md-3"><strong>بانک:</strong> @Model.BankName</div>
+            <div class="col-md-3"><strong>شعبه:</strong> @Model.BranchName</div>
+            <div class="col-md-3"><strong>شماره حساب:</strong> @Model.AccountNumber</div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.DrawerName))
+        {
+            <div class="row mt-2">
+                <div class="col-md-6"><strong>صاحب چک:</strong> @Model.DrawerName</div>
+                <div class="col-md-6"><strong>کد ملی:</strong> @Model.DrawerNationalId</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="row mt-2">
+                <div class="col-md-12"><strong>توضیحات:</strong> @Model.Description</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.BounceReason))
+        {
+            <div class="alert alert-danger mt-3">
+                <strong>دلیل برگشت:</strong> @Model.BounceReason
+            </div>
+        }
+
+        @if (Model.TransactionId.HasValue)
+        {
+            <div class="alert alert-success mt-3">
+                <i class="fa fa-check"></i> سند حسابداری مرتبط:
+                <a asp-area="Accounting" asp-controller="Transactions" asp-action="Details" asp-route-id="@Model.TransactionId">مشاهده</a>
+            </div>
+        }
+
+        @if (Model.Histories != null && Model.Histories.Any())
+        {
+            <hr />
+            <h5><i class="fa fa-history"></i> تاریخچه</h5>
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 130px;">تاریخ</th>
+                        <th style="width: 130px;">از</th>
+                        <th style="width: 130px;">به</th>
+                        <th>توضیحات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var i = 1;
+                    }
+                    @foreach (var h in Model.Histories.OrderBy(x => x.Date))
+                    {
+                        <tr>
+                            <td class="persian-number">@i</td>
+                            <td>@h.Date.ToShortPersianDateString()</td>
+                            <td>@(h.FromStatus.HasValue? GetStatusName(h.FromStatus.Value) : "-")</td>
+                            <td><span class="badge badge-info">@GetStatusName(h.ToStatus)</span></td>
+                            <td>@h.Description</td>
+                        </tr>
+                        i++;
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+    <div class="card-footer">
+        <a asp-action="Index" class="btn btn-secondary"><i class="fa fa-arrow-right"></i> بازگشت</a>
+        @if (Model.Status == MyFirstCoreApp.Domain.Enums.ChequeStatus.InProgress)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fa fa-edit"></i> ویرایش</a>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetStatusName(MyFirstCoreApp.Domain.Enums.ChequeStatus status)
+    {
+        return status switch
+        {
+            MyFirstCoreApp.Domain.Enums.ChequeStatus.InProgress => "در جریان",
+            MyFirstCoreApp.Domain.Enums.ChequeStatus.Cleared => "پاس شده",
+            MyFirstCoreApp.Domain.Enums.ChequeStatus.Bounced => "برگشت خورده",
+            MyFirstCoreApp.Domain.Enums.ChequeStatus.Returned => "عودت داده شده",
+            MyFirstCoreApp.Domain.Enums.ChequeStatus.RePresented => "مجدداً ارائه",
+            MyFirstCoreApp.Domain.Enums.ChequeStatus.Cancelled => "ابطال شده",
+            MyFirstCoreApp.Domain.Enums.ChequeStatus.Referred => "ارجاع به صاحب چک",
+            MyFirstCoreApp.Domain.Enums.ChequeStatus.Cashed => "نقد شده",
+            _ => "نامشخص"
+        };
+    }
+}

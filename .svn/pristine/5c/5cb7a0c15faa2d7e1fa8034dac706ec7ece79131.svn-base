@@ -1,0 +1,101 @@
+﻿@page
+@model ForgotPasswordModel
+
+@{
+    ViewData["Title"] = "بازیابی کلمه عبور";
+}
+
+<div class="row justify-content-center">
+
+    <div class="col-md-6 col-lg-5">
+
+        <div class="card card-primary">
+
+            <div class="card-header text-center">
+
+                <h3 class="card-title float-none">
+
+                    <i class="fa fa-key"></i>
+
+                    بازیابی کلمه عبور
+
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <p class="text-center text-muted mb-4">
+                    ایمیل حساب کاربری خود را وارد کنید تا مراحل بازیابی کلمه عبور برای شما ارسال شود.
+                </p>
+
+                <form method="post">
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="alert alert-danger"
+                         role="alert">
+                    </div>
+
+                    <div class="form-group">
+
+                        <label asp-for="Input.Email">
+                            ایمیل
+                        </label>
+
+                        <div class="input-group">
+
+                            <div class="input-group-prepend">
+
+                                <span class="input-group-text">
+                                    <i class="fa fa-envelope"></i>
+                                </span>
+
+                            </div>
+
+                            <input asp-for="Input.Email"
+                                   class="form-control"
+                                   autocomplete="email"
+                                   placeholder="ایمیل خود را وارد کنید" />
+
+                        </div>
+
+                        <span asp-validation-for="Input.Email"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <button type="submit"
+                            class="btn btn-primary btn-block">
+
+                        <i class="fa fa-paper-plane"></i>
+
+                        ارسال درخواست بازیابی
+
+                    </button>
+
+                    <div class="text-center mt-3">
+
+                        <a asp-page="./Login">
+
+                            <i class="fa fa-arrow-right"></i>
+
+                            بازگشت به صفحه ورود
+
+                        </a>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

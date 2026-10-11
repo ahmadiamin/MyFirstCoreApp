@@ -1,0 +1,172 @@
+﻿@model ContactFormViewModel
+
+<div class="row">
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" class="form-control" placeholder="مثلاً علی رضایی" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Code"></label>
+            <input asp-for="Code" class="form-control" placeholder="1001" />
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="ContactType"></label>
+            <select asp-for="ContactType" class="form-control"
+                    asp-items="Model.ContactTypeOptions">
+            </select>
+            <span asp-validation-for="ContactType" class="text-danger"></span>
+        </div>
+    </div>
+
+</div>
+
+<hr />
+
+<h5 class="mb-3">
+    <i class="fa fa-phone"></i> اطلاعات تماس
+</h5>
+
+<div class="row">
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Mobile"></label>
+            <input asp-for="Mobile" class="form-control ltr input-mask-mobile"
+                   placeholder="0912-345-6789" />
+            <span asp-validation-for="Mobile" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Phone"></label>
+            <input asp-for="Phone" class="form-control ltr input-mask-phone"
+                   placeholder="021-12345678" />
+            <span asp-validation-for="Phone" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Email"></label>
+            <input asp-for="Email" class="form-control ltr" dir="ltr" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="PostalCode"></label>
+            <input asp-for="PostalCode" class="form-control ltr input-mask-postal-code"
+                   placeholder="12345-67890" />
+            <span asp-validation-for="PostalCode" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <label asp-for="Address"></label>
+            <textarea asp-for="Address" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Address" class="text-danger"></span>
+        </div>
+    </div>
+
+</div>
+
+<hr />
+
+<h5 class="mb-3">
+    <i class="fa fa-id-card"></i> اطلاعات حقوقی
+</h5>
+
+<div class="row">
+
+    <div class="col-md-4">
+        <div class="form-group">
+            <label asp-for="NationalId"></label>
+            <input asp-for="NationalId" class="form-control ltr input-mask-national-id"
+                   placeholder="1234567890" />
+            <span asp-validation-for="NationalId" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="form-group">
+            <label asp-for="EconomicCode"></label>
+            <input asp-for="EconomicCode" class="form-control ltr input-mask-economic-code"
+                   placeholder="123456789012" />
+            <span asp-validation-for="EconomicCode" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="form-group">
+            <label asp-for="RegistrationNumber"></label>
+            <input asp-for="RegistrationNumber" class="form-control ltr" />
+            <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
+        </div>
+    </div>
+
+</div>
+
+<hr />
+
+<h5 class="mb-3">
+    <i class="fa fa-money"></i> اطلاعات مالی
+</h5>
+
+<div class="row">
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="CurrentBalance"></label>
+            <input type="text"
+                   id="CurrentBalance_Display"
+                   class="form-control ltr persian-number persian-number-comma"
+                   data-target="CurrentBalance_Hidden"
+                   value="@Model.CurrentBalance" />
+            <input asp-for="CurrentBalance" type="hidden" id="CurrentBalance_Hidden" />
+            <span asp-validation-for="CurrentBalance" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="CreditLimit"></label>
+            <input asp-for="CreditLimit" type="text"
+                   class="form-control ltr input-mask-money" />
+            <span asp-validation-for="CreditLimit" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <label>وضعیت</label>
+            <div class="custom-control custom-checkbox mt-2">
+                <input asp-for="IsActive" class="custom-control-input" id="IsActive" />
+                <label asp-for="IsActive" class="custom-control-label" for="IsActive">
+                    فعال
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <label asp-for="Notes"></label>
+            <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Notes" class="text-danger"></span>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,126 @@
+﻿@model IEnumerable<MyFirstCoreApp.Models.Permission>
+@using MyFirstCoreApp.Services.Interfaces
+@inject IPermissionService PermissionService
+
+@{
+    ViewData["Title"] = "مدیریت دسترسی‌ها";
+}
+
+<div class="card card-primary">
+
+    <div class="card-header">
+
+        <h3 class="card-title">
+            <i class="fa fa-key"></i>
+            مدیریت دسترسی‌ها
+        </h3>
+
+        <div class="card-tools">
+
+            @if (await PermissionService.HasPermissionAsync(User, "Permission.Create"))
+            {
+                <a asp-area="Admin"
+                   asp-controller="Permissions"
+                   asp-action="Create"
+                   class="btn btn-success btn-sm">
+
+                    <i class="fa fa-plus"></i>
+                    ایجاد دسترسی
+
+                </a>
+            }
+
+        </div>
+
+    </div>
+
+    <div class="card-body p-0">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover table-striped mb-0">
+
+                <thead>
+                    <tr>
+                        <th>گروه</th>
+                        <th>نام</th>
+                        <th>عنوان</th>
+                        <th>وضعیت</th>
+                        <th style="width: 100px;">عملیات</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (var permission in Model)
+                    {
+                        <tr>
+
+                            <td>
+                                <span class="badge badge-secondary">
+                                    @permission.GroupName
+                                </span>
+                            </td>
+
+                            <td>
+                                <code>@permission.Name</code>
+                            </td>
+
+                            <td>
+                                @permission.DisplayName
+                            </td>
+
+                            <td>
+
+                                @if (permission.IsActive)
+                                {
+                                    <span class="badge badge-success">
+                                        فعال
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger">
+                                        غیرفعال
+                                    </span>
+                                }
+
+                            </td>
+
+                            <td>
+
+                                @if (await PermissionService.HasPermissionAsync(
+                                                            User,
+                                                            "Permission.Edit"))
+                                {
+                                    <a asp-action="Edit"
+                                       asp-route-id="@permission.Id"
+                                       class="btn btn-warning btn-sm"
+                                       title="ویرایش">
+
+                                        <i class="fa fa-edit"></i>
+
+                                    </a>
+                                }
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="card-footer text-muted">
+
+        تعداد دسترسی‌ها:
+        <strong>@Model.Count()</strong>
+
+    </div>
+
+</div>

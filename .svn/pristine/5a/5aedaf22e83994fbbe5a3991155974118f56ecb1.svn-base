@@ -1,0 +1,334 @@
+﻿using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Domain.Entities.Accounting;
+using MyFirstCoreApp.Domain.Entities.Invoicing;
+using MyFirstCoreApp.Domain.Enums;
+using MyFirstCoreApp.Infrastructure.Persistence;
+
+namespace MyFirstCoreApp.Infrastructure.Services;
+
+public class InvoiceService : IInvoiceService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ITransactionService _transactionService;
+
+    public InvoiceService(
+        ApplicationDbContext context,
+        ITransactionService transactionService)
+    {
+        _context = context;
+        _transactionService = transactionService;
+    }
+
+    public async Task<int> GetNextNumberAsync(int tenantId, InvoiceType invoiceType)
+    {
+        var maxNumber = await _context.Invoices
+            .Where(i => i.TenantId == tenantId && i.InvoiceType == invoiceType)
+            .MaxAsync(i => (int?)i.Number) ?? 0;
+
+        return maxNumber + 1;
+    }
+
+    public async Task<Invoice> CreateAsync(Invoice invoice)
+    {
+        // چک اقلام
+        if (invoice.Items.Count == 0)
+        {
+            throw new InvalidOperationException("فاکتور باید حداقل یک قلم داشته باشد.");
+        }
+
+        // محاسبه جمع‌ها
+        CalculateTotals(invoice);
+
+        // شماره فاکتور خودکار
+        if (invoice.Number == 0)
+        {
+            invoice.Number = await GetNextNumberAsync(invoice.TenantId, invoice.InvoiceType);
+        }
+
+        _context.Invoices.Add(invoice);
+        await _context.SaveChangesAsync();
+
+        return invoice;
+    }
+
+    public async Task UpdateAsync(Invoice invoice)
+    {
+        // چک قطعی نبودن
+        var existing = await _context.Invoices
+            .AsNoTracking()
+            .FirstOrDefaultAsync(i => i.Id == invoice.Id);
+
+        if (existing != null && existing.Status == InvoiceStatus.Posted)
+        {
+            throw new InvalidOperationException("فاکتور قطعی قابل ویرایش نیست.");
+        }
+
+        // محاسبه جمع‌ها
+        CalculateTotals(invoice);
+
+        _context.Invoices.Update(invoice);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(int id, int tenantId)
+    {
+        var entity = await _context.Invoices
+            .FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantId);
+
+        if (entity == null) return;
+
+        if (entity.Status == InvoiceStatus.Posted)
+        {
+            throw new InvalidOperationException("فاکتور قطعی قابل حذف نیست.");
+        }
+
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task PostAsync(int invoiceId, int tenantId)
+    {
+        var invoice = await _context.Invoices
+            .Include(i => i.Items)
+            .FirstOrDefaultAsync(i => i.Id == invoiceId && i.TenantId == tenantId);
+
+        if (invoice == null)
+            throw new InvalidOperationException("فاکتور پیدا نشد.");
+
+        if (invoice.Status == InvoiceStatus.Posted)
+            throw new InvalidOperationException("فاکتور قبلاً قطعی شده است.");
+
+        // 🆕 ساخت سند حسابداری خودکار
+        var transaction = await CreateTransactionFromInvoice(invoice, tenantId);
+
+        invoice.TransactionId = transaction.Id;
+        invoice.Status = InvoiceStatus.Posted;
+        invoice.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UnpostAsync(int invoiceId, int tenantId)
+    {
+        var invoice = await _context.Invoices
+            .FirstOrDefaultAsync(i => i.Id == invoiceId && i.TenantId == tenantId);
+
+        if (invoice == null)
+            throw new InvalidOperationException("فاکتور پیدا نشد.");
+
+        if (invoice.Status != InvoiceStatus.Posted)
+            throw new InvalidOperationException("فاکتور قطعی نیست.");
+
+        // 🆕 حذف سند حسابداری
+        if (invoice.TransactionId.HasValue)
+        {
+            await _transactionService.DeleteAsync(invoice.TransactionId.Value, tenantId);
+            invoice.TransactionId = null;
+        }
+
+        invoice.Status = InvoiceStatus.Draft;
+        invoice.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<Invoice> ConvertToInvoiceAsync(int preInvoiceId, int tenantId)
+    {
+        var preInvoice = await _context.Invoices
+            .Include(i => i.Items)
+            .FirstOrDefaultAsync(i => i.Id == preInvoiceId && i.TenantId == tenantId);
+
+        if (preInvoice == null)
+            throw new InvalidOperationException("پیش‌فاکتور پیدا نشد.");
+
+        if (preInvoice.InvoiceType != InvoiceType.PreInvoice)
+            throw new InvalidOperationException("این فاکتور، پیش‌فاکتور نیست.");
+
+        // ساخت فاکتور فروش جدید
+        var saleInvoice = new Invoice
+        {
+            TenantId = tenantId,
+            Number = await GetNextNumberAsync(tenantId, InvoiceType.Sale),
+            Date = DateTime.UtcNow,
+            InvoiceType = InvoiceType.Sale,
+            ContactId = preInvoice.ContactId,
+            Status = InvoiceStatus.Draft,
+            Description = preInvoice.Description,
+            ReferenceInvoiceId = preInvoice.Id,
+            SubTotal = preInvoice.SubTotal,
+            DiscountAmount = preInvoice.DiscountAmount,
+            TaxAmount = preInvoice.TaxAmount,
+            TotalAmount = preInvoice.TotalAmount,
+            Items = preInvoice.Items.Select(i => new InvoiceItem
+            {
+                TenantId = tenantId,
+                ProductId = i.ProductId,
+                Description = i.Description,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                DiscountPercent = i.DiscountPercent,
+                DiscountAmount = i.DiscountAmount,
+                TaxRate = i.TaxRate,
+                TaxAmount = i.TaxAmount,
+                LineTotal = i.LineTotal
+            }).ToList()
+        };
+
+        _context.Invoices.Add(saleInvoice);
+        await _context.SaveChangesAsync();
+
+        return saleInvoice;
+    }
+
+    // ---------- Helpers ----------
+
+    private void CalculateTotals(Invoice invoice)
+    {
+        decimal subTotal = 0;
+        decimal discountTotal = 0;
+        decimal taxTotal = 0;
+
+        foreach (var item in invoice.Items)
+        {
+            // جمع خط (قبل از تخفیف و مالیات)
+            var lineBase = item.Quantity * item.UnitPrice;
+
+            // تخفیف
+            item.DiscountAmount = lineBase * (item.DiscountPercent / 100);
+
+            // مالیات (بعد از تخفیف)
+            var afterDiscount = lineBase - item.DiscountAmount;
+            item.TaxAmount = afterDiscount * (item.TaxRate / 100);
+
+            // جمع خط
+            item.LineTotal = afterDiscount + item.TaxAmount;
+
+            subTotal += lineBase;
+            discountTotal += item.DiscountAmount;
+            taxTotal += item.TaxAmount;
+        }
+
+        invoice.SubTotal = subTotal;
+        invoice.DiscountAmount = discountTotal;
+        invoice.TaxAmount = taxTotal;
+        invoice.TotalAmount = subTotal - discountTotal + taxTotal;
+    }
+
+    /// <summary>
+    /// ساخت سند حسابداری خودکار از فاکتور
+    /// </summary>
+    private async Task<Transaction> CreateTransactionFromInvoice(Invoice invoice, int tenantId)
+    {
+        var lines = new List<TransactionLine>();
+
+        // 🆕 یه حساب پیش‌فرض برای "دریافتنی" یا "درآمد"
+        // (بعداً توی تنظیمات شرکت، حساب‌های پیش‌فرض رو تعریف می‌کنیم)
+        var receivableAccount = await GetOrCreateAccountAsync(tenantId, "دریافتنی", AccountType.Receivable);
+        var salesAccount = await GetOrCreateAccountAsync(tenantId, "درآمد فروش", AccountType.Income);
+
+        if (invoice.InvoiceType == InvoiceType.Sale)
+        {
+            // فروش: دریافتنی (بدهکار) / درآمد فروش (بستانکار)
+            lines.Add(new TransactionLine
+            {
+                TenantId = tenantId,
+                AccountId = receivableAccount.Id,
+                ContactId = invoice.ContactId,
+                Debit = invoice.TotalAmount,
+                Credit = 0,
+                Description = $"فاکتور فروش شماره {invoice.Number}"
+            });
+
+            lines.Add(new TransactionLine
+            {
+                TenantId = tenantId,
+                AccountId = salesAccount.Id,
+                Debit = 0,
+                Credit = invoice.TotalAmount,
+                Description = $"فاکتور فروش شماره {invoice.Number}"
+            });
+        }
+        else if (invoice.InvoiceType == InvoiceType.Purchase)
+        {
+            // خرید: خرید کالا (بدهکار) / پرداختنی (بستانکار)
+            var purchaseAccount = await GetOrCreateAccountAsync(tenantId, "خرید کالا", AccountType.Expense);
+            var payableAccount = await GetOrCreateAccountAsync(tenantId, "پرداختنی", AccountType.Payable);
+
+            lines.Add(new TransactionLine
+            {
+                TenantId = tenantId,
+                AccountId = purchaseAccount.Id,
+                Debit = invoice.TotalAmount,
+                Credit = 0,
+                Description = $"فاکتور خرید شماره {invoice.Number}"
+            });
+
+            lines.Add(new TransactionLine
+            {
+                TenantId = tenantId,
+                AccountId = payableAccount.Id,
+                ContactId = invoice.ContactId,
+                Debit = 0,
+                Credit = invoice.TotalAmount,
+                Description = $"فاکتور خرید شماره {invoice.Number}"
+            });
+        }
+
+        var transaction = new Transaction
+        {
+            TenantId = tenantId,
+            Date = invoice.Date,
+            Description = $"سند خودکار فاکتور شماره {invoice.Number}",
+            Reference = invoice.Number.ToString(),
+            IsPosted = true,   // سند خودکار، قطعی
+            Lines = lines
+        };
+
+        return await _transactionService.CreateAsync(transaction);
+    }
+
+    /// <summary>
+    /// پیدا کردن یا ساخت حساب پیش‌فرض
+    /// </summary>
+    private async Task<Account> GetOrCreateAccountAsync(int tenantId, string name, AccountType type)
+    {
+        var account = await _context.Accounts
+            .FirstOrDefaultAsync(a => a.TenantId == tenantId && a.Name == name && a.AccountType == type);
+
+        if (account != null) return account;
+
+        // ساخت حساب پیش‌فرض
+        // ⚠️ نیاز به یه AccountCategory داریم
+        var category = await _context.AccountCategories
+            .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.DefaultAccountType == type);
+
+        if (category == null)
+        {
+            category = new AccountCategory
+            {
+                TenantId = tenantId,
+                Name = $"دسته‌بندی {name}",
+                DefaultAccountType = type,
+                IsActive = true
+            };
+            _context.AccountCategories.Add(category);
+            await _context.SaveChangesAsync();
+        }
+
+        account = new Account
+        {
+            TenantId = tenantId,
+            Name = name,
+            AccountType = type,
+            AccountCategoryId = category.Id,
+            IsActive = true
+        };
+
+        _context.Accounts.Add(account);
+        await _context.SaveChangesAsync();
+
+        return account;
+    }
+}

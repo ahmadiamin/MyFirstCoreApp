@@ -1,0 +1,217 @@
+﻿@page
+@model RegisterModel
+
+@{
+    ViewData["Title"] = "ثبت نام";
+}
+
+<div class="row justify-content-center">
+
+    <div class="col-md-6 col-lg-5">
+
+        <div class="card card-primary">
+
+            <!-- Header -->
+            <div class="card-header text-center">
+
+                <h3 class="card-title float-none">
+
+                    <i class="fa fa-user-plus"></i>
+
+                    ایجاد حساب کاربری
+
+                </h3>
+
+            </div>
+
+
+            <!-- Body -->
+            <div class="card-body">
+
+                <p class="text-center text-muted mb-4">
+                    برای ایجاد حساب کاربری اطلاعات زیر را وارد کنید.
+                </p>
+
+
+                <form id="registerForm"
+                      asp-route-returnUrl="@Model.ReturnUrl"
+                      method="post">
+
+
+                    <!-- Validation -->
+                    <div asp-validation-summary="ModelOnly"
+                         class="alert alert-danger"
+                         role="alert">
+                    </div>
+
+
+                    <!-- Full Name -->
+                    <div class="form-group">
+
+                        <label asp-for="Input.FullName">
+                            نام و نام خانوادگی
+                        </label>
+
+                        <div class="input-group">
+
+                            <div class="input-group-prepend">
+
+                                <span class="input-group-text">
+                                    <i class="fa fa-user"></i>
+                                </span>
+
+                            </div>
+
+                            <input asp-for="Input.FullName"
+                                   class="form-control"
+                                   aria-required="true"
+                                   placeholder="نام و نام خانوادگی" />
+
+                        </div>
+
+                        <span asp-validation-for="Input.FullName"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <!-- Email -->
+                    <div class="form-group">
+
+                        <label asp-for="Input.Email">
+                            ایمیل
+                        </label>
+
+                        <div class="input-group">
+
+                            <div class="input-group-prepend">
+
+                                <span class="input-group-text">
+                                    <i class="fa fa-envelope"></i>
+                                </span>
+
+                            </div>
+
+                            <input asp-for="Input.Email"
+                                   class="form-control"
+                                   autocomplete="username"
+                                   aria-required="true"
+                                   placeholder="ایمیل خود را وارد کنید" />
+
+                        </div>
+
+                        <span asp-validation-for="Input.Email"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <!-- Password -->
+                    <div class="form-group">
+
+                        <label asp-for="Input.Password">
+                            رمز عبور
+                        </label>
+
+                        <div class="input-group">
+
+                            <div class="input-group-prepend">
+
+                                <span class="input-group-text">
+                                    <i class="fa fa-lock"></i>
+                                </span>
+
+                            </div>
+
+                            <input asp-for="Input.Password"
+                                   class="form-control"
+                                   autocomplete="new-password"
+                                   aria-required="true"
+                                   placeholder="رمز عبور" />
+
+                        </div>
+
+                        <span asp-validation-for="Input.Password"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <!-- Confirm Password -->
+                    <div class="form-group">
+
+                        <label asp-for="Input.ConfirmPassword">
+                            تکرار رمز عبور
+                        </label>
+
+                        <div class="input-group">
+
+                            <div class="input-group-prepend">
+
+                                <span class="input-group-text">
+                                    <i class="fa fa-lock"></i>
+                                </span>
+
+                            </div>
+
+                            <input asp-for="Input.ConfirmPassword"
+                                   class="form-control"
+                                   autocomplete="new-password"
+                                   aria-required="true"
+                                   placeholder="تکرار رمز عبور" />
+
+                        </div>
+
+                        <span asp-validation-for="Input.ConfirmPassword"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <!-- Register -->
+                    <button id="registerSubmit"
+                            type="submit"
+                            class="btn btn-primary btn-block">
+
+                        <i class="fa fa-user-plus"></i>
+
+                        ثبت نام
+
+                    </button>
+
+
+                    <!-- Login Link -->
+                    <div class="text-center mt-3">
+
+                        <p class="mb-0">
+
+                            قبلاً حساب کاربری ساخته‌اید؟
+
+                            <a asp-page="./Login"
+                               asp-route-returnUrl="@Model.ReturnUrl">
+
+                                ورود به سیستم
+
+                            </a>
+
+                        </p>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,21 @@
+﻿@model MyFirstCoreApp.Domain.Entities.Accounting.AccountCategory
+@{
+    ViewData["Title"] = "حذف دسته‌بندی";
+
+    var confirmModel = new MyFirstCoreApp.Models.ViewModels.DeleteConfirmViewModel
+    {
+        Title = "حذف دسته‌بندی حساب",
+        Message = "آیا از حذف این دسته‌بندی مطمئن هستید؟",
+        Area = "Accounting",
+        Controller = "AccountCategories",
+        Id = Model.Id,
+        Items = new()
+        {
+            new() { Label = "نام", Value = Model.Name },
+            new() { Label = "کد", Value = Model.Code },
+            new() { Label = "توضیحات", Value = Model.Description }
+        }
+    };
+}
+
+<partial name="_DeleteConfirm" model="confirmModel" />

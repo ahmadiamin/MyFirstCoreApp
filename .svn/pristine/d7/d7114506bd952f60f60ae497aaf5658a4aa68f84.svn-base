@@ -1,0 +1,129 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using MyFirstCoreApp.Models;
+using MyFirstCoreApp.Services;
+
+namespace MyFirstCoreApp.Areas.Identity.Pages.Account
+{
+    public class ResendEmailConfirmationModel : PageModel
+    {
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IEmailSender _emailSender;
+
+        public ResendEmailConfirmationModel(
+            UserManager<ApplicationUser> userManager,
+            IEmailSender emailSender)
+        {
+            _userManager = userManager;
+            _emailSender = emailSender;
+        }
+
+        [BindProperty]
+        public InputModel Input { get; set; } = new();
+
+        public class InputModel
+        {
+            [Required(ErrorMessage = "لطفاً ایمیل را وارد کنید.")]
+            [EmailAddress(ErrorMessage = "فرمت ایمیل صحیح نیست.")]
+            public string Email { get; set; } = string.Empty;
+        }
+
+        public void OnGet()
+        {
+        }
+
+        public async Task<IActionResult> OnPostAsync()
+        {
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            var user = await _userManager.FindByEmailAsync(Input.Email);
+
+            // برای جلوگیری از افشای وجود یا عدم وجود حساب
+            if (user == null)
+            {
+                return RedirectToPage("./ResendEmailConfirmationConfirmation");
+            }
+
+            // اگر قبلاً تأیید شده، دوباره ایمیل ارسال نکن
+            if (await _userManager.IsEmailConfirmedAsync(user))
+            {
+                return RedirectToPage("./ResendEmailConfirmationConfirmation");
+            }
+
+            var userId = await _userManager.GetUserIdAsync(user);
+
+            var code =
+                await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+            code = WebEncoders.Base64UrlEncode(
+                Encoding.UTF8.GetBytes(code));
+
+            var callbackUrl = Url.Page(
+                "/Account/ConfirmEmail",
+                pageHandler: null,
+                values: new
+                {
+                    area = "Identity",
+                    userId = userId,
+                    code = code
+                },
+                protocol: Request.Scheme);
+
+            var emailBody = $"""
+                <div style="direction:rtl;text-align:right;font-family:Tahoma,Arial;">
+
+                    <h2>تأیید آدرس ایمیل</h2>
+
+                    <p>
+                        سلام،
+                    </p>
+
+                    <p>
+                        برای تأیید آدرس ایمیل حساب کاربری خود
+                        روی دکمه زیر کلیک کنید:
+                    </p>
+
+                    <p>
+                        <a href="{HtmlEncoder.Default.Encode(callbackUrl!)}"
+                           style="
+                               display:inline-block;
+                               padding:10px 20px;
+                               background:#007bff;
+                               color:white;
+                               text-decoration:none;
+                               border-radius:4px;">
+                            تأیید ایمیل
+                        </a>
+                    </p>
+
+                    <p>
+                        اگر شما این درخواست را ارسال نکرده‌اید،
+                        این ایمیل را نادیده بگیرید.
+                    </p>
+
+                    <hr />
+
+                    <small>
+                        MyFirstCoreApp
+                    </small>
+
+                </div>
+                """;
+
+            await _emailSender.SendEmailAsync(
+                user.Email!,
+                "تأیید آدرس ایمیل - MyFirstCoreApp",
+                emailBody);
+
+            return RedirectToPage("./ResendEmailConfirmationConfirmation");
+        }
+    }
+}

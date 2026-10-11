@@ -1,0 +1,180 @@
+﻿@{
+    ViewData["Title"] = "دسته‌بندی حساب‌ها";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa-solid fa-triangle-exclamation"></i> @TempData["Error"]
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-folder"></i>
+            لیست دسته‌بندی حساب‌ها
+        </h3>
+        <div class="card-tools">
+            <a asp-area="Accounting" asp-controller="AccountCategories" asp-action="Create"
+               class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus"></i> دسته‌بندی جدید
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    </div>
+                    <input type="text" id="txtSearch" class="form-control"
+                           placeholder="جستجو در نام، کد..." />
+                </div>
+            </div>
+            <div class="col-md-7 text-left">
+                <span class="text-muted" id="lblCount"></span>
+            </div>
+        </div>
+
+        <div id="accountCategoriesGrid" class="ag-theme-alpine"
+             style="height: 600px; width: 100%;">
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            // ============================================
+            // ۱. Column Definitions
+            // ============================================
+            const columnDefs = [
+                AgGridHelper.rowNumberColumn(),
+                {
+                    field: 'name',
+                    headerName: 'نام',
+                    flex: 2,
+                    minWidth: 200
+                },
+                {
+                    field: 'code',
+                    headerName: 'کد',
+                    width: 120
+                },
+                {
+                    field: 'parentName',
+                    headerName: 'دسته والد',
+                    width: 150
+                },
+                {
+                    field: 'accountTypeName',
+                    headerName: 'نوع پیش‌فرض',
+                    width: 130
+                },
+                AgGridHelper.numberColumn('sortOrder', 'ترتیب', 100),
+                AgGridHelper.statusColumn('isActive'),
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 150,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const div = document.createElement('div');
+                        div.className = 'action-buttons';
+                        const d = params.data;
+
+                        // ✏ ویرایش
+                        const editBtn = document.createElement('a');
+                        editBtn.href = `/Accounting/AccountCategories/Edit/${d.id}`;
+                        editBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn';
+                        editBtn.title = 'ویرایش';
+                        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+                        div.appendChild(editBtn);
+
+                        // 🗑 حذف
+                        const deleteBtn = document.createElement('a');
+                        deleteBtn.href = 'javascript:void(0)';
+                        deleteBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn delete-btn';
+                        deleteBtn.dataset.id = d.id;
+                        deleteBtn.dataset.title = d.name || '';
+                        deleteBtn.dataset.code = d.code || '';
+                        deleteBtn.dataset.parent = d.parentName || '';
+                        deleteBtn.title = 'حذف';
+                        deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                        div.appendChild(deleteBtn);
+
+                        return div;
+                    }
+                }
+            ];
+
+            // ============================================
+            // ۲. ساخت Grid
+            // ============================================
+            AgGridHelper.create(
+                'accountCategoriesGrid',
+                columnDefs,
+                '/Accounting/AccountCategories/GetData',
+                'txtSearch',
+                'lblCount'
+            );
+
+            // ============================================
+            // ۳. رویداد حذف با Modal
+            // ============================================
+            $(document).on('click', '.delete-btn', function () {
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const title = $btn.data('title');
+                const code = $btn.data('code');
+                const parent = $btn.data('parent');
+
+                // 🆕 ساخت items برای Modal
+                const items = [];
+                if (title) items.push({ label: 'نام', value: title });
+                if (code) items.push({ label: 'کد', value: code });
+                if (parent) items.push({ label: 'دسته والد', value: parent });
+
+                // 🆕 نمایش Modal
+                ModalHelper.confirmDelete({
+                    url: '/Accounting/AccountCategories/Delete',
+                    data: {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    title: 'حذف دسته‌بندی: ' + title,
+                    message: 'آیا از حذف این دسته‌بندی مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
+                    items: items,
+                    onSuccess: function () {
+                        // 🆕 رفرش Grid (نه کل صفحه)
+                        const gridApi = document.querySelector('#accountCategoriesGrid').__agGridApi;
+                        if (gridApi) {
+                            gridApi.setGridOption('datasource', gridApi.getGridOption('datasource'));
+                        } else {
+                            location.reload();
+                        }
+                    }
+                });
+            });
+
+        });
+    </script>
+}

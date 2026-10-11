@@ -1,0 +1,62 @@
+﻿using System.Text;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using MyFirstCoreApp.Domain.Entities.Identity;
+
+namespace MyFirstCoreApp.Areas.Identity.Pages.Account
+{
+    public class ConfirmEmailModel : PageModel
+    {
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public ConfirmEmailModel(
+            UserManager<ApplicationUser> userManager)
+        {
+            _userManager = userManager;
+        }
+
+        public bool IsConfirmed { get; private set; }
+
+        public async Task<IActionResult> OnGetAsync(
+            string? userId,
+            string? code)
+        {
+            if (string.IsNullOrEmpty(userId) ||
+                string.IsNullOrEmpty(code))
+            {
+                IsConfirmed = false;
+                return Page();
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                IsConfirmed = false;
+                return Page();
+            }
+
+            try
+            {
+                // Decode کردن توکن
+                code = Encoding.UTF8.GetString(
+                    WebEncoders.Base64UrlDecode(code));
+
+                var result =
+                    await _userManager.ConfirmEmailAsync(
+                        user,
+                        code);
+
+                IsConfirmed = result.Succeeded;
+            }
+            catch
+            {
+                IsConfirmed = false;
+            }
+
+            return Page();
+        }
+    }
+}

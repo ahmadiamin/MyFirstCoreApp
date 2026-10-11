@@ -1,0 +1,156 @@
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+
+namespace MyFirstCoreApp.Areas.Admin.Controllers
+{
+    [Area("Admin")]
+    public class RolesController : Controller
+    {
+        private readonly RoleManager<IdentityRole> _roleManager;
+
+        public RolesController(RoleManager<IdentityRole> roleManager)
+        {
+            _roleManager = roleManager;
+        }
+
+        // GET: /Admin/Roles
+        public IActionResult Index()
+        {
+            var roles = _roleManager.Roles
+                .OrderBy(x => x.Name)
+                .ToList();
+
+            return View(roles);
+        }
+
+        // GET: /Admin/Roles/Create
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: /Admin/Roles/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "نام نقش الزامی است.");
+
+                return View();
+            }
+
+            var normalizedName = name.Trim();
+
+            if (await _roleManager.RoleExistsAsync(normalizedName))
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "این نقش قبلاً وجود دارد.");
+
+                return View();
+            }
+
+            var role = new IdentityRole
+            {
+                Name = normalizedName
+            };
+
+            var result = await _roleManager.CreateAsync(role);
+
+            if (result.Succeeded)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    error.Description);
+            }
+
+            return View();
+        }
+
+        // GET: /Admin/Roles/Edit/{id}
+        [HttpGet]
+        public async Task<IActionResult> Edit(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            var role = await _roleManager.FindByIdAsync(id);
+
+            if (role == null)
+                return NotFound();
+
+            return View(role);
+        }
+
+        // POST: /Admin/Roles/Edit
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(
+            string id,
+            string name)
+        {
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "نام نقش الزامی است.");
+
+                var currentRole = await _roleManager.FindByIdAsync(id);
+
+                if (currentRole == null)
+                    return NotFound();
+
+                return View(currentRole);
+            }
+
+            var role = await _roleManager.FindByIdAsync(id);
+
+            if (role == null)
+                return NotFound();
+
+            var normalizedName = name.Trim();
+
+            var existingRole = await _roleManager.FindByNameAsync(normalizedName);
+
+            if (existingRole != null && existingRole.Id != role.Id)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "این نام نقش قبلاً استفاده شده است.");
+
+                return View(role);
+            }
+
+            role.Name = normalizedName;
+
+            var result = await _roleManager.UpdateAsync(role);
+
+            if (result.Succeeded)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    error.Description);
+            }
+
+            return View(role);
+        }
+    }
+}

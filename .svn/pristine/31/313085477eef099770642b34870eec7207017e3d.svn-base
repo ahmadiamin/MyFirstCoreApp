@@ -1,0 +1,62 @@
+﻿@model IEnumerable<MyFirstCoreApp.Models.ViewModels.RoleListViewModel>
+@inject PermissionService PermissionService
+@{
+    ViewData["Title"] = "مدیریت نقش‌ها";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>مدیریت نقش‌ها</h2>
+
+    @if (await PermissionService.HasPermissionAsync(User, "Role.Create"))
+    {
+        <a asp-area="Admin"
+           asp-controller="Roles"
+           asp-action="Create"
+           class="btn btn-primary">
+            ایجاد نقش
+        </a>
+    }
+</div>
+
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>نام نقش</th>
+            <th>تعداد کاربران</th>
+            <th>تعداد دسترسی‌ها</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var role in Model)
+        {
+            <tr>
+                <td>
+                    @role.Name
+                </td>
+
+                <td>
+                    @role.UserCount
+                </td>
+
+                <td>
+                    @role.PermissionCount
+                </td>
+
+                <td>
+                    @if (await PermissionService.HasPermissionAsync(
+                                    User,
+                                    "Role.Edit"))
+                    {
+                        <a asp-action="Edit"
+                           asp-route-id="@role.Id"
+                           class="btn btn-sm btn-warning">
+                            ویرایش
+                        </a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

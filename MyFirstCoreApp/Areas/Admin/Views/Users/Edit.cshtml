@@ -1,0 +1,139 @@
+﻿@model MyFirstCoreApp.Models.ViewModels.EditUserViewModel
+
+@{
+    ViewData["Title"] = "ویرایش کاربر";
+}
+
+<div class="card card-primary">
+
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-user"></i>
+            ویرایش کاربر
+        </h3>
+    </div>
+
+    <form asp-action="Edit" method="post">
+
+        <input asp-for="Id" type="hidden" />
+
+        <div class="card-body">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="alert alert-danger"></div>
+
+            <div class="row">
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="FullName"></label>
+                        <input asp-for="FullName"
+                               class="form-control"
+                               placeholder="نام و نام خانوادگی" />
+                        <span asp-validation-for="FullName"
+                              class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="UserName"></label>
+                        <input asp-for="UserName"
+                               class="form-control"
+                               placeholder="نام کاربری" />
+                        <span asp-validation-for="UserName"
+                              class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Email"></label>
+                        <input asp-for="Email"
+                               class="form-control"
+                               placeholder="ایمیل" />
+                        <span asp-validation-for="Email"
+                              class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="PhoneNumber"></label>
+                        <input asp-for="PhoneNumber"
+                               class="form-control"
+                               placeholder="شماره موبایل" />
+                        <span asp-validation-for="PhoneNumber"
+                              class="text-danger"></span>
+                    </div>
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="form-group">
+
+                <label>
+                    <i class="fa fa-users"></i>
+                    نقش‌ها
+                </label>
+
+                <div class="border rounded p-3">
+
+                    @if (Model.Roles.Any())
+                    {
+                        @foreach (var role in Model.Roles)
+                        {
+                            <div class="custom-control custom-checkbox mb-2">
+
+                                <input class="custom-control-input"
+                                       type="checkbox"
+                                       name="SelectedRoles"
+                                       value="@role.Name"
+                                       id="role_@role.Id"
+                                       @(role.Selected ? "checked" : "") />
+
+                                <label class="custom-control-label"
+                                       for="role_@role.Id">
+                                    @role.Name
+                                </label>
+
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">
+                            هیچ نقشی تعریف نشده است.
+                        </span>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card-footer">
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i>
+                ذخیره
+            </button>
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i>
+                انصراف
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

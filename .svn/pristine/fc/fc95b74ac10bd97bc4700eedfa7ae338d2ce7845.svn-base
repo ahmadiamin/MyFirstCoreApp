@@ -1,0 +1,43 @@
+﻿@model Microsoft.AspNetCore.Identity.IdentityRole
+
+@{
+    ViewData["Title"] = "ویرایش نقش";
+}
+
+<h2>ویرایش نقش</h2>
+
+<form asp-area="Admin"
+      asp-controller="Roles"
+      asp-action="Edit"
+      method="post">
+
+    <input type="hidden"
+           name="id"
+           value="@Model.Id" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger mb-3"></div>
+
+    <div class="form-floating mb-3">
+        <input type="text"
+               name="name"
+               value="@Model.Name"
+               class="form-control"
+               placeholder="نام نقش"
+               required />
+
+        <label>نام نقش</label>
+    </div>
+
+    <button type="submit"
+            class="btn btn-primary">
+        ذخیره
+    </button>
+
+    <a asp-area="Admin"
+       asp-controller="Roles"
+       asp-action="Index"
+       class="btn btn-secondary">
+        انصراف
+    </a>
+</form>

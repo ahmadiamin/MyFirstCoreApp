@@ -1,0 +1,343 @@
+﻿@{
+    // 🆕 تشخیص نوع از URL
+    var paymentTypeParam = Context.Request.Query["paymentType"].ToString();
+    var isReceived = paymentTypeParam == "1";
+    var pageTitle = isReceived ? "دریافت‌ها" : "پرداخت‌ها";
+    var newButtonText = isReceived ? "دریافت جدید" : "پرداخت جدید";
+    ViewData["Title"] = pageTitle;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa-solid fa-triangle-exclamation"></i> @TempData["Error"]
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+            لیست @pageTitle
+        </h3>
+        <div class="card-tools">
+            @if (isReceived)
+            {
+                <a asp-action="Create" asp-route-paymentType="1" class="btn btn-success btn-sm">
+                    <i class="fa-solid fa-plus"></i> دریافت جدید
+                </a>
+            }
+            else
+            {
+                <a asp-action="Create" asp-route-paymentType="2" class="btn btn-danger btn-sm">
+                    <i class="fa-solid fa-plus"></i> پرداخت جدید
+                </a>
+            }
+        </div>
+    </div>
+    <div class="card-body">
+
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    </div>
+                    <input type="text" id="txtSearch" class="form-control"
+                           placeholder="جستجو در شماره، طرف حساب، مرجع..." />
+                </div>
+            </div>
+            <div class="col-md-7 text-left">
+                <span class="text-muted" id="lblCount"></span>
+            </div>
+        </div>
+
+        <div id="paymentsGrid" class="ag-theme-alpine"
+             style="height: 600px; width: 100%;">
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ============================================
+        // 🆕 متغیر global برای Grid API
+        // ============================================
+        let paymentsGridApi = null;
+
+        $(document).ready(function () {
+
+            // ============================================
+            // ۱. URL با فیلتر نوع
+            // ============================================
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentType = urlParams.get('paymentType');
+
+            let dataUrl = '/Banking/Payments/GetData';
+            if (paymentType) dataUrl += '?paymentType=' + paymentType;
+
+            // ============================================
+            // ۲. تعریف ستون‌ها
+            // ============================================
+            const columnDefs = [
+                AgGridHelper.rowNumberColumn(),
+                AgGridHelper.numberColumn('number', 'شماره', 90),
+                {
+                    field: 'date',
+                    headerName: 'تاریخ',
+                    width: 110,
+                    valueFormatter: function (params) {
+                        if (!params.value) return '';
+                        return new Date(params.value).toLocaleDateString('fa-IR');
+                    }
+                },
+                {
+                    field: 'paymentTypeName',
+                    headerName: 'نوع',
+                    width: 100,
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const span = document.createElement('span');
+                        span.className = params.data.paymentType === 1 ? 'badge badge-success' : 'badge badge-danger';
+                        span.textContent = params.value;
+                        return span;
+                    }
+                },
+                { field: 'contactName', headerName: 'طرف حساب', width: 180, flex: 1 },
+                { field: 'bankAccountName', headerName: 'حساب بانکی', width: 150 },
+                AgGridHelper.moneyColumn('amount', 'مبلغ کل', 140),
+                AgGridHelper.moneyColumn('allocatedAmount', 'تخصیص‌یافته', 130),
+                {
+                    field: 'unallocatedAmount',
+                    headerName: 'تخصیص‌نیافته',
+                    width: 130,
+                    valueFormatter: function (params) {
+                        if (!params.value) return '۰';
+                        return Number(params.value).toLocaleString('en-US');
+                    }
+                },
+                {
+                    field: 'statusName',
+                    headerName: 'وضعیت',
+                    width: 100,
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const span = document.createElement('span');
+                        const s = params.data.status;
+                        if (s === 1) span.className = 'badge badge-warning';
+                        else if (s === 2) span.className = 'badge badge-success';
+                        else span.className = 'badge badge-danger';
+                        span.textContent = params.value;
+                        return span;
+                    }
+                },
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 220,
+                    minWidth: 220,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const div = document.createElement('div');
+                        div.className = 'action-buttons';
+                        const d = params.data;
+
+                        // 👁 مشاهده (همیشه)
+                        const viewBtn = document.createElement('a');
+                        viewBtn.href = `/Banking/Payments/Details/${d.id}`;
+                        viewBtn.className = 'btn btn-sm btn-outline-info action-icon-btn';
+                        viewBtn.title = 'مشاهده';
+                        viewBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                        div.appendChild(viewBtn);
+
+                        if (d.status === 1) { // پیش‌نویس
+                            // ✅ قطعی
+                            const postBtn = document.createElement('a');
+                            postBtn.href = 'javascript:void(0)';
+                            postBtn.className = 'btn btn-sm btn-outline-success action-icon-btn post-btn';
+                            postBtn.dataset.id = d.id;
+                            postBtn.title = 'قطعی کردن';
+                            postBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                            div.appendChild(postBtn);
+
+                            // ✏ ویرایش
+                            const editBtn = document.createElement('a');
+                            editBtn.href = `/Banking/Payments/Edit/${d.id}`;
+                            editBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn';
+                            editBtn.title = 'ویرایش';
+                            editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+                            div.appendChild(editBtn);
+
+                            // 🗑 حذف
+                            const deleteBtn = document.createElement('a');
+                            deleteBtn.href = 'javascript:void(0)';
+                            deleteBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn delete-btn';
+                            deleteBtn.dataset.id = d.id;
+                            deleteBtn.dataset.title = d.number || '';
+                            deleteBtn.dataset.contact = d.contactName || '';
+                            deleteBtn.dataset.amount = d.amount || 0;
+                            deleteBtn.dataset.type = d.paymentTypeName || '';
+                            deleteBtn.title = 'حذف';
+                            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                            div.appendChild(deleteBtn);
+                        }
+                        else if (d.status === 2) { // قطعی
+                            // ↩ برگشت
+                            const unpostBtn = document.createElement('a');
+                            unpostBtn.href = 'javascript:void(0)';
+                            unpostBtn.className = 'btn btn-sm btn-outline-warning action-icon-btn unpost-btn';
+                            unpostBtn.dataset.id = d.id;
+                            unpostBtn.title = 'برگشت به پیش‌نویس';
+                            unpostBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i>';
+                            div.appendChild(unpostBtn);
+                        }
+
+                        return div;
+                    }
+                }
+            ];
+
+            // ============================================
+            // ۳. ساخت Grid
+            // ============================================
+            paymentsGridApi = AgGridHelper.create(
+                'paymentsGrid',
+                columnDefs,
+                dataUrl,
+                'txtSearch',
+                'lblCount'
+            );
+
+        });
+
+        // ============================================
+        // ۴. رویداد حذف
+        // ============================================
+        $(document).on('click', '.delete-btn', function () {
+            const $btn = $(this);
+            const id = $btn.data('id');
+            const title = $btn.data('title');
+            const contact = $btn.data('contact');
+            const amount = $btn.data('amount');
+            const type = $btn.data('type');
+
+            // 🆕 ساخت items
+            const items = [];
+            if (title) items.push({ label: 'شماره', value: title });
+            if (type) items.push({ label: 'نوع', value: type });
+            if (contact) items.push({ label: 'طرف حساب', value: contact });
+            if (amount) items.push({ label: 'مبلغ', value: Number(amount).toLocaleString('en-US') + ' ریال' });
+
+            // 🆕 نمایش Modal
+            ModalHelper.confirmDelete({
+                url: '/Banking/Payments/Delete',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                title: 'حذف ' + (type || 'پرداخت') + ' شماره ' + title,
+                message: 'آیا از حذف این ' + (type || 'پرداخت') + ' مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
+                items: items,
+                onSuccess: function () {
+                    // 🆕 رفرش Grid
+                    if (paymentsGridApi) {
+                        const ds = paymentsGridApi.getGridOption('datasource');
+                        paymentsGridApi.setGridOption('datasource', ds);
+                    } else {
+                        location.reload();
+                    }
+                }
+            });
+        });
+
+        // ============================================
+        // ۵. رویداد قطعی
+        // ============================================
+        $(document).on('click', '.post-btn', function () {
+            const id = $(this).data('id');
+
+            ModalHelper.confirm(
+                'آیا از قطعی کردن این پرداخت مطمئن هستید؟ پس از قطعی، سند حسابداری ساخته می‌شود.',
+                function () {
+                    $.ajax({
+                        url: '/Banking/Payments/Post',
+                        type: 'POST',
+                        data: {
+                            id: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (r) {
+                            if (r.success) {
+                                ModalHelper.success(r.message || 'پرداخت قطعی شد.', {
+                                    onClose: function () {
+                                        if (paymentsGridApi) {
+                                            const ds = paymentsGridApi.getGridOption('datasource');
+                                            paymentsGridApi.setGridOption('datasource', ds);
+                                        } else {
+                                            location.reload();
+                                        }
+                                    }
+                                });
+                            } else {
+                                ModalHelper.error(r.message);
+                            }
+                        }
+                    });
+                },
+                { title: 'قطعی کردن پرداخت', icon: 'fa-solid fa-circle-check', headerClass: 'bg-success text-white' }
+            );
+        });
+
+        // ============================================
+        // ۶. رویداد برگشت
+        // ============================================
+        $(document).on('click', '.unpost-btn', function () {
+            const id = $(this).data('id');
+
+            ModalHelper.confirm(
+                'آیا از برگشت این پرداخت به پیش‌نویس مطمئن هستید؟ سند حسابداری حذف می‌شود.',
+                function () {
+                    $.ajax({
+                        url: '/Banking/Payments/Unpost',
+                        type: 'POST',
+                        data: {
+                            id: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (r) {
+                            if (r.success) {
+                                ModalHelper.success(r.message || 'پرداخت به پیش‌نویس برگشت.', {
+                                    onClose: function () {
+                                        if (paymentsGridApi) {
+                                            const ds = paymentsGridApi.getGridOption('datasource');
+                                            paymentsGridApi.setGridOption('datasource', ds);
+                                        } else {
+                                            location.reload();
+                                        }
+                                    }
+                                });
+                            } else {
+                                ModalHelper.error(r.message);
+                            }
+                        }
+                    });
+                },
+                { title: 'برگشت پرداخت', icon: 'fa-solid fa-rotate-left', headerClass: 'bg-warning text-white' }
+            );
+        });
+    </script>
+}
