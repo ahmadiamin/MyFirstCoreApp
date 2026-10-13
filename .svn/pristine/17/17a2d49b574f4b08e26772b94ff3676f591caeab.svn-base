@@ -1,5 +1,0 @@
-﻿@using Microsoft.AspNetCore.Identity
-@using MyFirstCoreApp.Areas.Identity
-@using MyFirstCoreApp.Areas.Identity.Pages
-@using MyFirstCoreApp.Domain.Entities.Identity
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

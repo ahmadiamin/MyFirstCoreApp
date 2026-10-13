@@ -1,6 +1,0 @@
-﻿@using MyFirstCoreApp
-@using MyFirstCoreApp.Areas.Contacts
-@using MyFirstCoreApp.Areas.Contacts.ViewModels.Contact
-@using MyFirstCoreApp.Domain.Enums
-@using MyFirstCoreApp.Extensions
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

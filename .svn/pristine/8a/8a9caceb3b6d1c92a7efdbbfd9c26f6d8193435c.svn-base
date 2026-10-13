@@ -1,7 +1,0 @@
-﻿@using MyFirstCoreApp
-@using MyFirstCoreApp.Areas.Accounting
-@using MyFirstCoreApp.Areas.Accounting.ViewModels.AccountCategory
-@using MyFirstCoreApp.Areas.Accounting.ViewModels.Account
-@using MyFirstCoreApp.Areas.Accounting.ViewModels.TransactionGroup
-@using MyFirstCoreApp.Areas.Accounting.ViewModels.Transaction
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

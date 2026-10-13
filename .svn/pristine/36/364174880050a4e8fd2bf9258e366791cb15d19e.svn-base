@@ -1,5 +1,0 @@
-﻿@using MyFirstCoreApp
-@using MyFirstCoreApp.Areas.Invoicing
-@using MyFirstCoreApp.Areas.Invoicing.ViewModels.Invoice
-@using MyFirstCoreApp.Domain.Enums
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

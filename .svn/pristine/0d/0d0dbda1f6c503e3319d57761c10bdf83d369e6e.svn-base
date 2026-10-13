@@ -1,6 +1,0 @@
-﻿@using MyFirstCoreApp
-@using MyFirstCoreApp.Areas.Inventory
-@using MyFirstCoreApp.Areas.Inventory.ViewModels.Unit
-@using MyFirstCoreApp.Areas.Inventory.ViewModels.ProductCategory
-@using MyFirstCoreApp.Areas.Inventory.ViewModels.Product
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

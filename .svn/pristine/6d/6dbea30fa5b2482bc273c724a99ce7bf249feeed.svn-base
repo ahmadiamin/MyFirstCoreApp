@@ -1,5 +1,0 @@
-﻿@using MyFirstCoreApp
-@using MyFirstCoreApp.Areas.Banking
-@using MyFirstCoreApp.Areas.Banking.ViewModels.Cheque
-@using MyFirstCoreApp.Domain.Enums
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
