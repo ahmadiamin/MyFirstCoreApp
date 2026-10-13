@@ -103,12 +103,7 @@
                 {
                     field: 'date',
                     headerName: 'تاریخ',
-                    width: 110,
-                    valueFormatter: function (params) {
-                        if (!params.value) return '';
-                        const date = new Date(params.value);
-                        return date.toLocaleDateString('fa-IR');
-                    }
+                    width: 110
                 },
                 {
                     field: 'invoiceTypeName',

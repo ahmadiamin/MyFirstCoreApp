@@ -1,4 +1,4 @@
-﻿using MyFirstCoreApp.Domain.Common;
+using MyFirstCoreApp.Domain.Common;
 using MyFirstCoreApp.Domain.Enums;
 
 namespace MyFirstCoreApp.Domain.Entities.Invoicing;
@@ -14,9 +14,10 @@ public class Invoice : TenantEntity
     public int Number { get; set; }
 
     /// <summary>
-    /// تاریخ فاکتور
+    /// تاریخ فاکتور (فقط تاریخ). مقدار پیش‌فرض ندارد؛ سازنده باید صراحتاً تعیین کند.
+    /// (پیش‌فرض قبلی DateTime.Now به ساعت سرور میزبان وابسته بود.)
     /// </summary>
-    public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+    public DateOnly Date { get; set; }
 
     /// <summary>
     /// نوع فاکتور (فروش، خرید، پیش‌فاکتور)
@@ -72,47 +73,46 @@ public class Invoice : TenantEntity
     /// </summary>
     public decimal PaidAmount { get; set; }
 
-    //// <summary>
-    /// مبلغ باقی‌مانده (بعد از پرداخت و تخفیف تسویه)
+    /// <summary>
+    /// مبلغ باقی‌مانده (بعد از پرداخت و تخفیف تسویه).
+    /// فقط برای خواندن در حافظه؛ در کوئری از InvoiceBalance.WithOpenBalance() استفاده شود.
     /// </summary>
     public decimal RemainingAmount => TotalAmount - PaidAmount - SettlementDiscount;
 
     /// <summary>
-    /// سند حسابداری مرتبط
+    /// سند حسابداری اصلی فاکتور (سند تخفیف تسویه جداگانه است و این فیلد را عوض نمی‌کند)
     /// </summary>
     public int? TransactionId { get; set; }
     public Accounting.Transaction? Transaction { get; set; }
 
-    // ---- Navigation ----
-
     // ============================================
-    // 🆕 گردش کار پیش‌فاکتور
+    // گردش کار پیش‌فاکتور
     // ============================================
 
     /// <summary>
-    /// تاریخ ارسال به مشتری
+    /// لحظه‌ی ارسال به مشتری (UTC، توسط سیستم ثبت می‌شود)
     /// </summary>
     public DateTime? SentDate { get; set; }
 
     /// <summary>
-    /// تاریخ آخرین ارسال (آخرین بار که به مشتری داده شد)
+    /// لحظه‌ی آخرین ارسال (UTC)
     /// </summary>
     public DateTime? LastSentDate { get; set; }
 
     /// <summary>
-    /// تاریخ تایید مشتری
+    /// لحظه‌ی تایید مشتری (UTC)
     /// </summary>
     public DateTime? ApprovedDate { get; set; }
 
     /// <summary>
-    /// تاریخ رد مشتری
+    /// لحظه‌ی رد مشتری (UTC)
     /// </summary>
     public DateTime? RejectedDate { get; set; }
 
     /// <summary>
-    /// تاریخ پیگیری بعدی (اگه به تعویق افتاد)
+    /// تاریخ پیگیری بعدی (تاریخ انتخابی کاربر؛ فقط تاریخ)
     /// </summary>
-    public DateTime? NextFollowUpDate { get; set; }
+    public DateOnly? NextFollowUpDate { get; set; }
 
     /// <summary>
     /// پاسخ/توضیحات مشتری
@@ -130,7 +130,7 @@ public class Invoice : TenantEntity
     public decimal SettlementDiscount { get; set; }
 
     // ============================================
-    // 🆕 Navigation
+    // Navigation
     // ============================================
     public ICollection<InvoiceItem> Items { get; set; } = new List<InvoiceItem>();
 
@@ -138,5 +138,4 @@ public class Invoice : TenantEntity
     /// تاریخچه‌ی تغییرات
     /// </summary>
     public ICollection<InvoiceHistory> Histories { get; set; } = new List<InvoiceHistory>();
-
 }

@@ -40,7 +40,7 @@ public class AccountFormViewModel
     public string? CardNumber { get; set; }
 
     [Display(Name = "شماره شبا")]
-    [MaxLength(30)]
+    [MaxLength(32)]
     public string? ShebaNumber { get; set; }
 
     // ---- مالی ----

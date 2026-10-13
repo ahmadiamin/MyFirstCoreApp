@@ -1,5 +1,7 @@
 ﻿@using DNTPersianUtils.Core
+@using MyFirstCoreApp.Application.Common.Utilities
 @model MyFirstCoreApp.Domain.Entities.Invoicing.Invoice
+@inject TimeProvider Clock
 @{
     ViewData["Title"] = $"مشاهده فاکتور شماره {Model.Number}";
 }
@@ -31,7 +33,7 @@
             </div>
             <div class="col-md-3">
                 <strong>تاریخ:</strong>
-                <span>@Model.Date.ToShortPersianDateString()</span>
+                <span>@PersianDate.Format(Model.Date)</span>
             </div>
             <div class="col-md-3">
                 <strong>نوع:</strong>
@@ -156,7 +158,7 @@
                     {
                         <tr>
                             <td class="persian-number">@hi</td>
-                            <td>@h.Date.ToShortPersianDateString()</td>
+                            <td>@PersianDate.Format(Clock.ToLocalDate(h.Date))</td>
                             <td>
                                 @if (h.FromStatus.HasValue)
                                 {
@@ -241,14 +243,11 @@
             // 🆕 فاکتور فروش/خرید
             if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft)
             {
-                <button type="button" class="btn btn-success post-details-btn" data-id="@Model.Id">
+                <button type="button" class="btn btn-success post-details-btn" data-id="@Model.Id" id="btnFinalizing">
                     <i class="fa fa-check"></i> قطعی کردن
                 </button>
                 <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-info">
                     <i class="fa fa-edit"></i> ویرایش
-                </a>
-                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
-                    <i class="fa fa-trash"></i> حذف
                 </a>
             }
             else if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
@@ -428,6 +427,38 @@
                     }
                 }
 
+            // ============================================
+            // دکمه قطعی
+            // ============================================
+            $('#btnFinalizing').on('click', function () {
+                const id = $(this).data('id');
+
+                ModalHelper.confirm(
+                    'آیا از قطعی کردن این فاکتور مطمئن هستید؟ سند حسابداری ساخته می‌شود.',
+                    function () {
+                        $.ajax({
+                            url: '/Invoicing/Invoices/Post',
+                            type: 'POST',
+                            data: {
+                                id: id,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function (r) {
+                                if (r.success) {
+                                    ModalHelper.success(r.message || 'فاکتور قطعی شد.', {
+                                        onClose: function () {
+                                                location.href = '/Invoicing/Invoices?invoiceType=' + '@((int)Model.InvoiceType)';
+                                        }
+                                    });
+                                } else {
+                                    ModalHelper.error(r.message);
+                                }
+                            }
+                        });
+                    },
+                    { title: 'قطعی کردن فاکتور', icon: 'fa-solid fa-circle-check', headerClass: 'bg-success text-white' }
+                );
+            });
             });
         </script>
     }

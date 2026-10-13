@@ -1627,8 +1627,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<DateTime?>("LastSentDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("NextFollowUpDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly?>("NextFollowUpDate")
+                        .HasColumnType("date");
 
                     b.Property<int>("Number")
                         .HasColumnType("int");

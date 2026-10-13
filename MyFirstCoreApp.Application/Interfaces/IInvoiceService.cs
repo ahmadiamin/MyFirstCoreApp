@@ -1,16 +1,33 @@
-﻿using MyFirstCoreApp.Domain.Entities.Invoicing;
+﻿using MyFirstCoreApp.Application.Invoicing;
+using MyFirstCoreApp.Domain.Entities.Invoicing;
+using MyFirstCoreApp.Domain.Enums;
 
 namespace MyFirstCoreApp.Application.Interfaces;
 
+/// <summary>
+/// همه‌ی متدها در صورت نقض قاعده‌ی کسب‌وکار InvalidOperationException با پیام فارسی می‌دهند.
+/// عملیات چندمرحله‌ای (ثبت با ساخت سریع طرف‌حساب/کالا، قطعی، برگشت، تبدیل، تسویه)
+/// داخل یک تراکنش دیتابیس اجرا می‌شوند.
+/// </summary>
 public interface IInvoiceService
 {
     // ============================================
     // CRUD
     // ============================================
 
-    Task<int> GetNextNumberAsync(int tenantId, Domain.Enums.InvoiceType invoiceType);
-    Task<Invoice> CreateAsync(Invoice invoice);
-    Task UpdateAsync(Invoice invoice);
+    /// <summary>شماره‌ی پیشنهادی (فقط نمایشی؛ شماره‌ی نهایی هنگام ثبت تعیین می‌شود).</summary>
+    Task<int> GetNextNumberAsync(int tenantId, InvoiceType invoiceType);
+
+    /// <summary>
+    /// ثبت فاکتور (پیش‌نویس). مبالغ و شماره سمت سرویس محاسبه می‌شود.
+    /// اگر طرف‌حساب/کالا «جدید» باشد، در همان تراکنش ساخته می‌شود؛ با خطا هیچ‌چیز باقی نمی‌ماند.
+    /// </summary>
+    Task<Invoice> CreateAsync(InvoiceRequest request, int tenantId);
+
+    /// <summary>ویرایش فاکتور پیش‌نویس (یا پیش‌فاکتور اصلاح‌شده). نوع فاکتور قابل تغییر نیست.</summary>
+    Task UpdateAsync(InvoiceRequest request, int tenantId);
+
+    /// <summary>حذف نرم فاکتور پیش‌نویس.</summary>
     Task DeleteAsync(int id, int tenantId);
 
     // ============================================
@@ -18,36 +35,28 @@ public interface IInvoiceService
     // ============================================
 
     Task PostAsync(int invoiceId, int tenantId);
+
+    /// <summary>برگشت به پیش‌نویس. اگر پرداخت یا تخفیف تسویه دارد، رد می‌شود.</summary>
     Task UnpostAsync(int invoiceId, int tenantId);
 
     // ============================================
-    // 🆕 گردش کار پیش‌فاکتور
+    // گردش کار پیش‌فاکتور
     // ============================================
 
-    /// <summary>ارسال به مشتری</summary>
     Task MarkAsSentAsync(int invoiceId, int tenantId);
-
-    /// <summary>اصلاح شده (باید دوباره ارسال بشه)</summary>
     Task MarkAsRevisedAsync(int invoiceId, int tenantId, string? description);
-
-    /// <summary>تایید مشتری</summary>
     Task MarkAsApprovedAsync(int invoiceId, int tenantId, string? description);
-
-    /// <summary>رد مشتری</summary>
     Task MarkAsRejectedAsync(int invoiceId, int tenantId, string? reason);
-
-    /// <summary>به تعویق افتاد</summary>
-    Task MarkAsPostponedAsync(int invoiceId, int tenantId, DateTime nextFollowUpDate, string? reason);
-
-    /// <summary>لغو شده</summary>
+    Task MarkAsPostponedAsync(int invoiceId, int tenantId, DateOnly nextFollowUpDate, string? reason);
     Task MarkAsCancelledAsync(int invoiceId, int tenantId, string? reason);
 
     // ============================================
-    // 🆕 تبدیل
+    // تبدیل و تسویه
     // ============================================
 
-    /// <summary>تبدیل پیش‌فاکتور به فاکتور فروش</summary>
+    /// <summary>تبدیل پیش‌فاکتور تاییدشده به فاکتور فروش (پیش‌نویس).</summary>
     Task<Invoice> ConvertToInvoiceAsync(int preInvoiceId, int tenantId);
-    /// <summary>تسویه فاکتور با تخفیف</summary>
+
+    /// <summary>تسویه با تخفیف (سند جداگانه می‌سازد؛ سند اصلی فاکتور دست نمی‌خورد).</summary>
     Task SettleWithDiscountAsync(int invoiceId, int tenantId, decimal discountAmount);
 }

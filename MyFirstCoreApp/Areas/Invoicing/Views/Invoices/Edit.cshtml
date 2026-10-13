@@ -70,10 +70,11 @@
                 const discount = parseFloat(toEnglishNumber($row.find('.discount-input').val()).replace(/,/g, '')) || 0;
                 const tax = parseFloat(toEnglishNumber($row.find('.tax-input').val()).replace(/,/g, '')) || 0;
 
-                const lineBase = qty * price;
-                const discountAmount = lineBase * (discount / 100);
+                const lineBase = Math.round(qty * price);
+                const discountAmount = Math.round(lineBase * discount / 100);
                 const afterDiscount = lineBase - discountAmount;
-                const taxAmount = afterDiscount * (tax / 100);
+                const taxAmount = Math.round(afterDiscount * tax / 100);
+
                 const lineTotal = afterDiscount + taxAmount;
 
                 $row.find('.line-total').val(formatNumberWithComma(lineTotal.toFixed(0)));

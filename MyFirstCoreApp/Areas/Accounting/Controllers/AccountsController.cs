@@ -105,7 +105,7 @@ public class AccountsController : Controller
             BankName = model.BankName?.Trim(),
             AccountNumber = model.AccountNumber?.Trim(),
             CardNumber = model.CardNumber?.Trim(),
-            ShebaNumber = model.ShebaNumber?.Trim(),
+            ShebaNumber = model.ShebaNumber?.Replace("IR","").Trim(),
             CurrentBalance = model.CurrentBalance,
             IsDefault = model.IsDefault,
             IsActive = model.IsActive
@@ -141,7 +141,7 @@ public class AccountsController : Controller
             BankName = entity.BankName,
             AccountNumber = entity.AccountNumber,
             CardNumber = entity.CardNumber,
-            ShebaNumber = entity.ShebaNumber,
+            ShebaNumber = entity.ShebaNumber?.Replace("IR", "").Trim(),
             CurrentBalance = entity.CurrentBalance,
             IsDefault = entity.IsDefault,
             IsActive = entity.IsActive,

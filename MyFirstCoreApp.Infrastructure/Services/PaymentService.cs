@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
@@ -12,6 +12,7 @@ namespace MyFirstCoreApp.Infrastructure.Services;
 /// <summary>
 /// قواعد این سرویس:
 ///  - هر عملیات چندمرحله‌ای (ثبت، قطعی، برگشت) داخل «یک تراکنش دیتابیس» است؛ یا همه انجام می‌شود یا هیچ.
+///    تداخل هم‌زمانی روی فاکتور (PaidAmount) به پیام فارسی تبدیل می‌شود.
 ///  - سند حسابداری فقط از مسیر ITransactionService ساخته/حذف می‌شود (اعتبارسنجی و شماره‌گذاری مرکزی).
 ///  - اعتبارسنجی هنگام ثبت، ویرایش و «دوباره هنگام قطعی شدن» اجرا می‌شود
 ///    (چون وضعیت فاکتورها بین ثبت پیش‌نویس و قطعی شدن ممکن است عوض شده باشد).
@@ -56,43 +57,43 @@ public class PaymentService : IPaymentService
     // ثبت
     // ============================================
 
-    public async Task<Payment> CreateAsync(Payment payment)
+    public Task<Payment> CreateAsync(Payment payment)
     {
-        await ValidateAsync(payment);
-
-        payment.Status = PaymentStatus.Draft;
-        payment.AllocatedAmount = payment.Allocations.Sum(a => a.Amount);
-        foreach (var allocation in payment.Allocations)
-            allocation.TenantId = payment.TenantId;
-
-        var autoNumber = payment.Number == 0;
-
-        await using var dbTransaction = await _context.Database.BeginTransactionAsync();
-
-        // Number = 0 یعنی خودکار؛ در تداخل هم‌زمان با شماره‌ی بعدی دوباره تلاش می‌شود
-        for (var attempt = 1; ; attempt++)
+        return _context.ExecuteInTransactionAsync(async () =>
         {
-            if (autoNumber)
-                payment.Number = await GetNextNumberAsync(payment.TenantId);
+            await ValidateAsync(payment);
 
-            _context.Payments.Add(payment);
+            payment.Status = PaymentStatus.Draft;
+            payment.AllocatedAmount = payment.Allocations.Sum(a => a.Amount);
+            foreach (var allocation in payment.Allocations)
+                allocation.TenantId = payment.TenantId;
 
-            try
+            var autoNumber = payment.Number == 0;
+
+            // Number = 0 یعنی خودکار؛ در تداخل هم‌زمان با شماره‌ی بعدی دوباره تلاش می‌شود
+            for (var attempt = 1; ; attempt++)
             {
-                await _context.SaveChangesAsync();
-                break;
-            }
-            catch (DbUpdateException ex) when (autoNumber && attempt < MaxNumberingAttempts && ex.IsDuplicateKey())
-            {
-                DetachNew(payment);
-            }
-        }
+                if (autoNumber)
+                    payment.Number = await GetNextNumberAsync(payment.TenantId);
 
-        AddHistory(payment, null, PaymentStatus.Draft, "ایجاد پرداخت");
-        await _context.SaveChangesAsync();
+                _context.Payments.Add(payment);
 
-        await dbTransaction.CommitAsync();
-        return payment;
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    break;
+                }
+                catch (DbUpdateException ex) when (autoNumber && attempt < MaxNumberingAttempts && ex.IsDuplicateKey())
+                {
+                    DetachNew(payment);
+                }
+            }
+
+            AddHistory(payment, null, PaymentStatus.Draft, "ایجاد پرداخت");
+            await _context.SaveChangesAsync();
+
+            return payment;
+        });
     }
 
     // ============================================
@@ -161,94 +162,94 @@ public class PaymentService : IPaymentService
     // قطعی
     // ============================================
 
-    public async Task PostAsync(int paymentId, int tenantId)
+    public Task PostAsync(int paymentId, int tenantId)
     {
-        await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+        return _context.ExecuteInTransactionAsync(async () =>
+        {
+            var payment = await LoadAsync(paymentId, tenantId);
 
-        var payment = await LoadAsync(paymentId, tenantId);
+            if (payment.Status == PaymentStatus.Posted)
+                throw new InvalidOperationException("پرداخت قبلاً قطعی شده است.");
 
-        if (payment.Status == PaymentStatus.Posted)
-            throw new InvalidOperationException("پرداخت قبلاً قطعی شده است.");
+            if (payment.Status == PaymentStatus.Cancelled)
+                throw new InvalidOperationException("پرداخت لغوشده قابل قطعی شدن نیست.");
 
-        if (payment.Status == PaymentStatus.Cancelled)
-            throw new InvalidOperationException("پرداخت لغوشده قابل قطعی شدن نیست.");
+            // وضعیت فاکتورها ممکن است بعد از ثبت پیش‌نویس عوض شده باشد
+            await ValidateAsync(payment);
 
-        // وضعیت فاکتورها ممکن است بعد از ثبت پیش‌نویس عوض شده باشد
-        await ValidateAsync(payment);
+            // ۱. اعمال تخصیص‌ها روی فاکتورها
+            // (PaidAmount توکن هم‌زمانی است؛ اگر کاربر دیگری هم‌زمان همین فاکتور را تغییر دهد،
+            //  ExecuteInTransactionAsync آن را به پیام فارسی تبدیل می‌کند و همه‌چیز برمی‌گردد.)
+            var invoiceIds = payment.Allocations.Select(a => a.InvoiceId).ToList();
+            var invoices = await _context.Invoices
+                .Where(i => invoiceIds.Contains(i.Id))
+                .ToDictionaryAsync(i => i.Id);
 
-        // ۱. اعمال تخصیص‌ها روی فاکتورها
-        var invoiceIds = payment.Allocations.Select(a => a.InvoiceId).ToList();
-        var invoices = await _context.Invoices
-            .Where(i => invoiceIds.Contains(i.Id))
-            .ToDictionaryAsync(i => i.Id);
+            foreach (var allocation in payment.Allocations)
+                invoices[allocation.InvoiceId].PaidAmount += allocation.Amount;
 
-        foreach (var allocation in payment.Allocations)
-            invoices[allocation.InvoiceId].PaidAmount += allocation.Amount;
+            // ۲. سند خودکار (از مسیر مرکزی، با اعتبارسنجی و شماره‌گذاری)
+            var transaction = await BuildTransactionAsync(payment, tenantId);
+            await _transactionService.CreateAsync(transaction);
 
-        // ۲. سند خودکار (از مسیر مرکزی، با اعتبارسنجی و شماره‌گذاری)
-        var transaction = await BuildTransactionAsync(payment, tenantId);
-        await _transactionService.CreateAsync(transaction);
+            payment.TransactionId = transaction.Id;
+            payment.Status = PaymentStatus.Posted;
 
-        payment.TransactionId = transaction.Id;
-        payment.Status = PaymentStatus.Posted;
-
-        AddHistory(payment, PaymentStatus.Draft, PaymentStatus.Posted, "قطعی شد");
-        await _context.SaveChangesAsync();
-
-        await dbTransaction.CommitAsync();
+            AddHistory(payment, PaymentStatus.Draft, PaymentStatus.Posted, "قطعی شد");
+            await _context.SaveChangesAsync();
+        });
     }
 
     // ============================================
     // برگشت به پیش‌نویس
     // ============================================
 
-    public async Task UnpostAsync(int paymentId, int tenantId)
+    public Task UnpostAsync(int paymentId, int tenantId)
     {
-        await using var dbTransaction = await _context.Database.BeginTransactionAsync();
-
-        var payment = await LoadAsync(paymentId, tenantId);
-
-        if (payment.Status != PaymentStatus.Posted)
-            throw new InvalidOperationException("پرداخت قطعی نیست.");
-
-        // ۱. برگشت تخصیص‌ها
-        var invoiceIds = payment.Allocations.Select(a => a.InvoiceId).ToList();
-        var invoices = await _context.Invoices
-            .Where(i => invoiceIds.Contains(i.Id))
-            .ToDictionaryAsync(i => i.Id);
-
-        foreach (var allocation in payment.Allocations)
+        return _context.ExecuteInTransactionAsync(async () =>
         {
-            if (!invoices.TryGetValue(allocation.InvoiceId, out var invoice))
-                continue;
+            var payment = await LoadAsync(paymentId, tenantId);
 
-            if (invoice.PaidAmount < allocation.Amount)
+            if (payment.Status != PaymentStatus.Posted)
+                throw new InvalidOperationException("پرداخت قطعی نیست.");
+
+            // ۱. برگشت تخصیص‌ها
+            var invoiceIds = payment.Allocations.Select(a => a.InvoiceId).ToList();
+            var invoices = await _context.Invoices
+                .Where(i => invoiceIds.Contains(i.Id))
+                .ToDictionaryAsync(i => i.Id);
+
+            foreach (var allocation in payment.Allocations)
             {
-                throw new InvalidOperationException(
-                    $"مبلغ پرداخت‌شده‌ی فاکتور {invoice.Number} با این تخصیص همخوانی ندارد؛ برگشت ممکن نیست.");
+                if (!invoices.TryGetValue(allocation.InvoiceId, out var invoice))
+                    continue;
+
+                if (invoice.PaidAmount < allocation.Amount)
+                {
+                    throw new InvalidOperationException(
+                        $"مبلغ پرداخت‌شده‌ی فاکتور {invoice.Number} با این تخصیص همخوانی ندارد؛ برگشت ممکن نیست.");
+                }
+
+                invoice.PaidAmount -= allocation.Amount;
             }
 
-            invoice.PaidAmount -= allocation.Amount;
-        }
+            // ۲. حذف سند خودکار
+            if (payment.TransactionId.HasValue)
+            {
+                var transactionId = payment.TransactionId.Value;
 
-        // ۲. حذف سند خودکار
-        if (payment.TransactionId.HasValue)
-        {
-            var transactionId = payment.TransactionId.Value;
+                var exists = await _context.Transactions.AnyAsync(t => t.Id == transactionId);
+                if (exists)
+                    await _transactionService.DeleteAsync(transactionId, tenantId);
 
-            var exists = await _context.Transactions.AnyAsync(t => t.Id == transactionId);
-            if (exists)
-                await _transactionService.DeleteAsync(transactionId, tenantId);
+                payment.TransactionId = null;
+            }
 
-            payment.TransactionId = null;
-        }
+            payment.Status = PaymentStatus.Draft;
 
-        payment.Status = PaymentStatus.Draft;
-
-        AddHistory(payment, PaymentStatus.Posted, PaymentStatus.Draft, "برگشت به پیش‌نویس");
-        await _context.SaveChangesAsync();
-
-        await dbTransaction.CommitAsync();
+            AddHistory(payment, PaymentStatus.Posted, PaymentStatus.Draft, "برگشت به پیش‌نویس");
+            await _context.SaveChangesAsync();
+        });
     }
 
     // ============================================
