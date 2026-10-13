@@ -96,11 +96,7 @@
                 {
                     field: 'date',
                     headerName: 'تاریخ',
-                    width: 110,
-                    valueFormatter: function (params) {
-                        if (!params.value) return '';
-                        return new Date(params.value).toLocaleDateString('fa-IR');
-                    }
+                    width: 110                    
                 },
                 {
                     field: 'paymentTypeName',

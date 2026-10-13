@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Domain.Entities.Accounting;
-using MyFirstCoreApp.Domain.Entities.Banking;
 using MyFirstCoreApp.Domain.Entities.Invoicing;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
@@ -319,7 +318,7 @@ public class InvoiceService : IInvoiceService
         {
             TenantId = tenantId,
             Number = await GetNextNumberAsync(tenantId, InvoiceType.Sale),
-            Date = DateTime.UtcNow,
+            Date = DateOnly.FromDateTime(DateTime.Now),
             InvoiceType = InvoiceType.Sale,
             ContactId = preInvoice.ContactId,
             Status = InvoiceStatus.Draft,
@@ -695,7 +694,7 @@ public class InvoiceService : IInvoiceService
         {
             TenantId = tenantId,
             Number = nextNumber,
-            Date = DateTime.UtcNow,
+            Date =  DateOnly.FromDateTime(DateTime.Now),
             Description = description,
             Reference = invoice.Number.ToString(),
             IsPosted = true,

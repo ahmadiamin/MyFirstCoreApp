@@ -137,19 +137,7 @@
                     }
 
                     // 🆕 تاریخ امن
-                    let displayDate = '—';
-                    try {
-                        if (inv.date) {
-                            const d = new Date(inv.date);
-                            if (!isNaN(d.getTime())) {
-                                displayDate = d.toLocaleDateString('fa-IR');
-                            } else {
-                                displayDate = inv.date;   // 🆕 اگه تاریخ ISO نبود، خودش رو نشون بده
-                            }
-                        }
-                    } catch (e) {
-                        displayDate = inv.date || '—';
-                    }
+                    const displayDate = inv.dateShamsi || '—';
 
                     html += '<tr class="allocation-row" data-invoice-id="' + inv.id + '">';
                     html += '  <td class="text-center">' + (idx + 1) + '</td>';

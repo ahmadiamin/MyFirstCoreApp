@@ -401,7 +401,7 @@ public class ChequeService : IChequeService
         {
             TenantId = tenantId,
             Number = nextNumber,   
-            Date = DateTime.UtcNow,
+            Date = DateOnly.FromDateTime(DateTime.Now),
             Description = transactionDescription,
             Reference = cheque.ChequeNumber,
             IsPosted = true,

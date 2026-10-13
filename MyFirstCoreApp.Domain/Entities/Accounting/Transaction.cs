@@ -13,9 +13,11 @@ public class Transaction : TenantEntity
     public int Number { get; set; }
 
     /// <summary>
-    /// تاریخ سند
+    /// تاریخ سند (فقط تاریخ، بدون ساعت و منطقه‌ی زمانی).
+    /// مقدار پیش‌فرض ندارد؛ سازنده‌ی سند باید صراحتاً تعیین کند
+    /// (مثلاً با TimeProvider.Today() یا تاریخ واردشده‌ی کاربر).
     /// </summary>
-    public DateTime Date { get; set; } = DateTime.UtcNow;
+    public DateOnly Date { get; set; }
 
     /// <summary>
     /// شرح کلی سند
@@ -52,6 +54,7 @@ public class Transaction : TenantEntity
     /// مجموع مبلغ سند (برای نمایش سریع)
     /// </summary>
     public decimal TotalAmount { get; set; }
+
     /// <summary>
     /// نوع مرجع (اگه سند خودکار باشه)
     /// مقادیر: "Invoice", "Cheque", "Payment", null (دستی)

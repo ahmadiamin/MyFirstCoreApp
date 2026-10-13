@@ -36,7 +36,7 @@ public class ContactReportLine
 {
     public int TransactionId { get; set; }
     public int TransactionNumber { get; set; }
-    public DateTime Date { get; set; }
+    public DateOnly Date { get; set; }
     public string DateShamsi { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Reference { get; set; }

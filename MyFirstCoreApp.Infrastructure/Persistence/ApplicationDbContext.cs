@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using System.Reflection;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Domain.Common;
 using MyFirstCoreApp.Domain.Entities.Accounting;
 using MyFirstCoreApp.Domain.Entities.Banking;
 using MyFirstCoreApp.Domain.Entities.Contacts;
@@ -12,27 +15,39 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
+        private readonly ICurrentTenant _currentTenant;
+
         public ApplicationDbContext(
-            DbContextOptions<ApplicationDbContext> options)
+            DbContextOptions<ApplicationDbContext> options,
+            ICurrentTenant currentTenant)
             : base(options)
         {
+            _currentTenant = currentTenant;
         }
-        // 🆕 Tenancy
+
+        /// <summary>
+        /// شرکت فعال. Query Filterها این پراپرتی را در هر کوئری می‌خوانند.
+        /// اگر null باشد (شرکت انتخاب نشده)، هیچ رکورد شرکت‌داری برگردانده نمی‌شود.
+        /// </summary>
+        public int? CurrentTenantId => _currentTenant.TenantId;
+
+        // Tenancy
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<UserTenant> UserTenants { get; set; }
-        // Accounting 🆕
+
+        // Accounting
         public DbSet<AccountCategory> AccountCategories { get; set; }
         public DbSet<Account> Accounts { get; set; }
         public DbSet<TransactionGroup> TransactionGroups { get; set; }
 
-        // 🆕 Transactions
+        // Transactions
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<TransactionLine> TransactionLines { get; set; }
 
-        // Contacts 🆕
+        // Contacts
         public DbSet<Contact> Contacts { get; set; }
 
-        // Inventory 🆕
+        // Inventory
         public DbSet<Unit> Units { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
         public DbSet<Product> Products { get; set; }
@@ -47,15 +62,26 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         // Banking
         public DbSet<Cheque> Cheques { get; set; }
         public DbSet<ChequeHistory> ChequeHistories { get; set; }
-        public DbSet<Payment> Payments { get; set; }                    
-        public DbSet<PaymentAllocation> PaymentAllocations { get; set; } 
-        public DbSet<PaymentHistory> PaymentHistories { get; set; }     
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<PaymentAllocation> PaymentAllocations { get; set; }
+        public DbSet<PaymentHistory> PaymentHistories { get; set; }
 
         // Identity (از قبلی‌ها)
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Menu> Menus { get; set; }
         public DbSet<UserProfileImage> UserProfileImages { get; set; }
+
+        /// <summary>
+        /// دسترسی به رکوردهای حذف‌شده‌ی نرم، فقط برای شرکت فعال.
+        /// به‌جای IgnoreQueryFilters() خام استفاده شود، چون IgnoreQueryFilters
+        /// فیلتر شرکت را هم برمی‌دارد و داده‌ی شرکت‌های دیگر را نشان می‌دهد.
+        /// </summary>
+        public IQueryable<TEntity> SetIncludingDeleted<TEntity>() where TEntity : TenantEntity
+            => Set<TEntity>()
+                .IgnoreQueryFilters()
+                .Where(e => e.TenantId == CurrentTenantId);
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -104,6 +130,56 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
                 .HasFilter("[IsPrimary] = 1")
                 .IsUnique();
 
+            // باید آخرین کار باشد تا روی همه‌ی کانفیگ‌ها غلبه کند
+            ApplyGlobalQueryFilters(builder);
+        }
+
+        // ---------------------------------------------------------------
+        // Global Query Filters
+        // ---------------------------------------------------------------
+
+        private void ApplyGlobalQueryFilters(ModelBuilder builder)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+            var tenantFilter = typeof(ApplicationDbContext)
+                .GetMethod(nameof(ApplyTenantFilter), flags)!;
+            var softDeleteFilter = typeof(ApplicationDbContext)
+                .GetMethod(nameof(ApplySoftDeleteFilter), flags)!;
+
+            foreach (var entityType in builder.Model.GetEntityTypes().ToList())
+            {
+                // فیلتر فقط روی ریشه‌ی سلسله‌مراتب تعریف می‌شود
+                if (entityType.BaseType != null || entityType.IsOwned())
+                    continue;
+
+                var clrType = entityType.ClrType;
+
+                if (typeof(TenantEntity).IsAssignableFrom(clrType))
+                {
+                    tenantFilter.MakeGenericMethod(clrType).Invoke(this, new object[] { builder });
+                }
+                else if (typeof(BaseEntity).IsAssignableFrom(clrType))
+                {
+                    softDeleteFilter.MakeGenericMethod(clrType).Invoke(this, new object[] { builder });
+                }
+            }
+        }
+
+        // این‌ها باید داخل خود DbContext باشند تا EF بتواند CurrentTenantId را
+        // برای هر نمونه‌ی Context جداگانه (و نه فقط اولین نمونه) ارزیابی کند.
+        // (با reflection صدا زده می‌شوند، پس "unused" نیستند.)
+
+        private void ApplyTenantFilter<TEntity>(ModelBuilder builder) where TEntity : TenantEntity
+        {
+            builder.Entity<TEntity>()
+                .HasQueryFilter(e => !e.IsDeleted && e.TenantId == CurrentTenantId);
+        }
+
+        private void ApplySoftDeleteFilter<TEntity>(ModelBuilder builder) where TEntity : BaseEntity
+        {
+            builder.Entity<TEntity>()
+                .HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }

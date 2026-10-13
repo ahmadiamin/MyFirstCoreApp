@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Models;
+using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Areas.Invoicing.ViewModels.Invoice;
 using MyFirstCoreApp.Domain.Entities.Contacts;
@@ -84,7 +85,7 @@ public class InvoicesController : Controller
             {
                 id = x.Id,
                 number = x.Number,
-                date = x.Date.ToString("yyyy-MM-ddTHH:mm:ss"),
+                date = x.Date.ToString("yyyy-MM-dd"),
                 invoiceType = (int)x.InvoiceType,
                 invoiceTypeName = x.InvoiceType == InvoiceType.Sale ? "فروش"
                                 : x.InvoiceType == InvoiceType.Purchase ? "خرید"
@@ -147,6 +148,9 @@ public class InvoicesController : Controller
     {
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
+        
+        if (!PersianDate.TryParse(model.Date, out var date))
+            ModelState.AddModelError(nameof(model.Date), "تاریخ نا معتبر است!");
 
         // 🆕 ۱. اول Contact
         if ((!model.ContactId.HasValue || model.ContactId.Value == 0)
@@ -273,7 +277,7 @@ public class InvoicesController : Controller
         {
             TenantId = tenantId.Value,
             Number = model.Number,
-            Date = ParsePersianDate(model.Date),
+            Date = date,
             InvoiceType = model.InvoiceType,
             ContactId = model.ContactId,
             Description = model.Description?.Trim(),
@@ -649,6 +653,9 @@ public class InvoicesController : Controller
 
         if (id != model.Id) return BadRequest();
 
+        if (!PersianDate.TryParse(model.Date, out var date))
+            ModelState.AddModelError(nameof(model.Date), "تاریخ نا معتبر است!");
+
         // 🆕 Contact جدید
         if ((!model.ContactId.HasValue || model.ContactId.Value == 0)
             && !string.IsNullOrWhiteSpace(model.ContactName))
@@ -773,7 +780,7 @@ public class InvoicesController : Controller
         _context.InvoiceItems.RemoveRange(entity.Items);
 
         // 🆕 به‌روزرسانی
-        entity.Date = ParsePersianDate(model.Date);
+        entity.Date = date;
         entity.InvoiceType = model.InvoiceType;
         entity.ContactId = model.ContactId;
         entity.Description = model.Description?.Trim();

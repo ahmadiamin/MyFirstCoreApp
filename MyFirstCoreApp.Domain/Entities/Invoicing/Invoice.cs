@@ -16,7 +16,7 @@ public class Invoice : TenantEntity
     /// <summary>
     /// تاریخ فاکتور
     /// </summary>
-    public DateTime Date { get; set; } = DateTime.UtcNow;
+    public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
 
     /// <summary>
     /// نوع فاکتور (فروش، خرید، پیش‌فاکتور)

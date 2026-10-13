@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Areas.Accounting.ViewModels.Report;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
-using System.Globalization;
 
 namespace MyFirstCoreApp.Areas.Accounting.Controllers;
 
@@ -14,18 +14,26 @@ namespace MyFirstCoreApp.Areas.Accounting.Controllers;
 [Authorize]
 public class ReportsController : Controller
 {
+    private const string InvalidRangeMessage = "تاریخ شروع یا پایان نامعتبر است. نمونه‌ی درست: 1405/01/10";
+
     private readonly ApplicationDbContext _context;
     private readonly ICurrentTenant _currentTenant;
+    private readonly TimeProvider _timeProvider;
 
     public ReportsController(
         ApplicationDbContext context,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        TimeProvider timeProvider)
     {
         _context = context;
         _currentTenant = currentTenant;
+        _timeProvider = timeProvider;
     }
 
-    // GET: /Accounting/Reports/Ledger
+    // ============================================
+    // گزارش معین
+    // ============================================
+
     // GET: /Accounting/Reports/Ledger
     [Authorize(Policy = "Report.Ledger")]
     public async Task<IActionResult> Ledger(
@@ -36,16 +44,9 @@ public class ReportsController : Controller
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
 
-        // 🆕 تاریخ پیش‌فرض (سال جاری شمسی)
-        var today = DateTime.Now;
-        var pc = new PersianCalendar();
-        var currentYear = pc.GetYear(today);
-        var currentMonth = pc.GetMonth(today);
-        var lastDayOfMonth = pc.GetDaysInMonth(currentYear, currentMonth);
-        var defaultFrom = $"{currentYear}/{currentMonth:00}/01";   // 🆕 ابتدای ماه
-        var defaultTo = $"{currentYear}/{currentMonth:00}/{lastDayOfMonth:00}";   // انتهای ماه
+        // پیش‌فرض: ماه جاری شمسی
+        var (defaultFrom, defaultTo) = CurrentMonthRange();
 
-        // 🆕 ساخت model (همیشه)
         var model = new LedgerReportViewModel
         {
             AccountId = accountId,
@@ -54,17 +55,14 @@ public class ReportsController : Controller
             AccountOptions = await GetAccountOptionsAsync()
         };
 
-        // 🆕 اگه حساب انتخاب نشده
         if (!accountId.HasValue)
         {
             if (Request.Query.ContainsKey("accountId"))
-            {
                 TempData["Error"] = "لطفاً یک حساب را انتخاب کنید.";
-            }
+
             return View(model);
         }
 
-        // اطلاعات حساب
         var account = await _context.Accounts
             .FirstOrDefaultAsync(a => a.Id == accountId.Value && a.TenantId == tenantId.Value);
 
@@ -73,51 +71,29 @@ public class ReportsController : Controller
         model.AccountName = account.Name;
         model.AccountCode = account.Code;
 
-        // تبدیل تاریخ‌ها
-        var from = ParsePersianDate(model.FromDate);
-        var to = ParsePersianDate(model.ToDate);
-
-        // دیباگ
-        System.Diagnostics.Debug.WriteLine($"FromDate: '{model.FromDate}' → {from}");
-        System.Diagnostics.Debug.WriteLine($"ToDate: '{model.ToDate}' → {to}");
+        if (!TryParseRange(model.FromDate, model.ToDate, out var from, out var to))
+            return View(model);
 
         // مانده اول دوره
-        if (from.HasValue)
-        {
-            var openingDebit = await _context.TransactionLines
-                .Where(l => l.TenantId == tenantId.Value
-                         && l.AccountId == accountId.Value
-                         && !l.IsDeleted
-                         && l.Transaction.IsPosted
-                         && l.Transaction.Date < from.Value)
-                .SumAsync(l => (decimal?)l.Debit) ?? 0;
-
-            var openingCredit = await _context.TransactionLines
-                .Where(l => l.TenantId == tenantId.Value
-                         && l.AccountId == accountId.Value
-                         && !l.IsDeleted
-                         && l.Transaction.IsPosted
-                         && l.Transaction.Date < from.Value)
-                .SumAsync(l => (decimal?)l.Credit) ?? 0;
-
-            model.OpeningBalance = openingDebit - openingCredit;
-        }
-
-        // تراکنش‌ها
-        var query = _context.TransactionLines
-            .Include(l => l.Transaction)
+        var openingQuery = _context.TransactionLines
             .Where(l => l.TenantId == tenantId.Value
                      && l.AccountId == accountId.Value
                      && !l.IsDeleted
-                     && l.Transaction.IsPosted);
+                     && l.Transaction.IsPosted
+                     && l.Transaction.Date < from);
 
-        if (from.HasValue)
-            query = query.Where(l => l.Transaction.Date >= from.Value);
+        var openingDebit = await openingQuery.SumAsync(l => (decimal?)l.Debit) ?? 0;
+        var openingCredit = await openingQuery.SumAsync(l => (decimal?)l.Credit) ?? 0;
+        model.OpeningBalance = openingDebit - openingCredit;
 
-        if (to.HasValue)
-            query = query.Where(l => l.Transaction.Date <= to.Value);
-
-        var lines = await query
+        // تراکنش‌های بازه (هر دو سر بازه شامل می‌شوند)
+        var lines = await _context.TransactionLines
+            .Where(l => l.TenantId == tenantId.Value
+                     && l.AccountId == accountId.Value
+                     && !l.IsDeleted
+                     && l.Transaction.IsPosted
+                     && l.Transaction.Date >= from
+                     && l.Transaction.Date <= to)
             .OrderBy(l => l.Transaction.Date)
             .ThenBy(l => l.Transaction.Number)
             .ThenBy(l => l.LineNumber)
@@ -133,13 +109,12 @@ public class ReportsController : Controller
             })
             .ToListAsync();
 
-        // محاسبه مانده تجمعی
         var runningBalance = model.OpeningBalance;
         foreach (var line in lines)
         {
             runningBalance += line.Debit - line.Credit;
             line.RunningBalance = runningBalance;
-            line.DateShamsi = ToPersianDateString(line.Date);
+            line.DateShamsi = PersianDate.Format(line.Date);
         }
 
         model.Lines = lines;
@@ -149,6 +124,10 @@ public class ReportsController : Controller
 
         return View(model);
     }
+
+    // ============================================
+    // گزارش تفصیلی
+    // ============================================
 
     // GET: /Accounting/Reports/Detailed
     [Authorize(Policy = "Report.Ledger")]
@@ -162,15 +141,8 @@ public class ReportsController : Controller
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
 
-        // 🆕 تاریخ پیش‌فرض
-        var today = DateTime.Now;
-        var pc = new PersianCalendar();
-        var currentYear = pc.GetYear(today);
-        var currentMonth = pc.GetMonth(today);
-        var lastDayOfMonth = pc.GetDaysInMonth(currentYear, currentMonth);
-
-        var defaultFrom = $"{currentYear}/01/01";
-        var defaultTo = $"{currentYear}/{currentMonth:00}/{lastDayOfMonth:00}";
+        // پیش‌فرض: ابتدای سال شمسی تا پایان ماه جاری
+        var (defaultFrom, defaultTo) = YearToDateRange();
 
         var model = new DetailedReportViewModel
         {
@@ -186,9 +158,8 @@ public class ReportsController : Controller
         if (!accountId.HasValue)
         {
             if (Request.Query.ContainsKey("accountId"))
-            {
                 TempData["Error"] = "لطفاً یک حساب را انتخاب کنید.";
-            }
+
             return View(model);
         }
 
@@ -202,44 +173,32 @@ public class ReportsController : Controller
         model.AccountCode = account.Code;
         model.AccountTypeName = GetAccountTypeName(account.AccountType);
 
-        // 🆕 تبدیل تاریخ
-        var from = ParsePersianDate(model.FromDate);
-        var to = ParsePersianDate(model.ToDate);
+        if (!TryParseRange(model.FromDate, model.ToDate, out var from, out var to))
+            return View(model);
 
-        // 🆕 مانده اول دوره
-        if (from.HasValue)
-        {
-            var openingQuery = _context.TransactionLines
-                .Include(l => l.Transaction)
-                .Where(l => l.TenantId == tenantId.Value
-                         && l.AccountId == accountId.Value
-                         && !l.IsDeleted
-                         && !l.Transaction.IsDeleted
-                         && l.Transaction.Date < from.Value);
-
-            if (onlyPosted)
-                openingQuery = openingQuery.Where(l => l.Transaction.IsPosted);
-
-            var openingDebit = await openingQuery.SumAsync(l => (decimal?)l.Debit) ?? 0;
-            var openingCredit = await openingQuery.SumAsync(l => (decimal?)l.Credit) ?? 0;
-
-            model.OpeningBalance = openingDebit - openingCredit;
-        }
-
-        // 🆕 خطوط
-        var query = _context.TransactionLines
-            .Include(l => l.Transaction)
-            .Include(l => l.Contact)
+        // مانده اول دوره
+        var openingQuery = _context.TransactionLines
             .Where(l => l.TenantId == tenantId.Value
                      && l.AccountId == accountId.Value
                      && !l.IsDeleted
-                     && !l.Transaction.IsDeleted);
+                     && !l.Transaction.IsDeleted
+                     && l.Transaction.Date < from);
 
-        if (from.HasValue)
-            query = query.Where(l => l.Transaction.Date >= from.Value);
+        if (onlyPosted)
+            openingQuery = openingQuery.Where(l => l.Transaction.IsPosted);
 
-        if (to.HasValue)
-            query = query.Where(l => l.Transaction.Date <= to.Value);
+        var openingDebit = await openingQuery.SumAsync(l => (decimal?)l.Debit) ?? 0;
+        var openingCredit = await openingQuery.SumAsync(l => (decimal?)l.Credit) ?? 0;
+        model.OpeningBalance = openingDebit - openingCredit;
+
+        // خطوط بازه
+        var query = _context.TransactionLines
+            .Where(l => l.TenantId == tenantId.Value
+                     && l.AccountId == accountId.Value
+                     && !l.IsDeleted
+                     && !l.Transaction.IsDeleted
+                     && l.Transaction.Date >= from
+                     && l.Transaction.Date <= to);
 
         if (contactId.HasValue)
             query = query.Where(l => l.ContactId == contactId.Value);
@@ -266,13 +225,12 @@ public class ReportsController : Controller
             })
             .ToListAsync();
 
-        // 🆕 محاسبه مانده
         var runningBalance = model.OpeningBalance;
         foreach (var line in lines)
         {
             runningBalance += line.Debit - line.Credit;
             line.RunningBalance = runningBalance;
-            line.DateShamsi = ToPersianDateString(line.Date);
+            line.DateShamsi = PersianDate.Format(line.Date);
         }
 
         model.Lines = lines;
@@ -283,39 +241,10 @@ public class ReportsController : Controller
         return View(model);
     }
 
-    // ---------- Helpers ----------
+    // ============================================
+    // گزارش طرف حساب
+    // ============================================
 
-    private async Task<List<SelectListItem>> GetContactOptionsAsync()
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return new();
-
-        return await _context.Contacts
-            .Where(c => c.TenantId == tenantId.Value && c.IsActive)
-            .OrderBy(c => c.Name)
-            .Select(c => new SelectListItem
-            {
-                Value = c.Id.ToString(),
-                Text = c.Name
-            })
-            .ToListAsync();
-    }
-
-    private string GetAccountTypeName(AccountType type)
-    {
-        return type switch
-        {
-            AccountType.Bank => "بانکی",
-            AccountType.Cash => "نقدی",
-            AccountType.Receivable => "دریافتنی",
-            AccountType.Payable => "پرداختنی",
-            AccountType.Capital => "سرمایه",
-            AccountType.Income => "درآمد",
-            AccountType.Expense => "هزینه",
-            AccountType.Contra => "واسط",
-            _ => "-"
-        };
-    }
     // GET: /Accounting/Reports/Contact
     [Authorize(Policy = "Report.Ledger")]
     public async Task<IActionResult> Contact(
@@ -327,15 +256,7 @@ public class ReportsController : Controller
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
 
-        // تاریخ پیش‌فرض
-        var today = DateTime.Now;
-        var pc = new PersianCalendar();
-        var currentYear = pc.GetYear(today);
-        var currentMonth = pc.GetMonth(today);
-        var lastDayOfMonth = pc.GetDaysInMonth(currentYear, currentMonth);
-
-        var defaultFrom = $"{currentYear}/01/01";
-        var defaultTo = $"{currentYear}/{currentMonth:00}/{lastDayOfMonth:00}";
+        var (defaultFrom, defaultTo) = YearToDateRange();
 
         var model = new ContactReportViewModel
         {
@@ -349,9 +270,8 @@ public class ReportsController : Controller
         if (!contactId.HasValue)
         {
             if (Request.Query.ContainsKey("contactId"))
-            {
                 TempData["Error"] = "لطفاً یک طرف حساب را انتخاب کنید.";
-            }
+
             return View(model);
         }
 
@@ -373,44 +293,32 @@ public class ReportsController : Controller
             _ => "-"
         };
 
-        // تبدیل تاریخ‌ها
-        var from = ParsePersianDate(model.FromDate);
-        var to = ParsePersianDate(model.ToDate);
+        if (!TryParseRange(model.FromDate, model.ToDate, out var from, out var to))
+            return View(model);
 
-        // 🆕 مانده اول دوره
-        if (from.HasValue)
-        {
-            var openingQuery = _context.TransactionLines
-                .Include(l => l.Transaction)
-                .Where(l => l.TenantId == tenantId.Value
-                         && l.ContactId == contactId.Value
-                         && !l.IsDeleted
-                         && !l.Transaction.IsDeleted
-                         && l.Transaction.Date < from.Value);
-
-            if (onlyPosted)
-                openingQuery = openingQuery.Where(l => l.Transaction.IsPosted);
-
-            var openingDebit = await openingQuery.SumAsync(l => (decimal?)l.Debit) ?? 0;
-            var openingCredit = await openingQuery.SumAsync(l => (decimal?)l.Credit) ?? 0;
-
-            model.OpeningBalance = openingDebit - openingCredit;
-        }
-
-        // 🆕 خطوط
-        var query = _context.TransactionLines
-            .Include(l => l.Transaction)
-            .Include(l => l.Account)
+        // مانده اول دوره
+        var openingQuery = _context.TransactionLines
             .Where(l => l.TenantId == tenantId.Value
                      && l.ContactId == contactId.Value
                      && !l.IsDeleted
-                     && !l.Transaction.IsDeleted);
+                     && !l.Transaction.IsDeleted
+                     && l.Transaction.Date < from);
 
-        if (from.HasValue)
-            query = query.Where(l => l.Transaction.Date >= from.Value);
+        if (onlyPosted)
+            openingQuery = openingQuery.Where(l => l.Transaction.IsPosted);
 
-        if (to.HasValue)
-            query = query.Where(l => l.Transaction.Date <= to.Value);
+        var openingDebit = await openingQuery.SumAsync(l => (decimal?)l.Debit) ?? 0;
+        var openingCredit = await openingQuery.SumAsync(l => (decimal?)l.Credit) ?? 0;
+        model.OpeningBalance = openingDebit - openingCredit;
+
+        // خطوط بازه
+        var query = _context.TransactionLines
+            .Where(l => l.TenantId == tenantId.Value
+                     && l.ContactId == contactId.Value
+                     && !l.IsDeleted
+                     && !l.Transaction.IsDeleted
+                     && l.Transaction.Date >= from
+                     && l.Transaction.Date <= to);
 
         if (onlyPosted)
             query = query.Where(l => l.Transaction.IsPosted);
@@ -434,13 +342,12 @@ public class ReportsController : Controller
             })
             .ToListAsync();
 
-        // محاسبه مانده تجمعی
         var runningBalance = model.OpeningBalance;
         foreach (var line in lines)
         {
             runningBalance += line.Debit - line.Credit;
             line.RunningBalance = runningBalance;
-            line.DateShamsi = ToPersianDateString(line.Date);
+            line.DateShamsi = PersianDate.Format(line.Date);
         }
 
         model.Lines = lines;
@@ -450,7 +357,64 @@ public class ReportsController : Controller
 
         return View(model);
     }
-    // ---------- Helpers ----------
+
+    // ============================================
+    // Helpers
+    // ============================================
+
+    /// <summary>
+    /// تاریخ نامعتبر دیگر بی‌صدا نادیده گرفته نمی‌شود (قبلاً گزارش بدون محدودیت تاریخ می‌ساخت
+    /// و کاربر متوجه نمی‌شد). پیام خطا در TempData قرار می‌گیرد.
+    /// </summary>
+    private bool TryParseRange(string? fromText, string? toText, out DateOnly from, out DateOnly to)
+    {
+        var fromOk = PersianDate.TryParse(fromText, out from);
+        var toOk = PersianDate.TryParse(toText, out to);
+
+        if (!fromOk || !toOk)
+        {
+            TempData["Error"] = InvalidRangeMessage;
+            return false;
+        }
+
+        if (from > to)
+        {
+            TempData["Error"] = "تاریخ شروع نباید بعد از تاریخ پایان باشد.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private (string From, string To) CurrentMonthRange()
+    {
+        var today = _timeProvider.Today();
+        return (PersianDate.Format(PersianDate.StartOfMonth(today)),
+                PersianDate.Format(PersianDate.EndOfMonth(today)));
+    }
+
+    private (string From, string To) YearToDateRange()
+    {
+        var today = _timeProvider.Today();
+        return (PersianDate.Format(PersianDate.StartOfYear(today)),
+                PersianDate.Format(PersianDate.EndOfMonth(today)));
+    }
+
+    private static string GetAccountTypeName(AccountType type)
+    {
+        return type switch
+        {
+            AccountType.Bank => "بانکی",
+            AccountType.Cash => "نقدی",
+            AccountType.Receivable => "دریافتنی",
+            AccountType.Payable => "پرداختنی",
+            AccountType.Capital => "سرمایه",
+            AccountType.Income => "درآمد",
+            AccountType.Expense => "هزینه",
+            AccountType.Contra => "واسط",
+            _ => "-"
+        };
+    }
 
     private async Task<List<SelectListItem>> GetAccountOptionsAsync()
     {
@@ -468,47 +432,19 @@ public class ReportsController : Controller
             .ToListAsync();
     }
 
-    private DateTime? ParsePersianDate(string? persianDate)
+    private async Task<List<SelectListItem>> GetContactOptionsAsync()
     {
-        if (string.IsNullOrWhiteSpace(persianDate))
-            return null;
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return new();
 
-        try
-        {
-            persianDate = ToEnglishNumber(persianDate);
-            var parts = persianDate.Split('/', '-');
-            if (parts.Length != 3) return null;
-
-            var year = int.Parse(parts[0]);
-            var month = int.Parse(parts[1]);
-            var day = int.Parse(parts[2]);
-
-            var pc = new PersianCalendar();
-            return pc.ToDateTime(year, month, day, 0, 0, 0, 0);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private string ToPersianDateString(DateTime date)
-    {
-        var pc = new PersianCalendar();
-        return $"{pc.GetYear(date):0000}/{pc.GetMonth(date):00}/{pc.GetDayOfMonth(date):00}";
-    }
-
-    private string ToEnglishNumber(string input)
-    {
-        if (string.IsNullOrEmpty(input)) return input;
-        return input
-            .Replace("۰", "0").Replace("۱", "1").Replace("۲", "2")
-            .Replace("۳", "3").Replace("۴", "4").Replace("۵", "5")
-            .Replace("۶", "6").Replace("۷", "7").Replace("۸", "8")
-            .Replace("۹", "9")
-            .Replace("٠", "0").Replace("١", "1").Replace("٢", "2")
-            .Replace("٣", "3").Replace("٤", "4").Replace("٥", "5")
-            .Replace("٦", "6").Replace("٧", "7").Replace("٨", "8")
-            .Replace("٩", "9");
+        return await _context.Contacts
+            .Where(c => c.TenantId == tenantId.Value && c.IsActive)
+            .OrderBy(c => c.Name)
+            .Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.Name
+            })
+            .ToListAsync();
     }
 }

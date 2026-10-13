@@ -21,8 +21,11 @@ public class Payment : TenantEntity
     /// <summary>وضعیت</summary>
     public PaymentStatus Status { get; set; } = PaymentStatus.Draft;
 
-    /// <summary>تاریخ</summary>
-    public DateTime Date { get; set; } = DateTime.UtcNow;
+    /// <summary>
+    /// تاریخ (فقط تاریخ). مقدار پیش‌فرض ندارد؛ سازنده باید صراحتاً تعیین کند.
+    /// (پیش‌فرض قبلی DateTime.Now به ساعت سرور میزبان وابسته بود.)
+    /// </summary>
+    public DateOnly Date { get; set; }
 
     // ============================================
     // طرف حساب

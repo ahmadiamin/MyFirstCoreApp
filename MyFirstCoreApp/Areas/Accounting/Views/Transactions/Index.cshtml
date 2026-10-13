@@ -70,16 +70,7 @@
             const columnDefs = [
                 AgGridHelper.rowNumberColumn(),
                 AgGridHelper.numberColumn('number', 'شماره', 90),
-                {
-                    field: 'date',
-                    headerName: 'تاریخ',
-                    width: 110,
-                    valueFormatter: function (params) {
-                        if (!params.value) return '';
-                        const d = new Date(params.value);
-                        return d.toLocaleDateString('fa-IR');
-                    }
-                },
+                { field: 'date', headerName: 'تاریخ', width: 110 },
                 { field: 'description', headerName: 'شرح', flex: 2, minWidth: 200 },
                 { field: 'groupName', headerName: 'گروه', width: 130 },
                 { field: 'reference', headerName: 'مرجع', width: 120 },

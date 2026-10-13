@@ -138,7 +138,7 @@
                     html += '  <td>فاکتور شماره ' + inv.number;
                     html += '    <input type="hidden" name="Allocations[' + idx + '].InvoiceId" value="' + inv.id + '" />';
                     html += '  </td>';
-                    html += '  <td>' + new Date(inv.date).toLocaleDateString('fa-IR') + '</td>';
+                    html += '  <td>' + (inv.dateShamsi || '—') + '</td>';
                     html += '  <td class="persian-number-comma">' + Number(inv.total).toLocaleString('en-US') + '</td>';
                     html += '  <td class="persian-number-comma text-warning">' + Number(inv.remaining).toLocaleString('en-US') + '</td>';
                     html += '  <td><input type="text" name="Allocations[' + idx + '].Amount" class="form-control form-control-sm allocation-amount persian-number persian-number-comma" data-remaining="' + inv.remaining + '" value="' + (allocate > 0 ? formatNumberWithComma(allocate.toString()) : '0') + '" /></td>';

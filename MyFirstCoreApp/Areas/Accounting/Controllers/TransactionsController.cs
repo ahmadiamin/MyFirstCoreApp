@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Models;
+using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Areas.Accounting.ViewModels.Transaction;
 using MyFirstCoreApp.Domain.Entities.Accounting;
@@ -15,19 +16,28 @@ namespace MyFirstCoreApp.Areas.Accounting.Controllers;
 [Authorize]
 public class TransactionsController : Controller
 {
+    private const int MaxPageSize = 200;
+
     private readonly ApplicationDbContext _context;
     private readonly ICurrentTenant _currentTenant;
     private readonly ITransactionService _transactionService;
+    private readonly TimeProvider _timeProvider;
 
     public TransactionsController(
         ApplicationDbContext context,
         ICurrentTenant currentTenant,
-        ITransactionService transactionService)
+        ITransactionService transactionService,
+        TimeProvider timeProvider)
     {
         _context = context;
         _currentTenant = currentTenant;
         _transactionService = transactionService;
+        _timeProvider = timeProvider;
     }
+
+    // ============================================
+    // لیست
+    // ============================================
 
     // GET: /Accounting/Transactions
     [Authorize(Policy = "Transaction.View")]
@@ -46,7 +56,8 @@ public class TransactionsController : Controller
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var s = request.Search.Trim();
+            // کاربر ممکن است عدد را با ارقام فارسی تایپ کند
+            var s = PersianDate.NormalizeDigits(request.Search.Trim());
             query = query.Where(x =>
                 (x.Description != null && x.Description.Contains(s)) ||
                 (x.Reference != null && x.Reference.Contains(s)) ||
@@ -63,48 +74,75 @@ public class TransactionsController : Controller
             _ => query.OrderByDescending(x => x.Date).ThenByDescending(x => x.Number)
         };
 
-        var items = await query
-            .Skip(request.StartRow)
-            .Take(request.EndRow - request.StartRow)
+        // سقف اندازه‌ی صفحه (جلوگیری از درخواست میلیونی)
+        var startRow = Math.Max(request.StartRow, 0);
+        var pageSize = Math.Clamp(request.EndRow - request.StartRow, 1, MaxPageSize);
+
+        var rows = await query
+            .Skip(startRow)
+            .Take(pageSize)
             .Select(x => new
             {
-                id = x.Id,
-                number = x.Number,
-                date = x.Date.ToString("yyyy-MM-ddTHH:mm:ss"),
-                description = x.Description,
-                groupName = x.TransactionGroup != null ? x.TransactionGroup.Name : null,
-                reference = x.Reference,
-                totalAmount = x.TotalAmount,
-                isPosted = x.IsPosted,
-                referenceType = x.ReferenceType,          
-                referenceId = x.ReferenceId,              
+                x.Id,
+                x.Number,
+                x.Date,
+                x.Description,
+                GroupName = x.TransactionGroup != null ? x.TransactionGroup.Name : null,
+                x.Reference,
+                x.TotalAmount,
+                x.IsPosted,
+                x.ReferenceType,
+                x.ReferenceId
             })
             .ToListAsync();
 
+        // تبدیل تاریخ به شمسی سمت سرور (تکیه بر تنظیمات مرورگر/منطقه‌ی زمانی کاربر نیست)
+        var items = rows.Select(x => new
+        {
+            id = x.Id,
+            number = x.Number,
+            date = PersianDate.Format(x.Date),
+            description = x.Description,
+            groupName = x.GroupName,
+            reference = x.Reference,
+            totalAmount = x.TotalAmount,
+            isPosted = x.IsPosted,
+            referenceType = x.ReferenceType,
+            referenceId = x.ReferenceId
+        });
+
         return Json(new { success = true, rows = items, lastRow = total });
     }
+
+    // ============================================
+    // ثبت
+    // ============================================
 
     // GET: /Accounting/Transactions/Create
     [Authorize(Policy = "Transaction.Create")]
     public async Task<IActionResult> Create()
     {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
         var accountOptions = await GetAccountOptionsAsync();
         var contactOptions = await GetContactOptionsAsync();
-        var groupOptions = await GetTransactionGroupOptionsAsync();
 
         var model = new TransactionFormViewModel
         {
-            Number = await _transactionService.GetNextNumberAsync(_currentTenant.TenantId ?? 0),
-            Date = DateTime.Now.ToString("yyyy/MM/dd"),
+            // فقط نمایشی؛ شماره‌ی نهایی هنگام ذخیره تعیین می‌شود
+            Number = await _transactionService.GetNextNumberAsync(tenantId.Value),
+            Date = PersianDate.Format(_timeProvider.Today()),
             AccountOptions = accountOptions,
             ContactOptions = contactOptions,
-            TransactionGroupOptions = groupOptions,
+            TransactionGroupOptions = await GetTransactionGroupOptionsAsync(),
             Lines = new List<TransactionLineViewModel>
-        {
-            new() { AccountOptions = accountOptions, ContactOptions = contactOptions ,Credit = 0, Debit = 0 },
-            new() { AccountOptions = accountOptions, ContactOptions = contactOptions ,Credit = 0, Debit = 0 }
-        }
+            {
+                new() { AccountOptions = accountOptions, ContactOptions = contactOptions, Credit = 0, Debit = 0 },
+                new() { AccountOptions = accountOptions, ContactOptions = contactOptions, Credit = 0, Debit = 0 }
+            }
         };
+
         return View(model);
     }
 
@@ -117,65 +155,21 @@ public class TransactionsController : Controller
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
 
-        // چک خطوط
-        var validLines = model.Lines
-            .Where(l => l.AccountId > 0 && (l.Debit > 0 || l.Credit > 0))
-            .ToList();
-
-        if (validLines.Count < 2)
-        {
-            ModelState.AddModelError("", "حداقل ۲ خط با حساب و مبلغ لازم است.");
-        }
-
-        // چک مجموع
-        var totalDebit = validLines.Sum(l => l.Debit ?? 0);
-        var totalCredit = validLines.Sum(l => l.Credit ?? 0);
-
-        if (totalDebit != totalCredit)
-        {
-            ModelState.AddModelError("", $"مجموع بدهکار ({totalDebit:N0}) با مجموع بستانکار ({totalCredit:N0}) برابر نیست.");
-        }
+        if (!PersianDate.TryParse(model.Date, out var date))
+            ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
 
         if (!ModelState.IsValid)
-        {
-            var accountOptions = await GetAccountOptionsAsync();
-            var contactOptions = await GetContactOptionsAsync();
-            var groupOptions = await GetTransactionGroupOptionsAsync();
-
-            model.AccountOptions = accountOptions;
-            model.ContactOptions = contactOptions;
-            model.TransactionGroupOptions = groupOptions;
-
-            // 🆕 پر کردن Options هر خط
-            foreach (var line in model.Lines)
-            {
-                line.AccountOptions = accountOptions;
-                line.ContactOptions = contactOptions;
-            }
-
-            return View(model);
-        }
-
-        // تبدیل تاریخ شمسی به میلادی
-        var date = ParsePersianDate(model.Date);
+            return await ReturnFormAsync(model);
 
         var transaction = new Transaction
         {
             TenantId = tenantId.Value,
-            Number = model.Number,
+            Number = 0, // خودکار
             Date = date,
             Description = model.Description?.Trim(),
             TransactionGroupId = model.TransactionGroupId,
             Reference = model.Reference?.Trim(),
-            Lines = validLines.Select(l => new TransactionLine
-            {
-                TenantId = tenantId.Value,
-                AccountId = l.AccountId,
-                ContactId = l.ContactId,
-                Debit = l.Debit ?? 0,
-                Credit = l.Credit ?? 0,
-                Description = l.Description?.Trim()
-            }).ToList()
+            Lines = BuildLines(model, tenantId.Value)
         };
 
         try
@@ -184,17 +178,248 @@ public class TransactionsController : Controller
             TempData["Success"] = $"سند شماره {transaction.Number} با موفقیت ثبت شد.";
             return RedirectToAction(nameof(Index));
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             ModelState.AddModelError("", ex.Message);
-            model.AccountOptions = await GetAccountOptionsAsync();
-            model.ContactOptions = await GetContactOptionsAsync();
-            model.TransactionGroupOptions = await GetTransactionGroupOptionsAsync();
-            return View(model);
+            return await ReturnFormAsync(model);
         }
     }
 
-    // ---------- Helpers ----------
+    // ============================================
+    // ویرایش
+    // ============================================
+
+    // GET: /Accounting/Transactions/Edit/5
+    [Authorize(Policy = "Transaction.Edit")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _transactionService.GetByIdAsync(id, tenantId.Value);
+        if (entity == null) return NotFound();
+
+        if (!string.IsNullOrEmpty(entity.ReferenceType))
+        {
+            TempData["Error"] = "این سند خودکار است و از صفحه‌ی مربوطه باید مدیریت شود.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (entity.IsPosted)
+        {
+            TempData["Error"] = "سند قطعی قابل ویرایش نیست.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var accountOptions = await GetAccountOptionsAsync();
+        var contactOptions = await GetContactOptionsAsync();
+
+        var model = new TransactionFormViewModel
+        {
+            Id = entity.Id,
+            Number = entity.Number,
+            Date = PersianDate.Format(entity.Date),
+            Description = entity.Description,
+            TransactionGroupId = entity.TransactionGroupId,
+            Reference = entity.Reference,
+            AttachmentPath = entity.AttachmentPath,
+            AccountOptions = accountOptions,
+            ContactOptions = contactOptions,
+            TransactionGroupOptions = await GetTransactionGroupOptionsAsync(),
+            Lines = entity.Lines
+                .OrderBy(l => l.LineNumber)
+                .Select(l => new TransactionLineViewModel
+                {
+                    Id = l.Id,
+                    AccountId = l.AccountId,
+                    ContactId = l.ContactId,
+                    Debit = l.Debit,
+                    Credit = l.Credit,
+                    Description = l.Description,
+                    AccountOptions = accountOptions,
+                    ContactOptions = contactOptions
+                })
+                .ToList()
+        };
+
+        return View(model);
+    }
+
+    // POST: /Accounting/Transactions/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Transaction.Edit")]
+    public async Task<IActionResult> Edit(int id, TransactionFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        if (id != model.Id) return BadRequest();
+
+        if (!PersianDate.TryParse(model.Date, out var date))
+            ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
+
+        if (!ModelState.IsValid)
+            return await ReturnFormAsync(model);
+
+        var transaction = new Transaction
+        {
+            Id = id,
+            TenantId = tenantId.Value,
+            Date = date,
+            Description = model.Description?.Trim(),
+            TransactionGroupId = model.TransactionGroupId,
+            Reference = model.Reference?.Trim(),
+            AttachmentPath = model.AttachmentPath,
+            Lines = BuildLines(model, tenantId.Value)
+        };
+
+        try
+        {
+            await _transactionService.UpdateAsync(transaction);
+            TempData["Success"] = $"سند شماره {model.Number} با موفقیت ویرایش شد.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError("", ex.Message);
+            return await ReturnFormAsync(model);
+        }
+    }
+
+    // ============================================
+    // Details
+    // ============================================
+
+    // GET: /Accounting/Transactions/Details/5
+    [Authorize(Policy = "Transaction.View")]
+    public async Task<IActionResult> Details(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _context.Transactions
+            .Include(t => t.TransactionGroup)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.Account)
+            .Include(t => t.Lines)
+                .ThenInclude(l => l.Contact)
+            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        return View(entity);
+    }
+
+    // ============================================
+    // قطعی / پیش‌نویس / حذف  (AJAX)
+    // ============================================
+
+    // POST: /Accounting/Transactions/Post/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Transaction.Post")]
+    public async Task<IActionResult> Post(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = NoTenantMessage });
+
+        try
+        {
+            await _transactionService.PostAsync(id, tenantId.Value);
+            return Json(new { success = true, message = "سند قطعی شد." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // POST: /Accounting/Transactions/Unpost/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Transaction.Post")]
+    public async Task<IActionResult> Unpost(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = NoTenantMessage });
+
+        try
+        {
+            await _transactionService.UnpostAsync(id, tenantId.Value);
+            return Json(new { success = true, message = "سند به پیش‌نویس برگشت." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // POST: /Accounting/Transactions/Delete
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Transaction.Delete")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = NoTenantMessage });
+
+        try
+        {
+            await _transactionService.DeleteManualAsync(id, tenantId.Value);
+            return Json(new { success = true, message = "سند با موفقیت حذف شد." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // ============================================
+    // Helpers
+    // ============================================
+
+    private const string InvalidDateMessage = "تاریخ نامعتبر است. نمونه‌ی درست: 1405/01/10";
+    private const string NoTenantMessage = "شرکت فعال مشخص نیست.";
+
+    /// <summary>
+    /// خطوط خالی (بدون حساب یا بدون مبلغ) که کاربر در فرم رها کرده نادیده گرفته می‌شوند.
+    /// بقیه‌ی قواعد در TransactionService اعمال می‌شود.
+    /// </summary>
+    private static List<TransactionLine> BuildLines(TransactionFormViewModel model, int tenantId)
+    {
+        return model.Lines
+            .Where(l => l.AccountId > 0 && ((l.Debit ?? 0) > 0 || (l.Credit ?? 0) > 0))
+            .Select(l => new TransactionLine
+            {
+                TenantId = tenantId,
+                AccountId = l.AccountId,
+                ContactId = l.ContactId,
+                Debit = l.Debit ?? 0,
+                Credit = l.Credit ?? 0,
+                Description = l.Description?.Trim()
+            })
+            .ToList();
+    }
+
+    /// <summary>فرم را با Optionها پر می‌کند و View همین Action (Create یا Edit) را برمی‌گرداند.</summary>
+    private async Task<IActionResult> ReturnFormAsync(TransactionFormViewModel model)
+    {
+        var accountOptions = await GetAccountOptionsAsync();
+        var contactOptions = await GetContactOptionsAsync();
+
+        model.AccountOptions = accountOptions;
+        model.ContactOptions = contactOptions;
+        model.TransactionGroupOptions = await GetTransactionGroupOptionsAsync();
+
+        foreach (var line in model.Lines)
+        {
+            line.AccountOptions = accountOptions;
+            line.ContactOptions = contactOptions;
+        }
+
+        return View(model);
+    }
 
     private async Task<List<SelectListItem>> GetAccountOptionsAsync()
     {
@@ -242,315 +467,5 @@ public class TransactionsController : Controller
                 Text = x.Name
             })
             .ToListAsync();
-    }
-
-    private DateTime ParsePersianDate(string persianDate)
-    {
-        // TODO: تبدیل شمسی به میلادی
-        // فعلاً فرض کن کاربر میلادی وارد کرده
-        if (DateTime.TryParse(persianDate, out var dt))
-            return dt;
-        return DateTime.UtcNow;
-    }
-
-    // POST: /Accounting/Transactions/Post/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Policy = "Transaction.Post")]
-    public async Task<IActionResult> Post(int id)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
-
-        try
-        {
-            var entity = await _context.Transactions
-                .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
-
-            if (entity == null)
-                return Json(new { success = false, message = "سند پیدا نشد." });
-
-            // 🆕 چک سند خودکار
-            if (!string.IsNullOrEmpty(entity.ReferenceType))
-                return Json(new { success = false, message = "این سند خودکار است و از صفحه‌ی مربوطه باید مدیریت شود." });
-
-            entity.IsPosted = true;
-            entity.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "سند قطعی شد." });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = ex.Message });
-        }
-    }
-
-    // POST: /Accounting/Transactions/Unpost/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Policy = "Transaction.Post")]
-    public async Task<IActionResult> Unpost(int id)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Forbid();
-
-        var entity = await _context.Transactions
-            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
-
-        if (entity == null) return NotFound();
-
-        if (!entity.IsPosted)
-        {
-            return Json(new { success = false, message = "این سند پیش‌نویس است." });
-        }
-
-        entity.IsPosted = false;
-        entity.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-
-        return Json(new { success = true, message = $"سند شماره {entity.Number} به پیش‌نویس برگشت." });
-    }
-
-    // ============================================
-    // Details
-    // ============================================
-
-    // GET: /Accounting/Transactions/Details/5
-    [Authorize(Policy = "Transaction.View")]
-    public async Task<IActionResult> Details(int id)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Forbid();
-
-        var entity = await _context.Transactions
-            .Include(t => t.TransactionGroup)
-            .Include(t => t.Lines)
-                .ThenInclude(l => l.Account)
-            .Include(t => t.Lines)
-                .ThenInclude(l => l.Contact)
-            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId.Value);
-
-        if (entity == null) return NotFound();
-
-        return View(entity);
-    }
-
-    // ============================================
-    // Edit
-    // ============================================
-
-    // GET: /Accounting/Transactions/Edit/5
-    [Authorize(Policy = "Transaction.Edit")]
-    public async Task<IActionResult> Edit(int id)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Forbid();
-
-        var entity = await _context.Transactions
-            .Include(t => t.Lines)
-            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId.Value);
-
-        if (entity == null) return NotFound();
-
-        if (entity.IsPosted)
-        {
-            TempData["Error"] = "سند قطعی قابل ویرایش نیست.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        var accountOptions = await GetAccountOptionsAsync();
-        var contactOptions = await GetContactOptionsAsync();
-        var groupOptions = await GetTransactionGroupOptionsAsync();
-
-        var model = new TransactionFormViewModel
-        {
-            Id = entity.Id,
-            Number = entity.Number,
-            Date = entity.Date.ToString("yyyy/MM/dd"),
-            Description = entity.Description,
-            TransactionGroupId = entity.TransactionGroupId,
-            Reference = entity.Reference,
-            AttachmentPath = entity.AttachmentPath,
-            AccountOptions = accountOptions,
-            ContactOptions = contactOptions,
-            TransactionGroupOptions = groupOptions,
-            Lines = entity.Lines.Select(l => new TransactionLineViewModel
-            {
-                Id = l.Id,
-                AccountId = l.AccountId,
-                ContactId = l.ContactId,
-                Debit = l.Debit,
-                Credit = l.Credit,
-                Description = l.Description,
-                AccountOptions = accountOptions,
-                ContactOptions = contactOptions
-            }).ToList()
-        };
-
-        return View(model);
-    }
-
-    // POST: /Accounting/Transactions/Edit/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Policy = "Transaction.Edit")]
-    public async Task<IActionResult> Edit(int id, TransactionFormViewModel model)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Forbid();
-
-        if (id != model.Id) return BadRequest();
-
-        // چک خطوط
-        var validLines = model.Lines
-           .Where(l => l.AccountId > 0 && ((l.Debit ?? 0) > 0 || (l.Credit ?? 0) > 0))
-           .ToList();
-
-        if (validLines.Count < 2)
-        {
-            ModelState.AddModelError("", "حداقل ۲ خط با حساب و مبلغ لازم است.");
-        }
-
-        // چک مجموع
-        var totalDebit = validLines.Sum(l => l.Debit);
-        var totalCredit = validLines.Sum(l => l.Credit);
-
-        if (totalDebit != totalCredit)
-        {
-            ModelState.AddModelError("", $"مجموع بدهکار ({totalDebit:N0}) با مجموع بستانکار ({totalCredit:N0}) برابر نیست.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            var accountOptions = await GetAccountOptionsAsync();
-            var contactOptions = await GetContactOptionsAsync();
-            var groupOptions = await GetTransactionGroupOptionsAsync();
-
-            model.AccountOptions = accountOptions;
-            model.ContactOptions = contactOptions;
-            model.TransactionGroupOptions = groupOptions;
-
-            // 🆕 پر کردن Options هر خط
-            foreach (var line in model.Lines)
-            {
-                line.AccountOptions = accountOptions;
-                line.ContactOptions = contactOptions;
-            }
-
-            return View(model);
-        }
-
-        var entity = await _context.Transactions
-            .Include(t => t.Lines)
-            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId.Value);
-
-        if (entity == null) return NotFound();
-
-        if (entity.IsPosted)
-        {
-            TempData["Error"] = "سند قطعی قابل ویرایش نیست.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // به‌روزرسانی هدر
-        entity.Date = ParsePersianDate(model.Date);
-        entity.Description = model.Description?.Trim();
-        entity.TransactionGroupId = model.TransactionGroupId;
-        entity.Reference = model.Reference?.Trim();
-        entity.UpdatedAt = DateTime.UtcNow;
-        entity.TotalAmount = totalDebit ?? 0;
-
-        // حذف خطوط قدیمی
-        _context.TransactionLines.RemoveRange(entity.Lines);
-
-        // اضافه کردن خطوط جدید
-        var lineNumber = 1;
-        foreach (var l in validLines)
-        {
-            entity.Lines.Add(new TransactionLine
-            {
-                TenantId = tenantId.Value,
-                LineNumber = lineNumber++,
-                AccountId = l.AccountId,
-                ContactId = l.ContactId,
-                Debit = l.Debit ?? 0,
-                Credit = l.Credit ?? 0,
-                Description = l.Description?.Trim()
-            });
-        }
-
-        await _context.SaveChangesAsync();
-
-        TempData["Success"] = $"سند شماره {entity.Number} با موفقیت ویرایش شد.";
-        return RedirectToAction(nameof(Index));
-    }
-
-    // ============================================
-    // Delete
-    // ============================================
-
-    // POST: /Accounting/Transactions/Delete
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Policy = "Transaction.Delete")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
-
-        try
-        {
-            var entity = await _context.Transactions
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
-
-            if (entity == null)
-                return Json(new { success = false, message = "سند پیدا نشد." });
-
-            if (entity.IsDeleted)
-                return Json(new { success = false, message = "این سند قبلاً حذف شده است." });
-
-            // 🆕 چک سند خودکار
-            if (!string.IsNullOrEmpty(entity.ReferenceType))
-            {
-                var refName = entity.ReferenceType switch
-                {
-                    "Invoice" => "فاکتور",
-                    "Cheque" => "چک",
-                    "Payment" => "پرداخت",
-                    _ => "مرجع"
-                };
-                return Json(new { success = false, message = $"این سند خودکار است و از صفحه‌ی {refName} باید مدیریت شود." });
-            }
-
-            // چک قطعی
-            if (entity.IsPosted)
-                return Json(new { success = false, message = "سند قطعی قابل حذف نیست. ابتدا آن را به پیش‌نویس برگردانید." });
-
-            // Soft Delete
-            entity.IsDeleted = true;
-            entity.DeletedAt = DateTime.UtcNow;
-
-            // Soft Delete خطوط
-            var lines = await _context.TransactionLines
-                .IgnoreQueryFilters()
-                .Where(l => l.TransactionId == id && !l.IsDeleted)
-                .ToListAsync();
-
-            foreach (var line in lines)
-            {
-                line.IsDeleted = true;
-                line.DeletedAt = DateTime.UtcNow;
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "سند با موفقیت حذف شد." });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = ex.Message });
-        }
     }
 }

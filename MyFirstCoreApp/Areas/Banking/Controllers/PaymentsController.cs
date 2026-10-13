@@ -1,15 +1,17 @@
-﻿using DNTPersianUtils.Core;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Models;
+using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Areas.Banking.ViewModels.Payment;
 using MyFirstCoreApp.Domain.Entities.Banking;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
+using MyFirstCoreApp.Infrastructure.Services;
 
 namespace MyFirstCoreApp.Areas.Banking.Controllers;
 
@@ -17,18 +19,29 @@ namespace MyFirstCoreApp.Areas.Banking.Controllers;
 [Authorize]
 public class PaymentsController : Controller
 {
+    private const int MaxPageSize = 200;
+    private const string InvalidDateMessage = "تاریخ نامعتبر است. نمونه‌ی درست: 1405/01/10";
+    private const string NoTenantMessage = "شرکت فعال مشخص نیست.";
+    private const string UnexpectedErrorMessage = "خطای غیرمنتظره رخ داد. لطفاً دوباره تلاش کنید.";
+
     private readonly ApplicationDbContext _context;
     private readonly ICurrentTenant _currentTenant;
     private readonly IPaymentService _paymentService;
+    private readonly TimeProvider _timeProvider;
+    private readonly ILogger<PaymentsController> _logger;
 
     public PaymentsController(
         ApplicationDbContext context,
         ICurrentTenant currentTenant,
-        IPaymentService paymentService)
+        IPaymentService paymentService,
+        TimeProvider timeProvider,
+        ILogger<PaymentsController> logger)
     {
         _context = context;
         _currentTenant = currentTenant;
         _paymentService = paymentService;
+        _timeProvider = timeProvider;
+        _logger = logger;
     }
 
     // ============================================
@@ -50,18 +63,14 @@ public class PaymentsController : Controller
         if (!tenantId.HasValue) return Json(new { success = false });
 
         var query = _context.Payments
-            .Include(x => x.Contact)
-            .Include(x => x.BankAccount)
-            .Where(x => x.TenantId == tenantId.Value && !x.IsDeleted);   
-       
+            .Where(x => x.TenantId == tenantId.Value);
+
         if (paymentType.HasValue)
-        {
             query = query.Where(x => x.PaymentType == paymentType.Value);
-        }
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var s = request.Search.Trim();
+            var s = PersianDate.NormalizeDigits(request.Search.Trim());
             query = query.Where(x =>
                 x.Number.ToString().Contains(s) ||
                 (x.Reference != null && x.Reference.Contains(s)) ||
@@ -76,31 +85,49 @@ public class PaymentsController : Controller
             "number" => request.SortDir == "asc" ? query.OrderBy(x => x.Number) : query.OrderByDescending(x => x.Number),
             "date" => request.SortDir == "asc" ? query.OrderBy(x => x.Date) : query.OrderByDescending(x => x.Date),
             "amount" => request.SortDir == "asc" ? query.OrderBy(x => x.Amount) : query.OrderByDescending(x => x.Amount),
-            _ => query.OrderByDescending(x => x.Date)
+            _ => query.OrderByDescending(x => x.Date).ThenByDescending(x => x.Number)
         };
 
-        var items = await query
-            .Skip(request.StartRow)
-            .Take(request.EndRow - request.StartRow)
+        var startRow = Math.Max(request.StartRow, 0);
+        var pageSize = Math.Clamp(request.EndRow - request.StartRow, 1, MaxPageSize);
+
+        var rows = await query
+            .Skip(startRow)
+            .Take(pageSize)
             .Select(x => new
             {
-                id = x.Id,
-                number = x.Number,
-                date = x.Date.ToString("yyyy-MM-ddTHH:mm:ss"),
-                paymentType = (int)x.PaymentType,
-                paymentTypeName = x.PaymentType == PaymentType.Received ? "دریافت" : "پرداخت",
-                contactName = x.Contact != null ? x.Contact.Name : null,
-                bankAccountName = x.BankAccount != null ? x.BankAccount.Name : null,
-                amount = x.Amount,
-                allocatedAmount = x.AllocatedAmount,
-                unallocatedAmount = x.Amount - x.AllocatedAmount,
-                reference = x.Reference,
-                status = (int)x.Status,
-                statusName = x.Status == PaymentStatus.Draft ? "پیش‌نویس"
-                            : x.Status == PaymentStatus.Posted ? "قطعی"
-                            : "لغو شده"
+                x.Id,
+                x.Number,
+                x.Date,
+                x.PaymentType,
+                ContactName = x.Contact != null ? x.Contact.Name : null,
+                BankAccountName = x.BankAccount != null ? x.BankAccount.Name : null,
+                x.Amount,
+                x.AllocatedAmount,
+                x.Reference,
+                x.Status
             })
             .ToListAsync();
+
+        // تاریخ شمسی سمت سرور (DateOnly.ToString با قالب زمان‌دار خطا می‌دهد)
+        var items = rows.Select(x => new
+        {
+            id = x.Id,
+            number = x.Number,
+            date = PersianDate.Format(x.Date),
+            paymentType = (int)x.PaymentType,
+            paymentTypeName = x.PaymentType == PaymentType.Received ? "دریافت" : "پرداخت",
+            contactName = x.ContactName,
+            bankAccountName = x.BankAccountName,
+            amount = x.Amount,
+            allocatedAmount = x.AllocatedAmount,
+            unallocatedAmount = x.Amount - x.AllocatedAmount,
+            reference = x.Reference,
+            status = (int)x.Status,
+            statusName = x.Status == PaymentStatus.Draft ? "پیش‌نویس"
+                       : x.Status == PaymentStatus.Posted ? "قطعی"
+                       : "لغو شده"
+        });
 
         return Json(new { success = true, rows = items, lastRow = total });
     }
@@ -112,16 +139,17 @@ public class PaymentsController : Controller
     [Authorize(Policy = "Payment.Create")]
     public async Task<IActionResult> Create(PaymentType paymentType = PaymentType.Received)
     {
-        var contactOptions = await GetContactOptionsAsync(paymentType);
-        var bankOptions = await GetBankAccountOptionsAsync();
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
 
         var model = new PaymentFormViewModel
         {
-            Number = await _paymentService.GetNextNumberAsync(_currentTenant.TenantId ?? 0),
+            // فقط نمایشی؛ شماره‌ی نهایی هنگام ذخیره تعیین می‌شود
+            Number = await _paymentService.GetNextNumberAsync(tenantId.Value),
             PaymentType = paymentType,
-            Date = DateTime.Now.ToShortPersianDateString(),
-            ContactOptions = contactOptions,
-            BankAccountOptions = bankOptions
+            Date = PersianDate.Format(_timeProvider.Today()),
+            ContactOptions = await GetContactOptionsAsync(paymentType),
+            BankAccountOptions = await GetBankAccountOptionsAsync()
         };
 
         return View(model);
@@ -135,75 +163,25 @@ public class PaymentsController : Controller
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
 
-        if (!model.ContactId.HasValue || model.ContactId.Value == 0)
-            ModelState.AddModelError("", "لطفاً طرف حساب را انتخاب کنید.");
-
-        var validAllocations = model.Allocations
-            .Where(a => a.InvoiceId > 0 && a.Amount > 0)
-            .ToList();
-
-        if (validAllocations.Count == 0)
-            ModelState.AddModelError("", "حداقل یک تخصیص به فاکتور لازم است.");
-
-        var totalAllocated = validAllocations.Sum(a => a.Amount);
-        if (totalAllocated > model.Amount)
-            ModelState.AddModelError("", $"مجموع تخصیص ({totalAllocated:N0}) بیشتر از مبلغ کل ({model.Amount:N0}) است.");
+        if (!PersianDate.TryParse(model.Date, out var date))
+            ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
 
         if (!ModelState.IsValid)
-        {
-            await ReloadOptionsAsync(model);
-
-            // 🆕 اگه ContactId داره ولی Allocations خالی، دوباره لود کن
-            if (model.ContactId.HasValue && model.ContactId.Value > 0)
-            {
-                var invoiceType = model.PaymentType == PaymentType.Received ? InvoiceType.Sale : InvoiceType.Purchase;
-
-                var invoices = await _context.Invoices
-                    .Where(i => i.TenantId == tenantId.Value
-                             && i.ContactId == model.ContactId.Value
-                             && i.InvoiceType == invoiceType
-                             && i.Status == InvoiceStatus.Posted
-                             && i.TotalAmount > i.PaidAmount)
-                    .OrderBy(i => i.Date)
-                    .ToListAsync();
-
-                // 🆕 اگه Allocations خالی یا مبلغ صفر، از invoices بساز
-                var modelAllocDict = model.Allocations.ToDictionary(a => a.InvoiceId, a => a.Amount);
-
-                model.Allocations = invoices.Select(i => new PaymentAllocationViewModel
-                {
-                    InvoiceId = i.Id,
-                    InvoiceNumber = i.Number,
-                    InvoiceTotal = i.TotalAmount,
-                    InvoicePaid = i.PaidAmount,
-                    InvoiceRemaining = i.TotalAmount - i.PaidAmount,
-                    InvoiceDate = i.Date.ToShortPersianDateString(),
-                    Amount = modelAllocDict.TryGetValue(i.Id, out var amt) ? amt : 0
-                }).ToList();
-            }
-
-            return View(model);
-        }
+            return await ReturnFormAsync(model, tenantId.Value);
 
         var payment = new Payment
         {
             TenantId = tenantId.Value,
-            Number = model.Number,
+            Number = 0, // خودکار
             PaymentType = model.PaymentType,
-            Date = ParsePersianDate(model.Date),
+            Date = date,
             ContactId = model.ContactId,
             BankAccountId = model.BankAccountId,
             PaymentMethod = model.PaymentMethod,
             Amount = model.Amount,
             Reference = model.Reference?.Trim(),
             Description = model.Description?.Trim(),
-            Allocations = validAllocations.Select(a => new PaymentAllocation
-            {
-                TenantId = tenantId.Value,
-                InvoiceId = a.InvoiceId,
-                Amount = a.Amount,
-                Description = a.Description?.Trim()
-            }).ToList()
+            Allocations = BuildAllocations(model, tenantId.Value)
         };
 
         try
@@ -212,11 +190,10 @@ public class PaymentsController : Controller
             TempData["Success"] = $"پرداخت شماره {payment.Number} با موفقیت ثبت شد.";
             return RedirectToAction(nameof(Index), new { paymentType = (int)payment.PaymentType });
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             ModelState.AddModelError("", ex.Message);
-            await ReloadOptionsAsync(model);
-            return View(model);
+            return await ReturnFormAsync(model, tenantId.Value);
         }
     }
 
@@ -248,7 +225,7 @@ public class PaymentsController : Controller
             Id = entity.Id,
             Number = entity.Number,
             PaymentType = entity.PaymentType,
-            Date = entity.Date.ToShortPersianDateString(),
+            Date = PersianDate.Format(entity.Date),
             ContactId = entity.ContactId,
             BankAccountId = entity.BankAccountId,
             PaymentMethod = entity.PaymentMethod,
@@ -265,8 +242,8 @@ public class PaymentsController : Controller
                 InvoiceNumber = a.Invoice.Number,
                 InvoiceTotal = a.Invoice.TotalAmount,
                 InvoicePaid = a.Invoice.PaidAmount,
-                InvoiceRemaining = a.Invoice.TotalAmount - a.Invoice.PaidAmount,
-                InvoiceDate = a.Invoice.Date.ToShortPersianDateString(),
+                InvoiceRemaining = InvoiceBalance.Remaining(a.Invoice),
+                InvoiceDate = FormatInvoiceDate(a.Invoice.Date),
                 Amount = a.Amount,
                 Description = a.Description
             }).ToList()
@@ -285,74 +262,26 @@ public class PaymentsController : Controller
 
         if (id != model.Id) return BadRequest();
 
-        if (!model.ContactId.HasValue || model.ContactId.Value == 0)
-            ModelState.AddModelError("", "لطفاً طرف حساب را انتخاب کنید.");
-
-        // 🆕 validAllocations (چک کن ProductId نه، InvoiceId)
-        var validAllocations = model.Allocations
-            .Where(a => a.InvoiceId > 0 && a.Amount > 0)
-            .ToList();
-
-        if (validAllocations.Count == 0)
-            ModelState.AddModelError("", "حداقل یک تخصیص به فاکتور لازم است.");
-
-        var totalAllocated = validAllocations.Sum(a => a.Amount);
-        if (totalAllocated > model.Amount)
-            ModelState.AddModelError("", $"مجموع تخصیص ({totalAllocated:N0}) بیشتر از مبلغ کل ({model.Amount:N0}) است.");
+        if (!PersianDate.TryParse(model.Date, out var date))
+            ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
 
         if (!ModelState.IsValid)
-        {
-            await ReloadOptionsAsync(model);
-
-            // 🆕 اگه ContactId داره ولی Allocations خالی، دوباره لود کن
-            if (model.ContactId.HasValue && model.ContactId.Value > 0)
-            {
-                var invoiceType = model.PaymentType == PaymentType.Received ? InvoiceType.Sale : InvoiceType.Purchase;
-
-                var invoices = await _context.Invoices
-                    .Where(i => i.TenantId == tenantId.Value
-                             && i.ContactId == model.ContactId.Value
-                             && i.InvoiceType == invoiceType
-                             && i.Status == InvoiceStatus.Posted
-                             && i.TotalAmount > i.PaidAmount)
-                    .OrderBy(i => i.Date)
-                    .ToListAsync();
-
-                var modelAllocDict = model.Allocations.ToDictionary(a => a.InvoiceId, a => a.Amount);
-
-                model.Allocations = invoices.Select(i => new PaymentAllocationViewModel
-                {
-                    InvoiceId = i.Id,
-                    InvoiceNumber = i.Number,
-                    InvoiceTotal = i.TotalAmount,
-                    InvoicePaid = i.PaidAmount,
-                    InvoiceRemaining = i.TotalAmount - i.PaidAmount,
-                    InvoiceDate = i.Date.ToShortPersianDateString(),
-                    Amount = modelAllocDict.TryGetValue(i.Id, out var amt) ? amt : 0
-                }).ToList();
-            }
-
-            return View(model);
-        }
+            return await ReturnFormAsync(model, tenantId.Value);
 
         var payment = new Payment
         {
             Id = model.Id,
-            Date = ParsePersianDate(model.Date),
+            TenantId = tenantId.Value,
             PaymentType = model.PaymentType,
+            Date = date,
             ContactId = model.ContactId,
             BankAccountId = model.BankAccountId,
             PaymentMethod = model.PaymentMethod,
             Amount = model.Amount,
             Reference = model.Reference?.Trim(),
             Description = model.Description?.Trim(),
-            Allocations = validAllocations.Select(a => new PaymentAllocation
-            {
-                Id = a.Id,
-                InvoiceId = a.InvoiceId,
-                Amount = a.Amount,
-                Description = a.Description?.Trim()
-            }).ToList()
+            ImagePath = model.ImagePath,
+            Allocations = BuildAllocations(model, tenantId.Value)
         };
 
         try
@@ -361,11 +290,10 @@ public class PaymentsController : Controller
             TempData["Success"] = "پرداخت با موفقیت ویرایش شد.";
             return RedirectToAction(nameof(Index), new { paymentType = (int)payment.PaymentType });
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             ModelState.AddModelError("", ex.Message);
-            await ReloadOptionsAsync(model);
-            return View(model);
+            return await ReturnFormAsync(model, tenantId.Value);
         }
     }
 
@@ -394,108 +322,29 @@ public class PaymentsController : Controller
     }
 
     // ============================================
-    // Delete
+    // Delete / Post / Unpost  (AJAX)
     // ============================================
 
-    // POST: /Banking/Payments/Delete
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = "Payment.Delete")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
-
-        try
-        {
-            var entity = await _context.Payments
-                .IgnoreQueryFilters()
-                .Include(p => p.Allocations)
-                .Include(p => p.Histories)
-                .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
-
-            if (entity == null)
-                return Json(new { success = false, message = "پرداخت پیدا نشد." });
-
-            if (entity.IsDeleted)
-                return Json(new { success = false, message = "این پرداخت قبلاً حذف شده است." });
-
-            // 🆕 فقط پیش‌نویس
-            if (entity.Status != PaymentStatus.Draft)
-                return Json(new { success = false, message = "فقط پرداخت پیش‌نویس قابل حذف است." });
-
-            // 🆕 Soft Delete پرداخت
-            entity.IsDeleted = true;
-            entity.DeletedAt = DateTime.UtcNow;
-
-            // 🆕 Soft Delete تخصیص‌ها
-            foreach (var alloc in entity.Allocations)
-            {
-                alloc.IsDeleted = true;
-                alloc.DeletedAt = DateTime.UtcNow;
-            }
-
-            // 🆕 Soft Delete تاریخچه
-            foreach (var h in entity.Histories)
-            {
-                h.IsDeleted = true;
-                h.DeletedAt = DateTime.UtcNow;
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "پرداخت با موفقیت حذف شد." });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = ex.Message });
-        }
-    }
-
-    // ============================================
-    // Post / Unpost
-    // ============================================
+    public Task<IActionResult> Delete(int id)
+        => RunAjaxAsync(tenantId => _paymentService.DeleteAsync(id, tenantId), "پرداخت با موفقیت حذف شد.");
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = "Payment.Post")]
-    public async Task<IActionResult> Post(int id)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
-
-        try
-        {
-            await _paymentService.PostAsync(id, tenantId.Value);
-            return Json(new { success = true, message = "پرداخت قطعی شد." });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = ex.Message + " | " + ex.InnerException?.Message });
-        }
-    }
+    public Task<IActionResult> Post(int id)
+        => RunAjaxAsync(tenantId => _paymentService.PostAsync(id, tenantId), "پرداخت قطعی شد.");
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = "Payment.Post")]
-    public async Task<IActionResult> Unpost(int id)
-    {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
-
-        try
-        {
-            await _paymentService.UnpostAsync(id, tenantId.Value);
-            return Json(new { success = true, message = "پرداخت به پیش‌نویس برگشت." });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = ex.Message });
-        }
-    }
+    public Task<IActionResult> Unpost(int id)
+        => RunAjaxAsync(tenantId => _paymentService.UnpostAsync(id, tenantId), "پرداخت به پیش‌نویس برگشت.");
 
     // ============================================
-    // AJAX: فاکتورهای طرف حساب
+    // AJAX: فاکتورهای باز طرف حساب
     // ============================================
 
     [HttpGet]
@@ -505,38 +354,120 @@ public class PaymentsController : Controller
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Json(new { success = false });
 
-        var invoiceType = paymentType == PaymentType.Received ? InvoiceType.Sale : InvoiceType.Purchase;
-
-        var invoices = await _context.Invoices
-            .Where(i => i.TenantId == tenantId.Value
-                     && i.ContactId == contactId
-                     && i.InvoiceType == invoiceType
-                     && i.Status == InvoiceStatus.Posted              // 🆕 فقط قطعی
-                     && i.TotalAmount > i.PaidAmount)                  // 🆕 با باقی‌مانده
-            .OrderBy(i => i.Date)
-            .Select(i => new
-            {
-                id = i.Id,
-                number = i.Number,
-                date = i.Date.ToString("yyyy-MM-ddTHH:mm:ss"),
-                total = i.TotalAmount,
-                paid = i.PaidAmount,
-                remaining = i.TotalAmount - i.PaidAmount
-            })
+        var invoices = await QueryOpenInvoices(tenantId.Value, contactId, paymentType)
+            .Select(i => new { i.Id, i.Number, i.Date, i.TotalAmount, i.PaidAmount, i.SettlementDiscount })
             .ToListAsync();
 
-        return Json(new { success = true, data = invoices });
+        var data = invoices.Select(i => new
+        {
+            id = i.Id,
+            number = i.Number,
+            dateShamsi = FormatInvoiceDate(i.Date),
+            total = i.TotalAmount,
+            paid = i.PaidAmount,
+            remaining = InvoiceBalance.Remaining(i.TotalAmount, i.PaidAmount, i.SettlementDiscount)
+        });
+
+        return Json(new { success = true, data });
     }
 
     // ============================================
     // Helpers
     // ============================================
 
-    private async Task ReloadOptionsAsync(PaymentFormViewModel model)
+    /// <summary>
+    /// خطای کسب‌وکار (InvalidOperationException) پیام فارسی به کاربر می‌دهد.
+    /// هر خطای دیگر لاگ می‌شود و پیام عمومی برمی‌گردد (جزئیات داخلی به کاربر نشان داده نمی‌شود).
+    /// </summary>
+    private async Task<IActionResult> RunAjaxAsync(Func<int, Task> action, string successMessage)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue)
+            return Json(new { success = false, message = NoTenantMessage });
+
+        try
+        {
+            await action(tenantId.Value);
+            return Json(new { success = true, message = successMessage });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Payment operation failed");
+            return Json(new { success = false, message = UnexpectedErrorMessage });
+        }
+    }
+
+    private static List<PaymentAllocation> BuildAllocations(PaymentFormViewModel model, int tenantId)
+    {
+        return model.Allocations
+            .Where(a => a.InvoiceId > 0 && a.Amount > 0)
+            .Select(a => new PaymentAllocation
+            {
+                TenantId = tenantId,
+                InvoiceId = a.InvoiceId,
+                Amount = a.Amount,
+                Description = a.Description?.Trim()
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// فرم را با Optionها و جدول فاکتورهای باز پر می‌کند (مبلغ‌های واردشده‌ی کاربر حفظ می‌شود)
+    /// و View همین Action (Create یا Edit) را برمی‌گرداند.
+    /// </summary>
+    private async Task<IActionResult> ReturnFormAsync(PaymentFormViewModel model, int tenantId)
     {
         model.ContactOptions = await GetContactOptionsAsync(model.PaymentType);
         model.BankAccountOptions = await GetBankAccountOptionsAsync();
+
+        if (model.ContactId.HasValue && model.ContactId.Value > 0)
+        {
+            var invoices = await QueryOpenInvoices(tenantId, model.ContactId.Value, model.PaymentType)
+                .ToListAsync();
+
+            var modelAllocDict = model.Allocations
+                .GroupBy(a => a.InvoiceId)
+                .ToDictionary(g => g.Key, g => g.First().Amount);
+
+            model.Allocations = invoices.Select(i => new PaymentAllocationViewModel
+            {
+                InvoiceId = i.Id,
+                InvoiceNumber = i.Number,
+                InvoiceTotal = i.TotalAmount,
+                InvoicePaid = i.PaidAmount,
+                InvoiceRemaining = InvoiceBalance.Remaining(i),
+                InvoiceDate = FormatInvoiceDate(i.Date),
+                Amount = modelAllocDict.TryGetValue(i.Id, out var amt) ? amt : 0
+            }).ToList();
+        }
+
+        return View(model);
     }
+
+    private IQueryable<MyFirstCoreApp.Domain.Entities.Invoicing.Invoice> QueryOpenInvoices(
+        int tenantId, int contactId, PaymentType paymentType)
+    {
+        var invoiceType = paymentType == PaymentType.Received ? InvoiceType.Sale : InvoiceType.Purchase;
+
+        return _context.Invoices
+            .Where(i => i.TenantId == tenantId
+                     && i.ContactId == contactId
+                     && i.InvoiceType == invoiceType
+                     && i.Status == InvoiceStatus.Posted)
+            .WithOpenBalance()
+            .OrderBy(i => i.Date);
+    }
+
+    // Invoice.Date تا مرحله‌ی 1E هنوز DateTime است؛ با همان فرمول پل (+۳:۳۰) شمسی می‌شود.
+    private static string FormatInvoiceDate(DateTime date)
+        => PersianDate.Format(LegacyDate.ToDateOnly(date));
+
+    private static string FormatInvoiceDate(DateOnly date)
+        => PersianDate.Format(date);
 
     private async Task<List<SelectListItem>> GetContactOptionsAsync(PaymentType paymentType)
     {
@@ -570,34 +501,5 @@ public class PaymentsController : Controller
                 Text = a.Name + (a.BankName != null ? $" - {a.BankName}" : "")
             })
             .ToListAsync();
-    }
-
-    private DateTime ParsePersianDate(string persianDate)
-    {
-        if (string.IsNullOrWhiteSpace(persianDate)) return DateTime.UtcNow;
-        try
-        {
-            persianDate = ToEnglishNumber(persianDate);
-            var parts = persianDate.Split('/', '-');
-            if (parts.Length != 3) return DateTime.UtcNow;
-
-            var year = int.Parse(parts[0]);
-            var month = int.Parse(parts[1]);
-            var day = int.Parse(parts[2]);
-
-            var pc = new System.Globalization.PersianCalendar();
-            return pc.ToDateTime(year, month, day, 0, 0, 0, 0);
-        }
-        catch { return DateTime.UtcNow; }
-    }
-
-    private string ToEnglishNumber(string input)
-    {
-        if (string.IsNullOrEmpty(input)) return input;
-        return input
-            .Replace("۰", "0").Replace("۱", "1").Replace("۲", "2")
-            .Replace("۳", "3").Replace("۴", "4").Replace("۵", "5")
-            .Replace("۶", "6").Replace("۷", "7").Replace("۸", "8")
-            .Replace("۹", "9");
     }
 }
