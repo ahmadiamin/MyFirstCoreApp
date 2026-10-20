@@ -1,0 +1,73 @@
+﻿@model List<MyFirstCoreApp.Models.ViewModels.MenuViewModel>
+
+@if (Model.Any())
+{
+    foreach (var item in Model)
+    {
+        if (item.Children.Any())
+        {
+            <li class="nav-item has-treeview">
+
+                <a href="#" class="nav-link">
+
+                    @if (!string.IsNullOrWhiteSpace(item.Icon))
+                    {
+                        <i class="nav-icon @item.Icon"></i>
+                    }
+
+                    <p>
+                        @item.Title
+                        <i class="right fa fa-angle-left"></i>
+                    </p>
+
+                </a>
+
+                <ul class="nav nav-treeview">
+
+                    @foreach (var child in item.Children)
+                    {
+                        <li class="nav-item">
+
+                            <a href="@child.Url"
+                               class="nav-link">
+
+                                @if (!string.IsNullOrWhiteSpace(child.Icon))
+                                {
+                                    <i class="nav-icon @child.Icon"></i>
+                                }
+
+                                <p>
+                                    @child.Title
+                                </p>
+
+                            </a>
+
+                        </li>
+                    }
+
+                </ul>
+
+            </li>
+        }
+        else
+        {
+            <li class="nav-item">
+
+                <a href="@item.Url"
+                   class="nav-link">
+
+                    @if (!string.IsNullOrWhiteSpace(item.Icon))
+                    {
+                        <i class="nav-icon @item.Icon"></i>
+                    }
+
+                    <p>
+                        @item.Title
+                    </p>
+
+                </a>
+
+            </li>
+        }
+    }
+}

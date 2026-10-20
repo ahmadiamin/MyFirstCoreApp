@@ -1,0 +1,136 @@
+﻿@model MyFirstCoreApp.Areas.Accounting.ViewModels.Transaction.TransactionFormViewModel
+
+<div class="row">
+    <div class="col-md-2">
+        <div class="form-group">
+            <label asp-for="Number"></label>
+            <input asp-for="Number" class="form-control" readonly />
+            <span asp-validation-for="Number" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="form-group">
+            <label asp-for="Date"></label>
+            <input asp-for="Date" class="form-control datepicker"
+                   placeholder="۱۴۰۳/۰۵/۱۵"
+                   autocomplete="off"
+                   dir="ltr" />
+            <span asp-validation-for="Date" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <input asp-for="Description" class="form-control" placeholder="شرح کلی سند" />
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="form-group">
+            <label asp-for="TransactionGroupId"></label>
+            <select asp-for="TransactionGroupId" class="form-control select2"
+                    asp-items="Model.TransactionGroupOptions">
+                <option value="">-- بدون گروه --</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Reference"></label>
+            <input asp-for="Reference" class="form-control" placeholder="شماره فاکتور، شماره چک، ..." />
+            <span asp-validation-for="Reference" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Attachment"></label>
+            <input asp-for="Attachment" type="file" class="form-control" />
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<h5 class="mb-3">
+    <i class="fa fa-list"></i>
+    خطوط سند
+</h5>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-striped" id="linesTable">
+        <thead>
+            <tr>
+                <th style="width: 40px;">#</th>
+                <th style="width: 250px;">حساب</th>
+                <th style="width: 200px;">طرف حساب</th>
+                <th style="width: 150px;">بدهکار</th>
+                <th style="width: 150px;">بستانکار</th>
+                <th>شرح</th>
+                <th style="width: 60px;"></th>
+            </tr>
+        </thead>
+        <tbody id="linesBody">
+            @for (int i = 0; i < Model.Lines.Count; i++)
+            {
+                <tr class="line-row">
+                    <td class="line-number">@(i + 1)</td>
+                    <td>
+                        <input type="hidden" name="Lines[@i].Id" value="@Model.Lines[i].Id" />
+                        <select name="Lines[@i].AccountId" class="form-control select2">
+                            <option value="">-- انتخاب --</option>
+                            @foreach (var opt in Model.AccountOptions)
+                            {
+                                <option value="@opt.Value" selected="@(opt.Value == Model.Lines[i].AccountId.ToString())">@opt.Text</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <select name="Lines[@i].ContactId" class="form-control select2">
+                            <option value="">-- بدون --</option>
+                            @foreach (var opt in Model.ContactOptions)
+                            {
+                                <option value="@opt.Value" selected="@(opt.Value == Model.Lines[i].ContactId?.ToString())">@opt.Text</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" name="Lines[@i].Debit"
+                               class="form-control persian-number persian-number-comma debit-input"
+                               value="@(Model.Lines[i].Debit ?? 0)" />
+                    </td>
+                    <td>
+                        <input type="text" name="Lines[@i].Credit"
+                               class="form-control persian-number persian-number-comma credit-input"
+                               value="@(Model.Lines[i].Credit ?? 0)" />
+                    </td>
+                    <td>
+                        <input type="text" name="Lines[@i].Description" class="form-control"
+                               value="@Model.Lines[i].Description" />
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger remove-line">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" class="text-left">مجموع:</th>
+                <th id="totalDebit" class="text-center">۰</th>
+                <th id="totalCredit" class="text-center">۰</th>
+                <th colspan="2" class="text-center" id="balanceStatus"></th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<button type="button" class="btn btn-sm btn-success" id="addLine">
+    <i class="fa fa-plus"></i> افزودن خط
+</button>

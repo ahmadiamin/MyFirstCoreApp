@@ -1,0 +1,213 @@
+﻿@model MyFirstCoreApp.Areas.Accounting.ViewModels.Transaction.TransactionFormViewModel
+@{
+    ViewData["Title"] = "ثبت سند جدید";
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-plus"></i>
+            ثبت سند جدید
+        </h3>
+    </div>
+
+    <form asp-area="Accounting" asp-controller="Transactions" asp-action="Create"
+          method="post" enctype="multipart/form-data" id="transactionForm">
+        @Html.AntiForgeryToken()
+
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <partial name="_Form" model="Model" />
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> ذخیره سند
+            </button>
+            <a asp-area="Accounting" asp-controller="Transactions" asp-action="Index"
+               class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i> انصراف
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+
+            // ============================================
+            // 🆕 Select2
+            // ============================================
+            function initSelect2(selector) {
+                $(selector)
+                    .not('.select2-hidden-accessible')
+                    .each(function () {
+                        $(this).select2({
+                            dir: 'rtl',
+                            placeholder: '-- انتخاب کنید --',
+                            allowClear: true,
+                            width: '100%',
+                            language: 'fa'
+                        });
+                    });
+            }
+
+            initSelect2('select.select2');
+
+            // ============================================
+            // 🆕 DatePicker شمسی
+            // ============================================
+             $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValueType: 'persian',   // 🆕 این کلیدیه
+                initialValue: true,
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' }
+                },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+
+            // ============================================
+            // 🆕 خطوط پویا
+            // ============================================
+            let lineIndex = @Model.Lines.Count;
+
+            $('#addLine').on('click', function () {
+                const accountOptions = `@Html.Raw(string.Join("", Model.AccountOptions.Select(o => $"<option value='{o.Value}'>{o.Text}</option>")))`;
+                const contactOptions = `@Html.Raw(string.Join("", Model.ContactOptions.Select(o => $"<option value='{o.Value}'>{o.Text}</option>")))`;
+
+                const newRow = `
+                    <tr class="line-row">
+                        <td class="line-number"></td>
+                        <td>
+                            <select name="Lines[${lineIndex}].AccountId" class="form-control select2">
+                                <option value="">-- انتخاب --</option>
+                                ${accountOptions}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="Lines[${lineIndex}].ContactId" class="form-control select2">
+                                <option value="">-- بدون --</option>
+                                ${contactOptions}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" name="Lines[${lineIndex}].Debit"
+                                   class="form-control persian-number persian-number-comma debit-input" />
+                        </td>
+                        <td>
+                            <input type="text" name="Lines[${lineIndex}].Credit"
+                                   class="form-control persian-number persian-number-comma credit-input" />
+                        </td>
+                        <td>
+                            <input type="text" name="Lines[${lineIndex}].Description"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger remove-line">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+                $('#linesBody').append(newRow);
+                lineIndex++;
+                renumberLines();
+                updateTotals();
+                initSelect2('#linesBody tr:last-child select.select2');
+            });
+
+            // ============================================
+            // 🆕 حذف خط
+            // ============================================
+            $(document).on('click', '.remove-line', function () {
+                if ($('#linesBody tr').length <= 2) {
+                    alert('حداقل ۲ خط لازم است.');
+                    return;
+                }
+                $(this).closest('tr').remove();
+                renumberLines();
+                updateTotals();
+            });
+
+            // ============================================
+            // 🆕 شماره‌گذاری مجدد
+            // ============================================
+            function renumberLines() {
+                $('#linesBody tr').each(function (i) {
+                    $(this).find('.line-number').text(i + 1);
+                });
+            }
+
+            // ============================================
+            // 🆕 محاسبه مجموع
+            // ============================================
+            function updateTotals() {
+                let totalDebit = 0;
+                let totalCredit = 0;
+
+                $('.debit-input').each(function () {
+                    const val = $(this).val();
+                    const num = parseFloat(toEnglishNumber(val).replace(/,/g, '')) || 0;
+                    totalDebit += num;
+                });
+
+                $('.credit-input').each(function () {
+                    const val = $(this).val();
+                    const num = parseFloat(toEnglishNumber(val).replace(/,/g, '')) || 0;
+                    totalCredit += num;
+                });
+
+                $('#totalDebit').text(formatNumberWithComma(totalDebit.toString()));
+                $('#totalCredit').text(formatNumberWithComma(totalCredit.toString()));
+
+                const status = $('#balanceStatus');
+                if (totalDebit === totalCredit && totalDebit > 0) {
+                    status.html('<span class="badge badge-success"><i class="fa fa-check"></i> متوازن</span>');
+                } else if (totalDebit === 0 && totalCredit === 0) {
+                    status.html('');
+                } else {
+                    status.html('<span class="badge badge-danger"><i class="fa fa-times"></i> نامتوازن</span>');
+                }
+            }
+
+            $(document).on('input', '.debit-input, .credit-input', updateTotals);
+            updateTotals();
+
+            // ============================================
+            // 🆕 موقع submit
+            //   ۱. اعداد فارسی رو به لاتین بدون کاما تبدیل کن
+            //   ۲. Select2 ها رو sync کن
+            // ============================================
+            $('#transactionForm').on('submit', function (e) {
+
+                // ۱. تبدیل اعداد فارسی به لاتین بدون کاما
+                $('.persian-number').each(function () {
+                    const $input = $(this);
+                    let val = $input.val();
+                    if (val) {
+                        val = toEnglishNumber(val).replace(/,/g, '');
+                        $input.val(val);
+                    }
+                });
+
+                // ۲. Select2 sync (اطمینان از ارسال مقادیر)
+                $('select.select2').each(function () {
+                    if ($(this).data('select2')) {
+                        $(this).trigger('change.select2');
+                    }
+                });
+
+                // ⚠️ از اینجا به بعد، فرم submit می‌شه
+                // (چون removeMaskOnSubmit نیست، کاماها الان حذف شدن)
+            });
+
+        });
+    </script>
+}

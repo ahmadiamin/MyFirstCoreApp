@@ -1,0 +1,61 @@
+﻿@model MyFirstCoreApp.Areas.Banking.ViewModels.Cheque.ChequeFormViewModel
+@{
+    ViewData["Title"] = "ویرایش چک";
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-edit"></i>
+            ویرایش چک
+        </h3>
+    </div>
+
+    <form asp-area="Banking" asp-controller="Cheques" asp-action="Edit"
+          asp-route-id="@Model.Id" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <partial name="_Form" model="Model" />
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> ذخیره تغییرات
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i> انصراف
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            $('select.select2').select2({
+                dir: 'rtl', placeholder: '-- انتخاب --', allowClear: true, width: '100%', language: 'fa'
+            });
+
+             $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValueType: 'persian',   // 🆕 این کلیدیه
+                initialValue: true,
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' }
+                },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+
+            $('form').on('submit', function () {
+                $('.persian-number').each(function () {
+                    var v = $(this).val();
+                    if (v) $(this).val(toEnglishNumber(v).replace(/,/g, ''));
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,190 @@
+﻿@model MyFirstCoreApp.Models.ViewModels.MenuListViewModel
+
+@{
+    ViewData["Title"] = "حذف منو";
+}
+
+<div class="card card-danger">
+
+    <div class="card-header">
+
+        <h3 class="card-title">
+            <i class="fa fa-trash"></i>
+            حذف منو
+        </h3>
+
+        <div class="card-tools">
+
+            <a asp-area="Admin"
+               asp-controller="Menus"
+               asp-action="Index"
+               class="btn btn-secondary btn-sm">
+
+                <i class="fa fa-arrow-right"></i>
+                بازگشت
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="alert alert-warning">
+            <i class="fa fa-exclamation-triangle"></i>
+
+            آیا از حذف منوی زیر مطمئن هستید؟
+
+            <strong>
+                @Model.Title
+            </strong>
+
+            <br />
+
+            <small>
+                توجه: این عملیات قابل بازگشت نیست.
+            </small>
+        </div>
+
+        <dl class="row">
+
+            <!-- عنوان -->
+            <dt class="col-md-3">
+                عنوان
+            </dt>
+
+            <dd class="col-md-9">
+                <strong>
+                    @Model.Title
+                </strong>
+            </dd>
+
+            <!-- آدرس -->
+            <dt class="col-md-3">
+                آدرس
+            </dt>
+
+            <dd class="col-md-9">
+
+                @if (!string.IsNullOrWhiteSpace(Model.Url))
+                {
+                    <code>
+                        @Model.Url
+                    </code>
+                }
+                else
+                {
+                    <span class="text-muted">-</span>
+                }
+
+            </dd>
+
+            <!-- آیکون -->
+            <dt class="col-md-3">
+                آیکون
+            </dt>
+
+            <dd class="col-md-9">
+
+                @if (!string.IsNullOrWhiteSpace(Model.Icon))
+                {
+                    <i class="@Model.Icon mr-1"></i>
+
+                    <code>
+                        @Model.Icon
+                    </code>
+                }
+                else
+                {
+                    <span class="text-muted">-</span>
+                }
+
+            </dd>
+
+            <!-- دسترسی -->
+            <dt class="col-md-3">
+                دسترسی
+            </dt>
+
+            <dd class="col-md-9">
+
+                @if (!string.IsNullOrWhiteSpace(Model.Permission))
+                {
+                    <span class="badge badge-secondary">
+                        @Model.Permission
+                    </span>
+                }
+                else
+                {
+                    <span class="text-muted">
+                        بدون محدودیت دسترسی
+                    </span>
+                }
+
+            </dd>
+
+            <!-- والد -->
+            <dt class="col-md-3">
+                والد
+            </dt>
+
+            <dd class="col-md-9">
+
+                @if (!string.IsNullOrWhiteSpace(Model.ParentTitle))
+                {
+                    <span class="badge badge-light">
+                        <i class="fa fa-folder-open"></i>
+                        @Model.ParentTitle
+                    </span>
+                }
+                else
+                {
+                    <span class="badge badge-info">
+                        <i class="fa fa-home"></i>
+                        ریشه
+                    </span>
+                }
+
+            </dd>
+
+        </dl>
+
+    </div>
+
+    <div class="card-footer">
+
+        <form asp-area="Admin"
+              asp-controller="Menus"
+              asp-action="DeleteConfirmed"
+              method="post"
+              class="d-inline">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   asp-for="Id" />
+
+            <button type="submit"
+                    class="btn btn-danger">
+
+                <i class="fa fa-trash"></i>
+                حذف منو
+
+            </button>
+
+        </form>
+
+        <a asp-area="Admin"
+           asp-controller="Menus"
+           asp-action="Index"
+           class="btn btn-secondary">
+
+            <i class="fa fa-times"></i>
+            انصراف
+
+        </a>
+
+    </div>
+
+</div>

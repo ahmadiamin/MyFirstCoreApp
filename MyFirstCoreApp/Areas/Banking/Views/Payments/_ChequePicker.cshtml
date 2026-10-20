@@ -1,0 +1,18 @@
+@model MyFirstCoreApp.Areas.Banking.ViewModels.Payment.PaymentFormViewModel
+
+@* انتخاب چک؛ فقط وقتی روش پرداخت «چک» است نمایش داده می‌شود (با جاوااسکریپت صفحه). *@
+<div class="row" id="chequeRow" style="display:none">
+    <div class="col-md-8">
+        <div class="form-group">
+            <label asp-for="ChequeId"></label>
+            <select asp-for="ChequeId" id="ChequeId" class="form-control" data-selected="@Model.ChequeId">
+                <option value="">-- انتخاب چک --</option>
+            </select>
+            <small class="form-text text-muted">
+                چک را ابتدا در بخش «چک‌ها» ثبت کنید. سند حسابداری را خود چک می‌سازد؛
+                این پرداخت فقط مبلغ را به فاکتورها تخصیص می‌دهد.
+            </small>
+            <span asp-validation-for="ChequeId" class="text-danger"></span>
+        </div>
+    </div>
+</div>

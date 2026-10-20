@@ -1,0 +1,21 @@
+﻿@model MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoicePoem.InvoicePoemViewModel
+
+<div class="form-group">
+    <label asp-for="Text"></label>
+    <textarea asp-for="Text"
+              class="form-control"
+              rows="5"
+              maxlength="2000"></textarea>
+    <span asp-validation-for="Text" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <div class="custom-control custom-checkbox">
+        <input asp-for="IsActive"
+               class="custom-control-input"
+               id="IsActive" />
+        <label asp-for="IsActive"
+               class="custom-control-label"
+               for="IsActive"></label>
+    </div>
+</div>

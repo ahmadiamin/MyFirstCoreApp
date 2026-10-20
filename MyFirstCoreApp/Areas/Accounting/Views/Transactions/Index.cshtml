@@ -1,0 +1,301 @@
+﻿@Html.AntiForgeryToken()   <!-- 🆕 برای Post -->
+@{
+    ViewData["Title"] = "اسناد حسابداری";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-file-text"></i>
+            لیست اسناد حسابداری
+        </h3>
+        <div class="card-tools">
+            <a asp-area="Accounting" asp-controller="Transactions" asp-action="Create"
+               class="btn btn-primary btn-sm">
+                <i class="fa fa-plus"></i> سند جدید
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa fa-search"></i></span>
+                    </div>
+                    <input type="text" id="txtSearch" class="form-control"
+                           placeholder="جستجو در شماره، شرح، مرجع..." />
+                </div>
+            </div>
+            <div class="col-md-7 text-left">
+                <span class="text-muted" id="lblCount"></span>
+            </div>
+        </div>
+
+        <div id="transactionsGrid" class="ag-theme-alpine"
+             style="height: 600px; width: 100%;">
+        </div>
+
+    </div>
+</div>
+@Html.AntiForgeryToken()
+@section Scripts {
+    <script>
+        // ============================================
+        // 🆕 متغیر global برای Grid API
+        // ============================================
+        let transactionsGridApi = null;
+
+        $(document).ready(function () {
+
+            // ============================================
+            // ۱. تعریف ستون‌ها
+            // ============================================
+            const columnDefs = [
+                AgGridHelper.rowNumberColumn(),
+                AgGridHelper.numberColumn('number', 'شماره', 90),
+                { field: 'date', headerName: 'تاریخ', width: 110 },
+                { field: 'description', headerName: 'شرح', flex: 2, minWidth: 200 },
+                { field: 'groupName', headerName: 'گروه', width: 130 },
+                { field: 'reference', headerName: 'مرجع', width: 120 },
+                AgGridHelper.moneyColumn('totalAmount', 'مبلغ', 140),
+                {
+                    headerName: 'وضعیت',
+                    field: 'isPosted',
+                    width: 100,
+                    sortable: false,
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const span = document.createElement('span');
+                        if (params.value) {
+                            span.className = 'badge badge-success';
+                            span.textContent = 'قطعی';
+                        } else {
+                            span.className = 'badge badge-warning';
+                            span.textContent = 'پیش‌نویس';
+                        }
+                        return span;
+                    }
+                },
+                        {
+            headerName: 'عملیات',
+            colId: 'actions',
+            width: 200,
+            sortable: false,
+            filter: false,
+            pinned: 'left',
+            cellRenderer: function (params) {
+                if (!params.data) return '';
+                const div = document.createElement('div');
+                div.className = 'action-buttons';
+                const d = params.data;
+
+                // 👁 مشاهده (همیشه)
+                const viewBtn = document.createElement('a');
+                viewBtn.href = `/Accounting/Transactions/Details/${d.id}`;
+                viewBtn.className = 'btn btn-sm btn-outline-info action-icon-btn';
+                viewBtn.title = 'مشاهده';
+                viewBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                div.appendChild(viewBtn);
+
+                // 🆕 چک کن سند خودکار نباشه
+                const isAuto = d.referenceType && d.referenceType !== '';
+
+                if (!isAuto) {
+                    // ✅ قطعی
+                    if (!d.isPosted) {
+                        const postBtn = document.createElement('a');
+                        postBtn.href = 'javascript:void(0)';
+                        postBtn.className = 'btn btn-sm btn-outline-success action-icon-btn post-btn';
+                        postBtn.dataset.id = d.id;
+                        postBtn.title = 'قطعی کردن';
+                        postBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                        div.appendChild(postBtn);
+                    } else {
+                        // ↩ برگشت
+                        const unpostBtn = document.createElement('a');
+                        unpostBtn.href = 'javascript:void(0)';
+                        unpostBtn.className = 'btn btn-sm btn-outline-warning action-icon-btn unpost-btn';
+                        unpostBtn.dataset.id = d.id;
+                        unpostBtn.title = 'برگشت به پیش‌نویس';
+                        unpostBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i>';
+                        div.appendChild(unpostBtn);
+                    }
+
+                    // ✏ ویرایش (فقط پیش‌نویس)
+                    if (!d.isPosted) {
+                        const editBtn = document.createElement('a');
+                        editBtn.href = `/Accounting/Transactions/Edit/${d.id}`;
+                        editBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn';
+                        editBtn.title = 'ویرایش';
+                        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+                        div.appendChild(editBtn);
+                    }
+
+                    // 🗑 حذف (فقط پیش‌نویس)
+                    if (!d.isPosted) {
+                        const deleteBtn = document.createElement('a');
+                        deleteBtn.href = 'javascript:void(0)';
+                        deleteBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn delete-btn';
+                        deleteBtn.dataset.id = d.id;
+                        deleteBtn.dataset.title = d.number || '';
+                        deleteBtn.dataset.desc = d.description || '';
+                        deleteBtn.dataset.amount = d.totalAmount || 0;
+                        deleteBtn.title = 'حذف';
+                        deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                        div.appendChild(deleteBtn);
+                    }
+                } else {
+                    // 🆕 سند خودکار: نمایش نشان
+                    const span = document.createElement('span');
+                    span.className = 'badge badge-secondary';
+                    span.title = 'سند خودکار - از صفحه‌ی مربوطه مدیریت کنید';
+                    span.innerHTML = '<i class="fa-solid fa-lock"></i> خودکار';
+                    div.appendChild(span);
+                }
+
+                return div;
+            }
+        }
+            ];
+
+            // ============================================
+            // ۲. ساخت Grid
+            // ============================================
+            transactionsGridApi = AgGridHelper.create(
+                'transactionsGrid',
+                columnDefs,
+                '/Accounting/Transactions/GetData',
+                'txtSearch',
+                'lblCount'
+            );
+
+        });
+
+        // ============================================
+        // ۳. رویداد حذف
+        // ============================================
+        $(document).on('click', '.delete-btn', function () {
+            const $btn = $(this);
+            const id = $btn.data('id');
+            const title = $btn.data('title');
+            const desc = $btn.data('desc');
+            const amount = $btn.data('amount');
+
+            // 🆕 ساخت items
+            const items = [];
+            if (title) items.push({ label: 'شماره سند', value: title });
+            if (desc) items.push({ label: 'شرح', value: desc });
+            if (amount) items.push({ label: 'مبلغ', value: Number(amount).toLocaleString('en-US') + ' ریال' });
+
+            // 🆕 نمایش Modal
+            ModalHelper.confirmDelete({
+                url: '/Accounting/Transactions/Delete',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                title: 'حذف سند شماره ' + title,
+                message: 'آیا از حذف این سند مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
+                items: items,
+                onSuccess: function () {
+                    // 🆕 رفرش Grid
+                    if (transactionsGridApi) {
+                        const ds = transactionsGridApi.getGridOption('datasource');
+                        transactionsGridApi.setGridOption('datasource', ds);
+                    } else {
+                        location.reload();
+                    }
+                }
+            });
+        });
+
+        // 🆕 رویداد قطعی
+        $(document).on('click', '.post-btn', function () {
+            const id = $(this).data('id');
+
+            ModalHelper.confirm(
+                'آیا از قطعی کردن این سند مطمئن هستید؟',
+                function () {
+                    $.ajax({
+                        url: '/Accounting/Transactions/Post',
+                        type: 'POST',
+                        data: {
+                            id: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (r) {
+                            if (r.success) {
+                                ModalHelper.success(r.message || 'سند قطعی شد.', {
+                                    onClose: function () {
+                                        if (transactionsGridApi) {
+                                            const ds = transactionsGridApi.getGridOption('datasource');
+                                            transactionsGridApi.setGridOption('datasource', ds);
+                                        } else {
+                                            location.reload();
+                                        }
+                                    }
+                                });
+                            } else {
+                                ModalHelper.error(r.message);
+                            }
+                        }
+                    });
+                },
+                { title: 'قطعی کردن سند', icon: 'fa-solid fa-circle-check' }
+            );
+        });
+
+        // 🆕 رویداد برگشت
+        $(document).on('click', '.unpost-btn', function () {
+            const id = $(this).data('id');
+
+            ModalHelper.confirm(
+                'آیا از برگشت این سند به پیش‌نویس مطمئن هستید؟',
+                function () {
+                    $.ajax({
+                        url: '/Accounting/Transactions/Unpost',
+                        type: 'POST',
+                        data: {
+                            id: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (r) {
+                            if (r.success) {
+                                ModalHelper.success(r.message || 'سند به پیش‌نویس برگشت.', {
+                                    onClose: function () {
+                                        if (transactionsGridApi) {
+                                            const ds = transactionsGridApi.getGridOption('datasource');
+                                            transactionsGridApi.setGridOption('datasource', ds);
+                                        } else {
+                                            location.reload();
+                                        }
+                                    }
+                                });
+                            } else {
+                                ModalHelper.error(r.message);
+                            }
+                        }
+                    });
+                },
+                { title: 'برگشت سند', icon: 'fa-solid fa-rotate-left' }
+            );
+        });
+    </script>
+}

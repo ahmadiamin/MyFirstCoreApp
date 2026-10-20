@@ -1,0 +1,39 @@
+﻿@model MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoicePoem.InvoicePoemViewModel
+
+@{
+    ViewData["Title"] = "ثبت شعر جدید";
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">ثبت شعر جدید</h3>
+    </div>
+
+    <form asp-area="Invoicing"
+          asp-controller="InvoicePoems"
+          asp-action="Create"
+          method="post">
+
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger mb-3"></div>
+
+            <partial name="_Form" model="Model" />
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> ذخیره
+            </button>
+
+            <a asp-action="Index"
+               asp-controller="InvoicePoems"
+               asp-area="Invoicing"
+               class="btn btn-secondary">انصراف</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

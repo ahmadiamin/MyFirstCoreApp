@@ -1,0 +1,188 @@
+﻿@model MyFirstCoreApp.Models.ViewModels.ProfileImagesViewModel
+
+@{
+    ViewData["Title"] = "مدیریت تصاویر پروفایل";
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        <i class="fa fa-check-circle"></i>
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        <i class="fa fa-exclamation-circle"></i>
+        @TempData["Error"]
+    </div>
+}
+
+<div class="card card-primary">
+
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-images"></i>
+            مدیریت تصاویر پروفایل
+        </h3>
+    </div>
+
+    <div class="card-body">
+
+        <div class="alert alert-light border">
+            <strong>کاربر:</strong>
+            @Model.FullName
+        </div>
+
+        @if (Model.Images.Any())
+        {
+            <div class="row">
+
+                @foreach (var image in Model.Images)
+                {
+                    <div class="col-md-3 col-sm-4 col-6 mb-3">
+
+                        <div class="card h-100">
+
+                            <div class="position-relative">
+
+                                <img src="@Url.Action(
+                                                                                  "ProfileImage",
+                                                                                  "Users",
+                                                                                  new
+                                                                                  {
+                                                                                      area = "Admin",
+                                                                                      id = image.Id
+                                                                                  })"
+                             class="card-img-top"
+                             style="
+                                        height:180px;
+                                        object-fit:cover;" />
+
+                        @if (image.IsPrimary)
+                                {
+                                    <span class="badge badge-success position-absolute"
+                                          style="top:10px; right:10px;">
+                                        تصویر اصلی
+                                    </span>
+                                }
+
+                            </div>
+
+                            <div class="card-body p-2 text-center">
+
+                                @if (!image.IsPrimary)
+                                {
+                                    <form asp-action="SetPrimaryProfileImage"
+                                          asp-controller="Users"
+                                          asp-area="Admin"
+                                          method="post"
+                                          class="d-inline">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@image.Id" />
+
+                                        <button type="submit"
+                                                class="btn btn-outline-primary btn-sm"
+                                                title="انتخاب به عنوان تصویر اصلی">
+                                            <i class="fa fa-star"></i>
+                                            تصویر اصلی
+                                        </button>
+
+                                    </form>
+                                }
+
+                                <form asp-action="DeleteProfileImage"
+                                      asp-controller="Users"
+                                      asp-area="Admin"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('آیا از حذف این تصویر مطمئن هستید؟');">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@image.Id" />
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm"
+                                            title="حذف تصویر">
+                                        <i class="fa fa-trash"></i>
+                                        حذف
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-light border">
+                <i class="fa fa-info-circle"></i>
+                هنوز تصویری برای این کاربر ثبت نشده است.
+            </div>
+        }
+
+        <hr />
+
+        <form asp-action="UploadProfileImages"
+              asp-controller="Users"
+              asp-area="Admin"
+              method="post"
+              enctype="multipart/form-data">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="userId"
+                   value="@Model.UserId" />
+
+            <div class="form-group">
+
+                <label>
+                    <i class="fa fa-upload"></i>
+                    افزودن تصاویر جدید
+                </label>
+
+                <input type="file"
+                       name="NewImages"
+                       class="form-control-file"
+                       accept=".jpg,.jpeg,.png,.webp"
+                       multiple />
+
+                <small class="form-text text-muted">
+                    امکان انتخاب چند تصویر وجود دارد.
+                    فرمت‌های JPG، PNG و WebP مجاز هستند.
+                </small>
+
+            </div>
+
+            <button type="submit"
+                    class="btn btn-success">
+                <i class="fa fa-upload"></i>
+                آپلود تصاویر
+            </button>
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i>
+                بازگشت
+            </a>
+
+        </form>
+
+    </div>
+
+</div>

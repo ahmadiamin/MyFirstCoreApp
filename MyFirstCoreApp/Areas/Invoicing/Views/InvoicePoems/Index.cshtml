@@ -1,0 +1,106 @@
+﻿@model IEnumerable<MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoicePoem.InvoicePoemViewModel>
+
+@{
+    ViewData["Title"] = "مدیریت شعرهای فاکتور";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">شعرهای فاکتور</h3>
+
+        <div class="card-tools">
+            <a asp-area="Invoicing"
+               asp-controller="InvoicePoems"
+               asp-action="Create"
+               class="btn btn-primary btn-sm">
+                <i class="fa fa-plus"></i>
+                شعر جدید
+            </a>
+
+            <a asp-area="Invoicing"
+               asp-controller="InvoicePrintSettings"
+               asp-action="Edit"
+               class="btn btn-secondary btn-sm">
+                تنظیمات چاپ
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th style="width:70px">ردیف</th>
+                    <th>متن شعر</th>
+                    <th style="width:100px">وضعیت</th>
+                    <th style="width:150px">عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var row = 0;
+                }
+
+                @foreach (var poem in Model)
+                {
+                    <tr>
+                        <td>@(++row)</td>
+                        <td style="white-space:pre-line">@poem.Text</td>
+                        <td>
+                            @if (poem.IsActive)
+                            {
+                                <span class="badge badge-success">فعال</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">غیرفعال</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-area="Invoicing"
+                               asp-controller="InvoicePoems"
+                               asp-action="Edit"
+                               asp-route-id="@poem.Id"
+                               class="btn btn-sm btn-outline-primary"
+                               title="ویرایش">
+                                <i class="fa fa-edit"></i>
+                            </a>
+
+                            <form asp-area="Invoicing"
+                                  asp-controller="InvoicePoems"
+                                  asp-action="Delete"
+                                  asp-route-id="@poem.Id"
+                                  method="post"
+                                  class="d-inline"
+                                  onsubmit="return confirm('آیا از حذف این شعر مطمئن هستید؟');">
+                                @Html.AntiForgeryToken()
+
+                                <button type="submit"
+                                        class="btn btn-sm btn-outline-danger"
+                                        title="حذف">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            هنوز شعری ثبت نشده است.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

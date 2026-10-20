@@ -1,0 +1,114 @@
+﻿@model MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoicePrintSetting.InvoicePrintSettingViewModel
+
+@{
+    ViewData["Title"] = "تنظیمات چاپ فاکتور";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">تنظیمات چاپ فاکتور</h3>
+    </div>
+
+    <form asp-area="Invoicing"
+          asp-controller="InvoicePrintSettings"
+          asp-action="Edit"
+          method="post">
+
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger mb-3"></div>
+
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input asp-for="ShowBalance"
+                           class="custom-control-input"
+                           id="ShowBalance" />
+
+                    <label asp-for="ShowBalance"
+                           class="custom-control-label"
+                           for="ShowBalance">
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description"></label>
+                <textarea asp-for="Description"
+                          class="form-control"
+                          rows="5"
+                          maxlength="2000"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PoemSelectionMode"></label>
+
+                <select asp-for="PoemSelectionMode"
+                        class="form-control"
+                        id="PoemSelectionMode">
+                    <option value="0">بدون شعر</option>
+                    <option value="1">انتخاب تصادفی</option>
+                    <option value="2">شعر ثابت</option>
+                </select>
+
+                <span asp-validation-for="PoemSelectionMode"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="form-group" id="selectedPoemContainer">
+                <label asp-for="SelectedInvoicePoemId"></label>
+
+                <select asp-for="SelectedInvoicePoemId"
+                        asp-items="Model.Poems"
+                        class="form-control">
+                    <option value="">-- انتخاب شعر --</option>
+                </select>
+
+                <span asp-validation-for="SelectedInvoicePoemId"
+                      class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i>
+                ذخیره تنظیمات
+            </button>
+
+            <a asp-area="Invoicing"
+               asp-controller="InvoicePoems"
+               asp-action="Index"
+               class="btn btn-secondary">
+                مدیریت شعرها
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+            function toggleSelectedPoem() {
+                const isSelected =
+                    $('#PoemSelectionMode').val() === '2';
+
+                $('#selectedPoemContainer')
+                    .toggle(isSelected);
+            }
+
+            $('#PoemSelectionMode').on(
+                'change',
+                toggleSelectedPoem
+            );
+
+            toggleSelectedPoem();
+        });
+    </script>
+}

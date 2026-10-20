@@ -1,0 +1,51 @@
+@model MyFirstCoreApp.Areas.Accounting.ViewModels.FiscalYear.FiscalYearFormViewModel
+@{
+    ViewData["Title"] = "ویرایش سال مالی";
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-edit"></i>
+            @ViewData["Title"]
+        </h3>
+    </div>
+
+    <form asp-area="Accounting" asp-controller="FiscalYears" asp-action="Edit" asp-route-id="@Model.Id" method="post">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <partial name="_Form" model="Model" />
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> ذخیره
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i> انصراف
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // ============================================
+            // ۲. DatePicker
+            // ============================================
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValueType: 'persian',   // 🆕 این کلیدیه
+                initialValue: true,
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' }
+                },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+        });
+    </script>
+}

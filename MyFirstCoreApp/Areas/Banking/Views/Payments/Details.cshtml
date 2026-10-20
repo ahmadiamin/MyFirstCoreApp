@@ -1,0 +1,122 @@
+﻿@using DNTPersianUtils.Core
+@using MyFirstCoreApp.Application.Common.Utilities
+@model MyFirstCoreApp.Domain.Entities.Banking.Payment
+@{
+    ViewData["Title"] = $"مشاهده پرداخت {Model.Number}";
+    var isReceived = Model.PaymentType == MyFirstCoreApp.Domain.Enums.PaymentType.Received;
+}
+
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+            @(isReceived ? "دریافت" : "پرداخت") شماره @Model.Number
+        </h3>
+        <div class="card-tools">
+            <span class="badge @(isReceived ? "badge-success" : "badge-danger")">
+                @(isReceived ? "دریافت" : "پرداخت")
+            </span>
+            <span class="badge @(Model.Status == MyFirstCoreApp.Domain.Enums.PaymentStatus.Posted ? "badge-success" : "badge-warning")">
+                @(Model.Status == MyFirstCoreApp.Domain.Enums.PaymentStatus.Posted ? "قطعی" : "پیش‌نویس")
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <div class="row">
+            <div class="col-md-3"><strong>شماره:</strong> @Model.Number</div>
+            <div class="col-md-3"><strong>تاریخ:</strong> @PersianDate.Format(Model.Date)</div>
+            <div class="col-md-3"><strong>طرف حساب:</strong> @Model.Contact?.Name</div>
+            <div class="col-md-3"><strong>حساب بانکی:</strong> @Model.BankAccount?.Name</div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-3"><strong>روش پرداخت:</strong> @GetMethodName(Model.PaymentMethod)</div>
+            <div class="col-md-3"><strong>مبلغ کل:</strong> <span class="persian-number-comma">@Model.Amount.ToString("N0")</span></div>
+            <div class="col-md-3"><strong>تخصیص‌یافته:</strong> <span class="persian-number-comma">@Model.AllocatedAmount.ToString("N0")</span></div>
+            <div class="col-md-3"><strong>تخصیص‌نیافته:</strong> <span class="persian-number-comma">@Model.UnallocatedAmount.ToString("N0")</span></div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Reference))
+        {
+            <div class="row mt-2">
+                <div class="col-md-12"><strong>مرجع:</strong> @Model.Reference</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="row mt-2">
+                <div class="col-md-12"><strong>توضیحات:</strong> @Model.Description</div>
+            </div>
+        }
+
+        @if (Model.TransactionId.HasValue)
+        {
+            <div class="alert alert-success mt-3">
+                <i class="fa-solid fa-circle-check"></i> سند حسابداری:
+                <a asp-area="Accounting" asp-controller="Transactions" asp-action="Details" asp-route-id="@Model.TransactionId">مشاهده</a>
+            </div>
+        }
+
+        <hr />
+        <h5><i class="fa-solid fa-list"></i> تخصیص‌ها به فاکتورها</h5>
+
+        @if (Model.Allocations.Any())
+        {
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>فاکتور</th>
+                        <th>تاریخ</th>
+                        <th>مبلغ کل</th>
+                        <th>مبلغ تخصیص</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var i = 1;
+                    }
+                    @foreach (var a in Model.Allocations.OrderBy(x => x.Invoice.Date))
+                    {
+                        <tr>
+                            <td class="persian-number">@i</td>
+                            <td>
+                                <a asp-area="Invoicing" asp-controller="Invoices" asp-action="Details" asp-route-id="@a.InvoiceId">
+                                    فاکتور شماره @a.Invoice.Number
+                                </a>
+                            </td>
+                            <td>@a.Invoice.Date.ToShortPersianDateString()</td>
+                            <td class="persian-number-comma">@a.Invoice.TotalAmount.ToString("N0")</td>
+                            <td class="persian-number-comma">@a.Amount.ToString("N0")</td>
+                        </tr>
+                        i++;
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+    <div class="card-footer">
+        <a asp-action="Index"
+           asp-route-paymentType="@((int)Model.PaymentType)"
+           class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-right"></i> بازگشت
+        </a>
+        @if (Model.Status == MyFirstCoreApp.Domain.Enums.PaymentStatus.Draft)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fa-solid fa-pen-to-square"></i> ویرایش</a>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetMethodName(MyFirstCoreApp.Domain.Enums.PaymentMethod m) => m switch
+    {
+        MyFirstCoreApp.Domain.Enums.PaymentMethod.Cash => "نقد",
+        MyFirstCoreApp.Domain.Enums.PaymentMethod.BankTransfer => "انتقال بانکی",
+        MyFirstCoreApp.Domain.Enums.PaymentMethod.Card => "کارت به کارت",
+        MyFirstCoreApp.Domain.Enums.PaymentMethod.Cheque => "چک",
+        _ => "سایر"
+    };
+}

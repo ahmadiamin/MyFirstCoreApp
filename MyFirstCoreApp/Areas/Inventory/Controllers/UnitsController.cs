@@ -1,0 +1,203 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Application.Common.Models;
+using MyFirstCoreApp.Areas.Inventory.ViewModels.Unit;
+using MyFirstCoreApp.Domain.Entities.Inventory;
+using MyFirstCoreApp.Infrastructure.Persistence;
+
+namespace MyFirstCoreApp.Areas.Inventory.Controllers;
+
+[Area("Inventory")]
+[Authorize]
+public class UnitsController : Controller
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICurrentTenant _currentTenant;
+
+    public UnitsController(
+        ApplicationDbContext context,
+        ICurrentTenant currentTenant)
+    {
+        _context = context;
+        _currentTenant = currentTenant;
+    }
+
+    // GET: /Inventory/Units
+    [Authorize(Policy = "Unit.View")]
+    public IActionResult Index() => View();
+
+    // POST: /Inventory/Units/GetData
+    [HttpPost]
+    [Authorize(Policy = "Unit.View")]
+    public async Task<IActionResult> GetData([FromBody] AgGridRequest request)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false });
+
+        var query = _context.Units.Where(x => x.TenantId == tenantId.Value);
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var s = request.Search.Trim();
+            query = query.Where(x =>
+                (x.Name != null && x.Name.Contains(s)) ||
+                (x.Symbol != null && x.Symbol.Contains(s)));
+        }
+
+        var total = await query.CountAsync();
+
+        query = request.SortBy switch
+        {
+            "name" => request.SortDir == "asc"
+                ? query.OrderBy(x => x.Name)
+                : query.OrderByDescending(x => x.Name),
+            "symbol" => request.SortDir == "asc"
+                ? query.OrderBy(x => x.Symbol)
+                : query.OrderByDescending(x => x.Symbol),
+            "sortOrder" => request.SortDir == "asc"
+                ? query.OrderBy(x => x.SortOrder)
+                : query.OrderByDescending(x => x.SortOrder),
+            _ => query.OrderBy(x => x.Id)
+        };
+
+        var items = await query
+            .Skip(request.StartRow)
+            .Take(request.EndRow - request.StartRow)
+            .Select(x => new
+            {
+                id = x.Id,
+                name = x.Name,
+                symbol = x.Symbol,
+                sortOrder = x.SortOrder,
+                isActive = x.IsActive
+            })
+            .ToListAsync();
+
+        return Json(new { success = true, rows = items, lastRow = total });
+    }
+
+    // GET: /Inventory/Units/Create
+    [Authorize(Policy = "Unit.Create")]
+    public IActionResult Create() => View(new UnitFormViewModel());
+
+    // POST: /Inventory/Units/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Unit.Create")]
+    public async Task<IActionResult> Create(UnitFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+        if (!ModelState.IsValid) return View(model);
+
+        var entity = new Unit
+        {
+            TenantId = tenantId.Value,
+            IsActive = model.IsActive,
+            Name = model.Name,
+            Symbol = model.Symbol,
+            SortOrder = model.SortOrder,
+        };
+
+        _context.Units.Add(entity);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "واحد با موفقیت ثبت شد.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // GET: /Inventory/Units/Edit/5
+    [Authorize(Policy = "Unit.Edit")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _context.Units
+            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        var model = new UnitFormViewModel
+        {
+            Id = entity.Id,
+            IsActive = entity.IsActive,
+            Name = entity.Name,
+            Symbol = entity.Symbol,
+            SortOrder = entity.SortOrder,
+        };
+
+        return View(model);
+    }
+
+    // POST: /Inventory/Units/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Unit.Edit")]
+    public async Task<IActionResult> Edit(int id, UnitFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+        if (id != model.Id) return BadRequest();
+        if (!ModelState.IsValid) return View(model);
+
+        var entity = await _context.Units
+            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        entity.IsActive = model.IsActive;
+        entity.UpdatedAt = DateTime.UtcNow;
+        entity.Name = model.Name;
+        entity.Symbol = model.Symbol;
+        entity.SortOrder = model.SortOrder;
+
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "واحد با موفقیت ویرایش شد.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // POST: /Inventory/Units/Delete
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Unit.Delete")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
+
+        try
+        {
+            var entity = await _context.Units
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+            if (entity == null)
+                return Json(new { success = false, message = "واحد پیدا نشد." });
+
+            if (entity.IsDeleted)
+                return Json(new { success = false, message = "این واحد قبلاً حذف شده است." });
+
+            // 🆕 چک کالا
+            var hasProducts = await _context.Products
+                .AnyAsync(x => x.UnitId == id && !x.IsDeleted);
+
+            if (hasProducts)
+                return Json(new { success = false, message = "این واحد در کالاها استفاده شده و قابل حذف نیست." });
+
+            // Soft Delete
+            entity.IsDeleted = true;
+            entity.DeletedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "واحد با موفقیت حذف شد." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+}

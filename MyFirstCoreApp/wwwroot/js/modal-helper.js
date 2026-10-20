@@ -1,0 +1,241 @@
+﻿window.ModalHelper = {
+
+    show: function (options) {
+        options = options || {};
+
+        // 🆕 پاک کردن backdrop و Modal قبلی
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('padding-right', '');
+        $('#generalModal').remove();
+
+        let buttonsHtml = '';
+        if (options.buttons && options.buttons.length > 0) {
+            options.buttons.forEach(function (btn, idx) {
+                buttonsHtml += '<button type="button" class="btn ' + (btn.class || 'btn-secondary') + '" ' +
+                    'data-dismiss="' + (btn.dismiss ? 'modal' : '') + '" ' +
+                    'data-action="' + (btn.action || '') + '" ' +
+                    'data-idx="' + idx + '">' +
+                    (btn.icon ? '<i class="' + btn.icon + '"></i> ' : '') +
+                    (btn.text || '') +
+                    '</button>';
+            });
+        }
+
+        const modalHtml =
+            '<div class="modal fade" id="generalModal" tabindex="-1" role="dialog" aria-hidden="true">' +
+            '<div class="modal-dialog ' + (options.size || 'modal-md') + ' modal-dialog-centered" role="document">' +
+            '<div class="modal-content">' +
+            '<div class="modal-header ' + (options.headerClass || 'bg-primary text-white') + '">' +
+            '<h5 class="modal-title">' +
+            (options.icon ? '<i class="' + options.icon + '"></i> ' : '') +
+            (options.title || 'عنوان') +
+            '</h5>' +
+            '<button type="button" class="close" data-dismiss="modal" aria-label="بستن">' +
+            '<span aria-hidden="true">&times;</span>' +
+            '</button>' +
+            '</div>' +
+            '<div class="modal-body" id="generalModalBody">' +
+            (options.body || '') +
+            '</div>' +
+            (buttonsHtml ? '<div class="modal-footer">' + buttonsHtml + '</div>' : '') +
+            '</div>' +
+            '</div>' +
+            '</div>';
+
+        $('body').append(modalHtml);
+
+        $('#generalModal').on('click', 'button[data-action]', function () {
+            const action = $(this).data('action');
+            const idx = $(this).data('idx');
+            const btn = options.buttons ? options.buttons[idx] : null;
+
+            if (action === 'confirm' && options.onConfirm) {
+                options.onConfirm();
+            } else if (action === 'cancel' && options.onCancel) {
+                options.onCancel();
+            } else if (btn && btn.onClick) {
+                btn.onClick();
+            }
+        });
+
+        $('#generalModal').on('shown.bs.modal', function () {
+            // 🆕 اعمال DatePicker روی input های datepicker داخل Modal
+            $('#generalModal .datepicker').each(function () {
+                var $input = $(this);
+                var val = $input.val();
+
+                $input.persianDatepicker({
+                    format: 'YYYY/MM/DD',
+                    initialValue: false,
+                    autoClose: true,
+                    observer: true,
+                    calendar: {
+                        persian: {
+                            locale: 'fa',
+                            showHint: true,
+                            leapYearMode: 'algorithmic'
+                        }
+                    },
+                    toolbox: {
+                        calendarSwitch: { enabled: false }
+                    }
+                });
+
+                if (val) {
+                    $input.persianDatepicker('setDate', val);
+                }
+            });
+
+            if (options.onShow) options.onShow();
+        });
+
+        $('#generalModal').on('hidden.bs.modal', function () {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css('padding-right', '');
+            if (options.onClose) options.onClose();
+            $(this).remove();
+        });
+
+        $('#generalModal').modal('show');
+    },
+
+    confirm: function (message, onConfirm, options) {
+        options = options || {};
+        this.show({
+            title: options.title || 'تایید',
+            icon: options.icon || 'fa-solid fa-question-circle',
+            headerClass: options.headerClass || 'bg-warning text-white',
+            body: '<p class="text-center mb-0">' + message + '</p>',
+            buttons: [
+                { text: 'انصراف', class: 'btn-secondary', icon: 'fa-solid fa-times', dismiss: true },
+                { text: 'تایید', class: 'btn-success', icon: 'fa-solid fa-check', action: 'confirm' }
+            ],
+            onConfirm: onConfirm
+        });
+    },
+
+    alert: function (message, options) {
+        options = options || {};
+        this.show({
+            title: options.title || 'اطلاع',
+            icon: options.icon || 'fa-solid fa-info-circle',
+            headerClass: options.headerClass || 'bg-info text-white',
+            body: '<p class="text-center mb-0">' + message + '</p>',
+            buttons: [
+                { text: 'باشه', class: 'btn-primary', icon: 'fa-solid fa-check', dismiss: true }
+            ]
+        });
+    },
+
+    error: function (message, options) {
+        options = options || {};
+        this.show({
+            title: options.title || 'خطا',
+            icon: options.icon || 'fa-solid fa-exclamation-triangle',
+            headerClass: options.headerClass || 'bg-danger text-white',
+            body: '<p class="text-center mb-0">' + message + '</p>',
+            buttons: [
+                { text: 'باشه', class: 'btn-danger', icon: 'fa-solid fa-check', dismiss: true }
+            ]
+        });
+    },
+
+    success: function (message, options) {
+        options = options || {};
+        this.show({
+            title: options.title || 'موفقیت',
+            icon: options.icon || 'fa-solid fa-check-circle',
+            headerClass: options.headerClass || 'bg-success text-white',
+            body: '<p class="text-center mb-0">' + message + '</p>',
+            buttons: [
+                { text: 'باشه', class: 'btn-success', icon: 'fa-solid fa-check', dismiss: true }
+            ],
+            onClose: options.onClose
+        });
+    },
+
+    confirmDelete: function (options) {
+        options = options || {};
+
+        let itemsHtml = '';
+        if (options.items && options.items.length > 0) {
+            itemsHtml = '<dl class="row mb-0">';
+            options.items.forEach(function (item) {
+                itemsHtml += '<dt class="col-sm-4">' + (item.label || '') + ':</dt>';
+                itemsHtml += '<dd class="col-sm-8">' + (item.value || '—') + '</dd>';
+            });
+            itemsHtml += '</dl>';
+        }
+
+        const bodyHtml =
+            '<div class="alert alert-danger">' +
+            '<i class="fa-solid fa-triangle-exclamation"></i> ' +
+            (options.message || 'آیا از حذف این مورد مطمئن هستید؟') +
+            '</div>' +
+            itemsHtml;
+
+        this.show({
+            title: options.title || 'حذف مورد',
+            icon: 'fa-solid fa-trash',
+            headerClass: 'bg-danger text-white',
+            size: options.size || 'modal-md',
+            body: bodyHtml,
+            buttons: [
+                { text: 'انصراف', class: 'btn-secondary', icon: 'fa-solid fa-times', dismiss: true },
+                { text: 'حذف', class: 'btn-danger', icon: 'fa-solid fa-trash', action: 'confirm' }
+            ],
+            onConfirm: function () {
+                const $btn = $('#generalModal button[data-action="confirm"]');
+                $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> در حال حذف...');
+
+                $.ajax({
+                    url: options.url,
+                    type: 'POST',
+                    data: options.data,
+                    success: function (r) {
+                        if (r.success) {
+                            // 🆕 بستن Modal + پاکسازی
+                            $('#generalModal').modal('hide');
+
+                            setTimeout(function () {
+                                $('.modal-backdrop').remove();
+                                $('body').removeClass('modal-open').css('padding-right', '');
+
+                                ModalHelper.success(r.message || 'با موفقیت حذف شد.', {
+                                    onClose: function () {
+                                        if (options.onSuccess) options.onSuccess();
+                                        else location.reload();
+                                    }
+                                });
+                            }, 300);
+                        } else {
+                            // 🆕 خطا: بستن Modal + پاکسازی
+                            $('#generalModal').modal('hide');
+
+                            setTimeout(function () {
+                                $('.modal-backdrop').remove();
+                                $('body').removeClass('modal-open').css('padding-right', '');
+
+                                ModalHelper.error(r.message || 'خطا در حذف');
+                            }, 300);
+                        }
+                    },
+                    error: function () {
+                        $('#generalModal').modal('hide');
+
+                        setTimeout(function () {
+                            $('.modal-backdrop').remove();
+                            $('body').removeClass('modal-open').css('padding-right', '');
+
+                            ModalHelper.error('خطا در ارتباط با سرور');
+                        }, 300);
+                    }
+                });
+            }
+        });
+    },
+
+    close: function () {
+        $('#generalModal').modal('hide');
+    }
+};

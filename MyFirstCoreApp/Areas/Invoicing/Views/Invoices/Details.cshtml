@@ -1,0 +1,465 @@
+﻿@using DNTPersianUtils.Core
+@using MyFirstCoreApp.Application.Common.Utilities
+@model MyFirstCoreApp.Domain.Entities.Invoicing.Invoice
+@inject TimeProvider Clock
+@{
+    ViewData["Title"] = $"مشاهده فاکتور شماره {Model.Number}";
+}
+
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-file-invoice"></i>
+            فاکتور شماره @Model.Number
+        </h3>
+        <div class="card-tools">
+            @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
+            {
+                <span class="badge badge-success"><i class="fa fa-check"></i> قطعی</span>
+            }
+            else
+            {
+                <span class="badge badge-warning"><i class="fa fa-clock"></i> پیش‌نویس</span>
+            }
+        </div>
+    </div>
+    <div class="card-body">
+
+        <!-- اطلاعات فاکتور -->
+        <div class="row">
+            <div class="col-md-3">
+                <strong>شماره:</strong>
+                <span class="persian-number">@Model.Number</span>
+            </div>
+            <div class="col-md-3">
+                <strong>تاریخ:</strong>
+                <span>@PersianDate.Format(Model.Date)</span>
+            </div>
+            <div class="col-md-3">
+                <strong>نوع:</strong>
+                <span>
+                    @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale)
+                    {
+                        <span>فروش</span>
+                    }
+                    else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase)
+                    {
+                        <span>خرید</span>
+                    }
+                    else
+                    {
+                        <span>پیش‌فاکتور</span>
+                    }
+                </span>
+            </div>
+            <div class="col-md-3">
+                <strong>طرف حساب:</strong>
+                <span>@Model.Contact?.Name</span>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <strong>شرح:</strong>
+                    <span>@Model.Description</span>
+                </div>
+            </div>
+        }
+
+        <hr />
+
+        <!-- اقلام -->
+        <h5><i class="fa fa-list"></i> اقلام فاکتور</h5>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">#</th>
+                    <th>کالا</th>
+                    <th>تعداد</th>
+                    <th>قیمت واحد</th>
+                    <th>تخفیف</th>
+                    <th>مالیات</th>
+                    <th>جمع</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var i = 1;
+                }
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td class="persian-number">@i</td>
+                        <td>@item.Product?.Name</td>
+                        <td class="persian-number">@item.Quantity</td>
+                        <td class="persian-number-comma">@item.UnitPrice.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.DiscountAmount.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.TaxAmount.ToString("N0")</td>
+                        <td class="persian-number-comma">@item.LineTotal.ToString("N0")</td>
+                    </tr>
+                    i++;
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="6" class="text-left">جمع اقلام:</th>
+                    <th class="persian-number-comma">@Model.SubTotal.ToString("N0")</th>
+                </tr>
+                <tr>
+                    <th colspan="6" class="text-left">جمع تخفیف:</th>
+                    <th class="persian-number-comma">@Model.DiscountAmount.ToString("N0")</th>
+                </tr>
+                <tr>
+                    <th colspan="6" class="text-left">جمع مالیات:</th>
+                    <th class="persian-number-comma">@Model.TaxAmount.ToString("N0")</th>
+                </tr>
+                <tr class="bg-info">
+                    <th colspan="6" class="text-left">مبلغ نهایی:</th>
+                    <th class="persian-number-comma"><strong>@Model.TotalAmount.ToString("N0")</strong></th>
+                </tr>
+            </tfoot>
+        </table>
+
+        @if (Model.TransactionId.HasValue)
+        {
+            <div class="alert alert-success">
+                <i class="fa fa-check"></i>
+                سند حسابداری مرتبط:
+                <a asp-area="Accounting" asp-controller="Transactions"
+                   asp-action="Details" asp-route-id="@Model.TransactionId">
+                    مشاهده سند
+                </a>
+            </div>
+        }
+        <!-- 🆕 تاریخچه -->
+        @if (Model.Histories != null && Model.Histories.Any())
+        {
+            <hr />
+            <h5><i class="fa fa-history"></i> تاریخچه</h5>
+
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 130px;">تاریخ</th>
+                        <th style="width: 130px;">از وضعیت</th>
+                        <th style="width: 130px;">به وضعیت</th>
+                        <th>توضیحات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var hi = 1;
+                    }
+                    @foreach (var h in Model.Histories.OrderBy(x => x.Date))
+                    {
+                        <tr>
+                            <td class="persian-number">@hi</td>
+                            <td>@PersianDate.Format(Clock.ToLocalDate(h.Date))</td>
+                            <td>
+                                @if (h.FromStatus.HasValue)
+                                {
+                                    <span>@GetStatusName(h.FromStatus.Value)</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge badge-info">@GetStatusName(h.ToStatus)</span>
+                            </td>
+                            <td>@h.Description</td>
+                        </tr>
+                        hi++;
+                    }
+                </tbody>
+            </table>
+        }
+
+        @functions {
+            string GetStatusName(MyFirstCoreApp.Domain.Enums.InvoiceStatus status)
+            {
+                return status switch
+                {
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft => "پیش‌نویس",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Sent => "ارسال شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised => "اصلاح شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Approved => "تایید شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Rejected => "رد شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Postponed => "به تعویق",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Converted => "تبدیل شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Cancelled => "لغو شده",
+                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted => "قطعی",
+                    _ => "نامشخص"
+                };
+            }
+        }
+    </div>
+
+    <div class="card-footer">
+        <a asp-action="Index"
+           asp-route-invoiceType="@((int)Model.InvoiceType)"
+           class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-right"></i> بازگشت
+        </a>
+
+        @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.PreInvoice)
+        {
+            // 🆕 گردش کار پیش‌فاکتور
+            if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft ||
+            Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised)
+            {
+                <button type="button" class="btn btn-primary workflow-details-btn" data-id="@Model.Id" data-action="sent">
+                    <i class="fa fa-paper-plane"></i> ارسال به مشتری
+                </button>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-info">
+                    <i class="fa fa-edit"></i> ویرایش
+                </a>
+            }
+
+            @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Sent ||
+                    Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised)
+            {
+                <button type="button" class="btn btn-success workflow-details-btn" data-id="@Model.Id" data-action="approved">
+                    <i class="fa fa-check"></i> تایید مشتری
+                </button>
+                <button type="button" class="btn btn-danger workflow-details-btn" data-id="@Model.Id" data-action="rejected">
+                    <i class="fa fa-times"></i> رد مشتری
+                </button>
+                <button type="button" class="btn btn-warning workflow-details-btn" data-id="@Model.Id" data-action="postponed">
+                    <i class="fa fa-clock"></i> به تعویق
+                </button>
+            }
+
+            @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Approved)
+            {
+                <button type="button" class="btn btn-success convert-details-btn" data-id="@Model.Id">
+                    <i class="fa fa-exchange-alt"></i> تبدیل به فاکتور فروش
+                </button>
+            }
+        }
+        else
+        {
+            // 🆕 فاکتور فروش/خرید
+            if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft)
+            {
+                <button type="button" class="btn btn-success post-details-btn" data-id="@Model.Id" id="btnFinalizing">
+                    <i class="fa fa-check"></i> قطعی کردن
+                </button>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-info">
+                    <i class="fa fa-edit"></i> ویرایش
+                </a>
+            }
+            else if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
+            {
+                <button type="button" class="btn btn-warning unpost-details-btn" data-id="@Model.Id">
+                    <i class="fa fa-undo"></i> برگشت به پیش نویس
+                </button>
+            }
+        }
+
+        @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted &&
+                Model.InvoiceType != MyFirstCoreApp.Domain.Enums.InvoiceType.PreInvoice)
+        {
+            var remaining = Model.TotalAmount - Model.PaidAmount - Model.SettlementDiscount;
+            if (remaining > 0)
+            {
+                <button type="button" class="btn btn-warning" id="btnSettleDiscount">
+                    <i class="fa-solid fa-percent"></i> تسویه با تخفیف
+                </button>
+            }
+        }
+    </div>
+
+    @Html.AntiForgeryToken()
+    @section Scripts {
+        <script>
+            $(document).ready(function () {
+
+                // 🆕 مبلغ باقی‌مانده
+                const remainingAmount = @(Model.TotalAmount - Model.PaidAmount - Model.SettlementDiscount);
+
+                // 🆕 دکمه‌ی "تسویه با تخفیف"
+                $('#btnSettleDiscount').on('click', function () {
+
+                    const bodyHtml = `
+                        <div class="alert alert-info">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>مبلغ کل فاکتور:</span>
+                                <strong class="persian-number-comma">${remainingAmount.toLocaleString('en-US')}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>باقی‌مانده:</span>
+                                <strong class="text-danger persian-number-comma">${remainingAmount.toLocaleString('en-US')}</strong>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="discountAmountInput">
+                                <i class="fa-solid fa-percent"></i> مبلغ تخفیف تسویه:
+                            </label>
+                            <input type="text"
+                                   id="discountAmountInput"
+                                   class="form-control form-control-lg ltr"
+                                   placeholder="0"
+                                   autocomplete="off"
+                                   dir="ltr" />
+                            <small class="form-text text-muted">
+                                مبلغی که مشتری به‌عنوان تخفیف کنار می‌گذارد.
+                            </small>
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <div class="d-flex justify-content-between">
+                                <span>مانده پس از تخفیف:</span>
+                                <strong id="remainingAfterDiscount" class="text-success persian-number-comma">0</strong>
+                            </div>
+                        </div>
+                    `;
+
+                    ModalHelper.show({
+                        title: 'تسویه با تخفیف',
+                        icon: 'fa-solid fa-percent',
+                        headerClass: 'bg-warning text-white',
+                        size: 'modal-md',
+                        body: bodyHtml,
+                        buttons: [
+                            {
+                                text: 'انصراف',
+                                class: 'btn-secondary',
+                                icon: 'fa-solid fa-times',
+                                dismiss: true
+                            },
+                            {
+                                text: 'تسویه با تخفیف',
+                                class: 'btn-warning',
+                                icon: 'fa-solid fa-check',
+                                action: 'confirm'
+                            }
+                        ],
+                        onShow: function () {
+                            // 🆕 focus روی input
+                            $('#discountAmountInput').focus();
+                            updateRemainingAfterDiscount();
+                        },
+                        onConfirm: function () {
+                            const val = $('#discountAmountInput').val();
+                            const discount = parseFloat(toEnglishNumber(val).replace(/,/g, '')) || 0;
+
+                            if (discount <= 0) {
+                                ModalHelper.error('مبلغ تخفیف نامعتبر است.');
+                                return;
+                            }
+
+                            if (discount > remainingAmount) {
+                                ModalHelper.error('مبلغ تخفیف (' + discount.toLocaleString('en-US') + ') بیشتر از باقی‌مانده (' + remainingAmount.toLocaleString('en-US') + ') است.');
+                                return;
+                            }
+
+                            // 🆕 غیرفعال کردن دکمه تایید
+                            $('#generalModal button[data-action="confirm"]')
+                                .prop('disabled', true)
+                                .html('<i class="fa-solid fa-spinner fa-spin"></i> در حال ثبت...');
+
+                            $.ajax({
+                                url: '/Invoicing/Invoices/SettleWithDiscount',
+                                type: 'POST',
+                                data: {
+                                    id: @Model.Id,
+                                    discountAmount: discount.toString(),
+                                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                success: function (r) {
+                                    if (r.success) {
+                                        ModalHelper.close();
+                                        ModalHelper.success(r.message, {
+                                            onClose: function () {
+                                                location.reload();
+                                            }
+                                        });
+                                        // 🆕 رفرش بعد از بستن Modal
+                                        setTimeout(function () { location.reload(); }, 1500);
+                                    } else {
+                                        ModalHelper.error(r.message);
+                                        $('#generalModal button[data-action="confirm"]')
+                                            .prop('disabled', false)
+                                            .html('<i class="fa-solid fa-check"></i> تسویه با تخفیف');
+                                    }
+                                },
+                                error: function () {
+                                    ModalHelper.error('خطا در ارتباط با سرور');
+                                    $('#generalModal button[data-action="confirm"]')
+                                        .prop('disabled', false)
+                                        .html('<i class="fa-solid fa-check"></i> تسویه با تخفیف');
+                                }
+                            });
+                        }
+                    });
+                });
+
+                // 🆕 محاسبه‌ی زنده‌ی مانده
+                $(document).on('input', '#discountAmountInput', function () {
+                    let val = $(this).val();
+                    if (val) {
+                        // 🆕 فرمت خودکار با کاما
+                        val = toEnglishNumber(val).replace(/,/g, '');
+                        $(this).val(formatNumberWithComma(val));
+                    }
+                    updateRemainingAfterDiscount();
+                });
+
+                // 🆕 به‌روزرسانی مانده
+                function updateRemainingAfterDiscount() {
+                    const val = $('#discountAmountInput').val();
+                    const discount = parseFloat(toEnglishNumber(val).replace(/,/g, '')) || 0;
+                    const after = remainingAmount - discount;
+
+                    $('#remainingAfterDiscount').text(formatNumberWithComma(after.toString()));
+
+                    if (after < 0) {
+                        $('#remainingAfterDiscount')
+                            .addClass('text-danger')
+                            .removeClass('text-success');
+                    } else {
+                        $('#remainingAfterDiscount')
+                            .addClass('text-success')
+                            .removeClass('text-danger');
+                    }
+                }
+
+            // ============================================
+            // دکمه قطعی
+            // ============================================
+            $('#btnFinalizing').on('click', function () {
+                const id = $(this).data('id');
+
+                ModalHelper.confirm(
+                    'آیا از قطعی کردن این فاکتور مطمئن هستید؟ سند حسابداری ساخته می‌شود.',
+                    function () {
+                        $.ajax({
+                            url: '/Invoicing/Invoices/Post',
+                            type: 'POST',
+                            data: {
+                                id: id,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function (r) {
+                                if (r.success) {
+                                    ModalHelper.success(r.message || 'فاکتور قطعی شد.', {
+                                        onClose: function () {
+                                                location.href = '/Invoicing/Invoices?invoiceType=' + '@((int)Model.InvoiceType)';
+                                        }
+                                    });
+                                } else {
+                                    ModalHelper.error(r.message);
+                                }
+                            }
+                        });
+                    },
+                    { title: 'قطعی کردن فاکتور', icon: 'fa-solid fa-circle-check', headerClass: 'bg-success text-white' }
+                );
+            });
+            });
+        </script>
+    }
+</div>

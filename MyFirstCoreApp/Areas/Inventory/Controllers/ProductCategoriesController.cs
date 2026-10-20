@@ -1,0 +1,213 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Application.Common.Models;
+using MyFirstCoreApp.Areas.Inventory.ViewModels.ProductCategory;
+using MyFirstCoreApp.Domain.Entities.Inventory;
+using MyFirstCoreApp.Infrastructure.Persistence;
+
+namespace MyFirstCoreApp.Areas.Inventory.Controllers;
+
+[Area("Inventory")]
+[Authorize]
+public class ProductCategoriesController : Controller
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICurrentTenant _currentTenant;
+
+    public ProductCategoriesController(
+        ApplicationDbContext context,
+        ICurrentTenant currentTenant)
+    {
+        _context = context;
+        _currentTenant = currentTenant;
+    }
+
+    // GET: /Inventory/ProductCategories
+    [Authorize(Policy = "ProductCategory.View")]
+    public IActionResult Index() => View();
+
+    // POST: /Inventory/ProductCategories/GetData
+    [HttpPost]
+    [Authorize(Policy = "ProductCategory.View")]
+    public async Task<IActionResult> GetData([FromBody] AgGridRequest request)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false });
+
+        var query = _context.ProductCategories.Where(x => x.TenantId == tenantId.Value);
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var s = request.Search.Trim();
+            query = query.Where(x =>
+                (x.Name != null && x.Name.Contains(s)) ||
+                (x.Code != null && x.Code.Contains(s)));
+        }
+
+        var total = await query.CountAsync();
+
+        query = request.SortBy switch
+        {
+            "name" => request.SortDir == "asc"
+                ? query.OrderBy(x => x.Name)
+                : query.OrderByDescending(x => x.Name),
+            "code" => request.SortDir == "asc"
+                ? query.OrderBy(x => x.Code)
+                : query.OrderByDescending(x => x.Code),
+            "sortOrder" => request.SortDir == "asc"
+                ? query.OrderBy(x => x.SortOrder)
+                : query.OrderByDescending(x => x.SortOrder),
+            _ => query.OrderBy(x => x.Id)
+        };
+
+        var items = await query
+            .Skip(request.StartRow)
+            .Take(request.EndRow - request.StartRow)
+            .Select(x => new
+            {
+                id = x.Id,
+                name = x.Name,
+                code = x.Code,
+                sortOrder = x.SortOrder,
+                isActive = x.IsActive
+            })
+            .ToListAsync();
+
+        return Json(new { success = true, rows = items, lastRow = total });
+    }
+
+    // GET: /Inventory/ProductCategories/Create
+    [Authorize(Policy = "ProductCategory.Create")]
+    public IActionResult Create() => View(new ProductCategoryFormViewModel());
+
+    // POST: /Inventory/ProductCategories/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "ProductCategory.Create")]
+    public async Task<IActionResult> Create(ProductCategoryFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+        if (!ModelState.IsValid) return View(model);
+
+        var entity = new ProductCategory
+        {
+            TenantId = tenantId.Value,
+            IsActive = model.IsActive,
+            Name = model.Name,
+            Code = model.Code,
+            Description = model.Description,
+            SortOrder = model.SortOrder,
+        };
+
+        _context.ProductCategories.Add(entity);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "دسته‌بندی کالا با موفقیت ثبت شد.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // GET: /Inventory/ProductCategories/Edit/5
+    [Authorize(Policy = "ProductCategory.Edit")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var entity = await _context.ProductCategories
+            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        var model = new ProductCategoryFormViewModel
+        {
+            Id = entity.Id,
+            IsActive = entity.IsActive,
+            Name = entity.Name,
+            Code = entity.Code,
+            Description = entity.Description,
+            SortOrder = entity.SortOrder,
+        };
+
+        return View(model);
+    }
+
+    // POST: /Inventory/ProductCategories/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "ProductCategory.Edit")]
+    public async Task<IActionResult> Edit(int id, ProductCategoryFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+        if (id != model.Id) return BadRequest();
+        if (!ModelState.IsValid) return View(model);
+
+        var entity = await _context.ProductCategories
+            .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+        if (entity == null) return NotFound();
+
+        entity.IsActive = model.IsActive;
+        entity.UpdatedAt = DateTime.UtcNow;
+        entity.Name = model.Name;
+        entity.Code = model.Code;
+        entity.Description = model.Description;
+        entity.SortOrder = model.SortOrder;
+
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "دسته‌بندی کالا با موفقیت ویرایش شد.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // POST: /Inventory/ProductCategories/Delete
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "ProductCategory.Delete")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = "Tenant not found" });
+
+        try
+        {
+            var entity = await _context.ProductCategories
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+
+            if (entity == null)
+                return Json(new { success = false, message = "دسته‌بندی کالا پیدا نشد." });
+
+            if (entity.IsDeleted)
+                return Json(new { success = false, message = "این دسته‌بندی قبلاً حذف شده است." });
+
+            // 🆕 چک زیردسته
+            var hasChildren = await _context.ProductCategories
+                .AnyAsync(x => x.ParentId == id && !x.IsDeleted);
+
+            if (hasChildren)
+                return Json(new { success = false, message = "این دسته‌بندی زیردسته دارد و قابل حذف نیست." });
+
+            // 🆕 چک کالا
+            var hasProducts = await _context.Products
+                .AnyAsync(x => x.ProductCategoryId == id && !x.IsDeleted);
+
+            if (hasProducts)
+                return Json(new { success = false, message = "این دسته‌بندی کالا دارد و قابل حذف نیست." });
+
+            // Soft Delete
+            entity.IsDeleted = true;
+            entity.DeletedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "دسته‌بندی کالا با موفقیت حذف شد." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+}

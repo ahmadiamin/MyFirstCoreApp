@@ -1,0 +1,29 @@
+@model MyFirstCoreApp.Areas.Accounting.ViewModels.FiscalYear.FiscalYearFormViewModel
+
+<input type="hidden" asp-for="Id" />
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="form-group">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" class="form-control" placeholder="سال مالی 1405" />
+            <small class="form-text text-muted">خالی بگذارید تا خودکار از سال شروع ساخته شود.</small>
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group">
+            <label asp-for="StartDate"></label>
+            <input asp-for="StartDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group">
+            <label asp-for="EndDate"></label>
+            <input asp-for="EndDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
+            <small class="form-text text-muted">سال مالی معمولاً ۱۲ ماهه است (حداکثر ۴۰۰ روز).</small>
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+        </div>
+    </div>
+</div>

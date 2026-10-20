@@ -1,0 +1,475 @@
+﻿@using System.Globalization
+@model MyFirstCoreApp.Models.ViewModels.DashboardViewModel
+
+@{
+    ViewData["Title"] = "داشبورد";
+
+    var summary = Model.Summary;
+
+    // عرض ستون نمودار نسبت به بزرگ‌ترین مقدار ماهانه
+    string Pct(decimal value)
+    {
+        if (summary == null || summary.MaxMonthlyValue <= 0 || value <= 0) return "0%";
+        var percent = (double)(value / summary.MaxMonthlyValue) * 100;
+        return Math.Max(percent, 1).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+    }
+
+    string DueBadge(MyFirstCoreApp.Application.Dashboard.DueChequeDto cheque)
+    {
+        if (cheque.DaysLeft < 0) return $"<span class=\"badge badge-danger\">{-cheque.DaysLeft} روز گذشته</span>";
+        if (cheque.DaysLeft == 0) return "<span class=\"badge badge-warning\">امروز</span>";
+        return $"<span class=\"badge badge-info\">{cheque.DaysLeft} روز مانده</span>";
+    }
+}
+
+<!-- هدر شرکت -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card card-primary card-outline">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <h4 class="mb-1">
+                            <i class="fa fa-building"></i>
+                            @Model.TenantName
+                        </h4>
+                        @if (!string.IsNullOrEmpty(Model.TenantLegalName))
+                        {
+                            <small class="text-muted">@Model.TenantLegalName</small>
+                        }
+                    </div>
+                    <div class="text-left">
+                        @if (Model.IsTenantOwner)
+                        {
+                            <span class="badge badge-success">
+                                <i class="fa fa-crown"></i>
+                                مالک شرکت
+                            </span>
+                        }
+                        <div class="text-muted small mt-1">
+                            امروز: <span dir="ltr">@Model.TodayText</span>
+                            @if (!string.IsNullOrEmpty(Model.FiscalRangeText))
+                            {
+                                <span class="mx-1">|</span>
+                                <span>سال مالی جاری: <span dir="ltr">@Model.FiscalRangeText</span></span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (summary == null && (Model.ShowFinance || Model.ShowCheques || Model.ShowInvoices))
+{
+    <div class="alert alert-warning">
+        <i class="fa fa-exclamation-triangle"></i>
+        خلاصه‌ی مالی در حال حاضر در دسترس نیست. (اگر تازه به‌روزرسانی کرده‌اید، Migration مربوط به پروسیجرهای گزارش را اجرا کنید.)
+    </div>
+}
+
+@if (summary != null && Model.ShowFinance)
+{
+    <!-- خلاصه‌ی مالی -->
+    <div class="row">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>@summary.CashAndBankBalance.ToString("N0")</h3>
+                    <p>موجودی نقد و بانک (ریال)</p>
+                </div>
+                <div class="icon"><i class="fa fa-wallet"></i></div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>@summary.ReceivableBalance.ToString("N0")</h3>
+                    <p>مطالبات (دریافتنی‌ها)</p>
+                </div>
+                <div class="icon"><i class="fa fa-hand-holding-dollar"></i></div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>@summary.PayableBalance.ToString("N0")</h3>
+                    <p>بدهی‌ها (پرداختنی‌ها)</p>
+                </div>
+                <div class="icon"><i class="fa fa-file-invoice-dollar"></i></div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h3>@((summary.SalesTotal - summary.PurchasesTotal).ToString("N0"))</h3>
+                    <p>فروش منهای خرید (سال مالی)</p>
+                </div>
+                <div class="icon"><i class="fa fa-chart-line"></i></div>
+                <a asp-area="Accounting" asp-controller="Reports" asp-action="Invoices" class="small-box-footer">
+                    گزارش فاکتورها <i class="fa fa-arrow-circle-left"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+@if (summary != null && Model.ShowInvoices)
+{
+    <!-- فاکتورهای باز -->
+    <div class="row">
+        <div class="col-md-3 col-6">
+            <div class="info-box">
+                <span class="info-box-icon bg-success"><i class="fa fa-cart-shopping"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">فروش سال مالی</span>
+                    <span class="info-box-number">@summary.SalesTotal.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="info-box">
+                <span class="info-box-icon bg-warning"><i class="fa fa-truck"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">خرید سال مالی</span>
+                    <span class="info-box-number">@summary.PurchasesTotal.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="info-box">
+                <span class="info-box-icon bg-info"><i class="fa fa-hourglass-half"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">فاکتور فروش باز (@summary.OpenSaleCount)</span>
+                    <span class="info-box-number">@summary.OpenSaleRemaining.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="info-box">
+                <span class="info-box-icon bg-danger"><i class="fa fa-hourglass-half"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">فاکتور خرید باز (@summary.OpenPurchaseCount)</span>
+                    <span class="info-box-number">@summary.OpenPurchaseRemaining.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (summary != null && Model.ShowCheques)
+{
+    <!-- چک‌ها -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card card-success card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fa fa-money-check-dollar"></i>
+                        چک‌های دریافتنیِ سررسید
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-success" title="در انتظار وصول">
+                            @summary.PendingReceivedChequeCount چک | @summary.PendingReceivedChequeAmount.ToString("N0")
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var cheque in summary.DueReceivedCheques)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-area="Banking" asp-controller="Cheques" asp-action="Details" asp-route-id="@cheque.Id">@cheque.ChequeNumber</a>
+                                    </td>
+                                    <td>@cheque.ContactName</td>
+                                    <td class="text-left">@cheque.Amount.ToString("N0")</td>
+                                    <td dir="ltr" class="text-right">@MyFirstCoreApp.Application.Common.Utilities.PersianDate.Format(cheque.DueDate)</td>
+                                    <td>@Html.Raw(DueBadge(cheque))</td>
+                                </tr>
+                            }
+                            @if (!summary.DueReceivedCheques.Any())
+                            {
+                                <tr><td class="text-center text-muted p-3">چک دریافتنیِ سررسیدشده یا نزدیک نداریم.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-center">
+                    <a asp-area="Banking" asp-controller="Cheques" asp-action="Index" asp-route-direction="1">همه‌ی چک‌های دریافتنی</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card card-danger card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fa fa-money-check"></i>
+                        چک‌های پرداختنیِ سررسید
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-danger" title="در انتظار پاس">
+                            @summary.PendingIssuedChequeCount چک | @summary.PendingIssuedChequeAmount.ToString("N0")
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var cheque in summary.DueIssuedCheques)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-area="Banking" asp-controller="Cheques" asp-action="Details" asp-route-id="@cheque.Id">@cheque.ChequeNumber</a>
+                                    </td>
+                                    <td>@cheque.ContactName</td>
+                                    <td class="text-left">@cheque.Amount.ToString("N0")</td>
+                                    <td dir="ltr" class="text-right">@MyFirstCoreApp.Application.Common.Utilities.PersianDate.Format(cheque.DueDate)</td>
+                                    <td>@Html.Raw(DueBadge(cheque))</td>
+                                </tr>
+                            }
+                            @if (!summary.DueIssuedCheques.Any())
+                            {
+                                <tr><td class="text-center text-muted p-3">چک پرداختنیِ سررسیدشده یا نزدیک نداریم.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-center">
+                    <a asp-area="Banking" asp-controller="Cheques" asp-action="Index" asp-route-direction="2">همه‌ی چک‌های پرداختنی</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (summary != null && Model.ShowFinance)
+{
+    <!-- مانده‌ی طرف حساب‌ها -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card card-outline card-success">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fa fa-arrow-down"></i> بدهکاران برتر (از ما طلب دارند... یعنی به ما بدهکارند)</h3>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var contact in summary.TopDebtors)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-area="Accounting" asp-controller="Reports" asp-action="Contact" asp-route-contactId="@contact.ContactId">@contact.Name</a>
+                                    </td>
+                                    <td class="text-left font-weight-bold">@contact.Balance.ToString("N0")</td>
+                                </tr>
+                            }
+                            @if (!summary.TopDebtors.Any())
+                            {
+                                <tr><td class="text-center text-muted p-3">طرف حساب بدهکاری وجود ندارد.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card card-outline card-danger">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fa fa-arrow-up"></i> بستانکاران برتر (ما به آن‌ها بدهکاریم)</h3>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var contact in summary.TopCreditors)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-area="Accounting" asp-controller="Reports" asp-action="Contact" asp-route-contactId="@contact.ContactId">@contact.Name</a>
+                                    </td>
+                                    <td class="text-left font-weight-bold">@Math.Abs(contact.Balance).ToString("N0")</td>
+                                </tr>
+                            }
+                            @if (!summary.TopCreditors.Any())
+                            {
+                                <tr><td class="text-center text-muted p-3">طرف حساب بستانکاری وجود ندارد.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- جریان ماهانه (بدون وابستگی به کتابخانه‌ی نمودار) -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fa fa-chart-simple"></i> جریان ماهانه‌ی سال مالی</h3>
+                    <div class="card-tools small">
+                        <span class="badge badge-success">فروش</span>
+                        <span class="badge badge-warning">خرید</span>
+                        <span class="badge badge-info">دریافت</span>
+                        <span class="badge badge-danger">پرداخت</span>
+                    </div>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:110px">ماه</th>
+                                <th>فروش / خرید</th>
+                                <th>دریافت / پرداخت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var month in summary.Months)
+                            {
+                                <tr>
+                                    <td>@month.MonthName <small class="text-muted" dir="ltr">@month.Label</small></td>
+                                    <td>
+                                        <div class="progress mb-1" style="height:12px" title="فروش: @month.Sales.ToString("N0")">
+                                            <div class="progress-bar bg-success" style="width:@Pct(month.Sales)"></div>
+                                        </div>
+                                        <div class="progress" style="height:12px" title="خرید: @month.Purchases.ToString("N0")">
+                                            <div class="progress-bar bg-warning" style="width:@Pct(month.Purchases)"></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="progress mb-1" style="height:12px" title="دریافت: @month.Received.ToString("N0")">
+                                            <div class="progress-bar bg-info" style="width:@Pct(month.Received)"></div>
+                                        </div>
+                                        <div class="progress" style="height:12px" title="پرداخت: @month.Paid.ToString("N0")">
+                                            <div class="progress-bar bg-danger" style="width:@Pct(month.Paid)"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted small">
+                    فروش و خرید: فاکتورهای قطعی. دریافت و پرداخت: پرداخت‌های قطعی. (با نگه داشتن ماوس مبلغ دقیق دیده می‌شود.)
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- شمارنده‌های حسابداری -->
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-primary">
+            <div class="inner">
+                <h3>@Model.ContactCount</h3>
+                <p>طرف حساب‌ها</p>
+            </div>
+            <div class="icon"><i class="fa fa-address-book"></i></div>
+            <a asp-area="Accounting" asp-controller="Contacts" asp-action="Index" class="small-box-footer">
+                مشاهده طرف حساب‌ها <i class="fa fa-arrow-circle-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-secondary">
+            <div class="inner">
+                <h3>@Model.ProductCount</h3>
+                <p>کالاها</p>
+            </div>
+            <div class="icon"><i class="fa fa-cube"></i></div>
+            <a asp-area="Inventory" asp-controller="Products" asp-action="Index" class="small-box-footer">
+                مشاهده کالاها <i class="fa fa-arrow-circle-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-orange">
+            <div class="inner">
+                <h3>@Model.InvoiceCount</h3>
+                <p>فاکتورها</p>
+            </div>
+            <div class="icon"><i class="fa fa-file-text"></i></div>
+            <a asp-area="Invoicing" asp-controller="Invoices" asp-action="Index" class="small-box-footer">
+                مشاهده فاکتورها <i class="fa fa-arrow-circle-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-teal">
+            <div class="inner">
+                <h3>@Model.ChequeCount</h3>
+                <p>چک‌های در انتظار وصول</p>
+            </div>
+            <div class="icon"><i class="fa fa-money"></i></div>
+            <a asp-area="Banking" asp-controller="Cheques" asp-action="Index" class="small-box-footer">
+                مشاهده چک‌ها <i class="fa fa-arrow-circle-left"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (Model.ShowSystemStats)
+{
+    <!-- آمار کاربران و دسترسی‌ها (فقط برای دارندگان دسترسی «مشاهده کاربران») -->
+    <div class="row">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>@Model.UserCount</h3>
+                    <p>کاربران</p>
+                </div>
+                <div class="icon"><i class="fa fa-users"></i></div>
+                <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="small-box-footer">
+                    مشاهده کاربران <i class="fa fa-arrow-circle-left"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>@Model.RoleCount</h3>
+                    <p>نقش‌ها</p>
+                </div>
+                <div class="icon"><i class="fa fa-user"></i></div>
+                <a asp-area="Admin" asp-controller="Roles" asp-action="Index" class="small-box-footer">
+                    مشاهده نقش‌ها <i class="fa fa-arrow-circle-left"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>@Model.PermissionCount</h3>
+                    <p>دسترسی‌ها</p>
+                </div>
+                <div class="icon"><i class="fa fa-key"></i></div>
+                <a asp-area="Admin" asp-controller="Permissions" asp-action="Index" class="small-box-footer">
+                    مشاهده دسترسی‌ها <i class="fa fa-arrow-circle-left"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>@Model.MenuCount</h3>
+                    <p>منوها</p>
+                </div>
+                <div class="icon"><i class="fa fa-bars"></i></div>
+                <a asp-area="Admin" asp-controller="Menus" asp-action="Index" class="small-box-footer">
+                    مشاهده منوها <i class="fa fa-arrow-circle-left"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+}
