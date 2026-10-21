@@ -44,6 +44,9 @@ public class ProductFormViewModel
     [Display(Name = "فعال")]
     public bool IsActive { get; set; } = true;
 
+    [Display(Name = "کنترل موجودی")]
+    public bool TrackInventory { get; set; } = true;
+
     // Dropdowns
     public List<SelectListItem> UnitOptions { get; set; } = new();
     public List<SelectListItem> CategoryOptions { get; set; } = new();

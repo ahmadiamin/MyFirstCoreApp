@@ -1,10 +1,11 @@
-﻿using System.Data;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Application.Inventory;
 using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
+using System.Data;
 
 namespace MyFirstCoreApp.Infrastructure.Services;
 
@@ -339,11 +340,15 @@ public class StockMovementService : IStockMovementService
             .CountAsync(x =>
                 x.TenantId == tenantId &&
                 x.IsActive &&
+                x.TrackInventory &&
                 productIds.Contains(x.Id));
 
         if (validCount != productIds.Count)
+        {
             throw new InvalidOperationException(
-                "یکی از کالاها وجود ندارد، غیرفعال است یا متعلق به شرکت جاری نیست.");
+                "یکی از کالاها وجود ندارد، غیرفعال است، " +
+                "متعلق به شرکت جاری نیست یا موجودی انبار آن کنترل نمی‌شود.");
+        }
     }
 
     private async Task ValidateReferenceInvoiceAsync(
@@ -473,6 +478,17 @@ public class StockMovementService : IStockMovementService
             .Distinct()
             .OrderBy(x => x)
             .ToList();
+        
+        var productName = await _context.Products
+            .Where(x =>
+                x.Id == productId &&
+                x.TenantId == tenantId)
+            .Select(x => x.Name)
+            .FirstOrDefaultAsync();
+
+        var displayName = string.IsNullOrWhiteSpace(productName)
+            ? $"شناسه {productId}"
+            : $"«{productName}» (شناسه {productId})";
 
         foreach (var date in datesToCheck)
         {
@@ -486,12 +502,13 @@ public class StockMovementService : IStockMovementService
             if (balance < 0)
             {
                 throw new InvalidOperationException(
-                    $"موجودی کالا با شناسه {productId} در انبار " +
-                    $"{warehouseId} پس از ثبت سند در تاریخ {date} منفی می‌شود. " +
+                    $"موجودی کالای {displayName} در انبار {warehouseId} " +
+                    $"پس از ثبت سند در تاریخ {@PersianDate.Format(date)} منفی می‌شود. " +
                     $"موجودی محاسبه‌شده: {balance}.");
             }
         }
     }
+
 
     public async Task CreateFromInvoiceAsync(int invoiceId, int tenantId)
     {
@@ -508,12 +525,36 @@ public class StockMovementService : IStockMovementService
             return;
 
         if (invoice.InvoiceType is not (InvoiceType.Sale or InvoiceType.Purchase))
-            throw new InvalidOperationException("نوع فاکتور برای ثبت گردش انبار معتبر نیست.");
+            throw new InvalidOperationException(
+                "نوع فاکتور برای ثبت گردش انبار معتبر نیست.");
 
         if (invoice.Items.Count == 0)
-            throw new InvalidOperationException("فاکتور بدون قلم کالا قابل ثبت در انبار نیست.");
+            throw new InvalidOperationException(
+                "فاکتور بدون قلم کالا قابل ثبت در انبار نیست.");
 
-        var warehouseId = await _warehouseService.GetDefaultWarehouseIdAsync(tenantId);
+        // فقط اقلامی که موجودی انبار برای آن‌ها کنترل می‌شود.
+        var productIds = invoice.Items
+            .Select(x => x.ProductId)
+            .Distinct()
+            .ToList();
+
+        var trackedProductIds = await _context.Products
+            .Where(x =>
+                x.TenantId == tenantId &&
+                x.TrackInventory &&
+                productIds.Contains(x.Id))
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        var trackedProductIdSet = trackedProductIds.ToHashSet();
+
+        var trackedItems = invoice.Items
+            .Where(x => trackedProductIdSet.Contains(x.ProductId))
+            .ToList();
+
+        // فاکتور فقط خدمات است؛ نیازی به گردش انبار نیست.
+        if (trackedItems.Count == 0)
+            return;
 
         // از ثبت دوباره اثر انبار جلوگیری می‌کنیم.
         var hasActiveMovement = await _context.StockMovements
@@ -533,6 +574,9 @@ public class StockMovementService : IStockMovementService
                 "برای این فاکتور قبلاً گردش انبار قطعی و فعال ثبت شده است.");
         }
 
+        var warehouseId =
+            await _warehouseService.GetDefaultWarehouseIdAsync(tenantId);
+
         var isSale = invoice.InvoiceType == InvoiceType.Sale;
 
         var request = new StockMovementRequest
@@ -546,19 +590,16 @@ public class StockMovementService : IStockMovementService
             DestinationWarehouseId = isSale ? null : warehouseId,
 
             ReferenceInvoiceId = invoice.Id,
+
             Description = isSale
                 ? $"خروج کالا بابت فاکتور فروش شماره {invoice.Number}"
                 : $"ورود کالا بابت فاکتور خرید شماره {invoice.Number}",
 
-            Items = invoice.Items.Select(item => new StockMovementItemRequest
+            Items = trackedItems.Select(item => new StockMovementItemRequest
             {
                 ProductId = item.ProductId,
                 Quantity = item.Quantity,
-
-                // قیمت خرید به‌عنوان اطلاعات اولیه بهای واحد ذخیره می‌شود.
-                // این مقدار فعلاً به معنی پیاده‌سازی کامل ارزش‌گذاری موجودی نیست.
                 UnitCost = isSale ? null : item.UnitPrice,
-
                 Description = item.Description
             }).ToList()
         };
@@ -567,6 +608,7 @@ public class StockMovementService : IStockMovementService
 
         await PostAsync(movementId, tenantId);
     }
+
 
     public async Task ReverseInvoiceAsync(int invoiceId, int tenantId)
     {

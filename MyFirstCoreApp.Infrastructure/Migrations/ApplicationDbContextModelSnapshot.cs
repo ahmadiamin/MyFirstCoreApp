@@ -1392,6 +1392,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("TrackInventory")
+                        .HasColumnType("bit");
+
                     b.Property<int>("UnitId")
                         .HasColumnType("int");
 

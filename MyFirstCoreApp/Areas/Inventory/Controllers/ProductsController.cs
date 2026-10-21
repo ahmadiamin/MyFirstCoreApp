@@ -117,6 +117,7 @@ public class ProductsController : Controller
             LastPurchasePrice = model.LastPurchasePrice,
             SalePrice = model.SalePrice,
             TaxRate = model.TaxRate,
+            TrackInventory = model.TrackInventory,
             IsActive = model.IsActive
         };
 
@@ -151,6 +152,7 @@ public class ProductsController : Controller
             LastPurchasePrice = entity.LastPurchasePrice,
             SalePrice = entity.SalePrice,
             TaxRate = entity.TaxRate,
+            TrackInventory = entity.TrackInventory,
             IsActive = entity.IsActive,
             UnitOptions = await GetUnitOptionsAsync(),
             CategoryOptions = await GetCategoryOptionsAsync()
@@ -190,9 +192,10 @@ public class ProductsController : Controller
         entity.LastPurchasePrice = model.LastPurchasePrice;
         entity.SalePrice = model.SalePrice;
         entity.TaxRate = model.TaxRate;
+        entity.TrackInventory = model.TrackInventory;
+
         entity.IsActive = model.IsActive;
         entity.UpdatedAt = DateTime.UtcNow;
-
         await _context.SaveChangesAsync();
 
         TempData["Success"] = "کالا با موفقیت ویرایش شد.";

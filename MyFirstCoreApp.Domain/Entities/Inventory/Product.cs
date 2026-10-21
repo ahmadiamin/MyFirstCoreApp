@@ -66,6 +66,11 @@ public class Product : TenantEntity
     /// آیا کالا در فاکتور استفاده شده؟
     /// </summary>
     public bool IsUsedInInvoices { get; set; }
+    /// <summary>
+    /// آیا موجودی این قلم در انبار کنترل شود؟
+    /// برای خدمات مقدار false است.
+    /// </summary>
+    public bool TrackInventory { get; set; } = true;
 
     // ---- Navigation ----
 

@@ -1,0 +1,249 @@
+﻿@using MyFirstCoreApp.Application.Common.Utilities
+@model MyFirstCoreApp.Areas.Inventory.ViewModels.Kardex.KardexReportViewModel
+
+@{
+    ViewData["Title"] = "کاردکس کالا";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-warehouse"></i>
+            گزارش کاردکس کالا
+        </h3>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-area="Inventory"
+              asp-controller="Kardex"
+              asp-action="Index"
+              method="get">
+
+            <div class="row">
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="form-group">
+                        <label asp-for="ProductId">کالا</label>
+                        <select asp-for="ProductId"
+                                asp-items="Model.ProductOptions"
+                                class="form-control select2"
+                                style="width: 100%;">
+                            <option value="">-- انتخاب کالا --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="form-group">
+                        <label asp-for="WarehouseId">انبار</label>
+                        <select asp-for="WarehouseId"
+                                asp-items="Model.WarehouseOptions"
+                                class="form-control select2"
+                                style="width: 100%;">
+                            <option value="">-- انتخاب انبار --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-2">
+                    <div class="form-group">
+                        <label asp-for="FromDate">از تاریخ</label>
+                        <input asp-for="FromDate"
+                               class="form-control datepicker"
+                               autocomplete="off"
+                               dir="ltr"
+                               placeholder="1405/01/01" />
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-2">
+                    <div class="form-group">
+                        <label asp-for="ToDate">تا تاریخ</label>
+                        <input asp-for="ToDate"
+                               class="form-control datepicker"
+                               autocomplete="off"
+                               dir="ltr"
+                               placeholder="1405/01/31" />
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="d-flex flex-wrap" style="gap: 8px;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    نمایش گزارش
+                </button>
+
+                <a asp-area="Inventory"
+                   asp-controller="Kardex"
+                   asp-action="Index"
+                   class="btn btn-secondary">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    پاک کردن فیلترها
+                </a>
+            </div>
+
+        </form>
+
+        @if (Model.ProductId.HasValue && Model.WarehouseId.HasValue)
+        {
+            <hr />
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="alert alert-light border mb-2">
+                        <strong>کالا:</strong>
+                        @Model.ProductName
+
+                        @if (!string.IsNullOrWhiteSpace(Model.ProductCode))
+                        {
+                            <span class="text-muted">
+                                (@Model.ProductCode)
+                            </span>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.UnitName))
+                        {
+                            <span class="text-muted">
+                                - واحد: @Model.UnitName
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="alert alert-light border mb-2">
+                        <strong>انبار:</strong>
+                        @Model.WarehouseName
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 110px;">تاریخ</th>
+                            <th style="min-width: 130px;">شماره سند</th>
+                            <th style="min-width: 200px;">شرح</th>
+                            <th class="text-center" style="min-width: 110px;">
+                                وارده
+                            </th>
+                            <th class="text-center" style="min-width: 110px;">
+                                صادره
+                            </th>
+                            <th class="text-center" style="min-width: 130px;">
+                                موجودی
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model.Rows.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted p-4">
+                                    در بازه انتخاب‌شده گردش کالایی یافت نشد.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var row in Model.Rows)
+                            {
+                                <tr>
+                                    <td dir="ltr" class="text-center">
+                                        @PersianDate.Format(row.Date)
+                                    </td>
+
+                                    <td>
+                                        @row.DocumentNumber
+                                    </td>
+
+                                    <td>
+                                        @row.Description
+                                    </td>
+
+                                    <td class="text-center text-success">
+                                        @if (row.Incoming != 0)
+                                        {
+                                            @row.Incoming.ToString("N2")
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-center text-danger">
+                                        @if (row.Outgoing != 0)
+                                        {
+                                            @row.Outgoing.ToString("N2")
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-center font-weight-bold">
+                                        @row.Balance.ToString("N2")
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+
+                    @if (Model.Rows.Count > 0)
+                    {
+                        <tfoot>
+                            <tr class="font-weight-bold">
+                                <td colspan="3" class="text-left">
+                                    جمع گردش دوره
+                                </td>
+
+                                <td class="text-center text-success">
+                                    @Model.Rows.Sum(x => x.Incoming).ToString("N2")
+                                </td>
+
+                                <td class="text-center text-danger">
+                                    @Model.Rows.Sum(x => x.Outgoing).ToString("N2")
+                                </td>
+
+                                <td class="text-center">
+                                    @Model.Rows[^1].Balance.ToString("N2")
+                                </td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+
+            <div class="text-muted mt-2">
+                تعداد ردیف‌ها: @Model.Rows.Count
+            </div>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('.select2').select2({
+                width: '100%',
+                dir: 'rtl',
+                language: 'fa',
+                placeholder: 'انتخاب کنید',
+                allowClear: true
+            });
+
+            $('.datepicker').each(function () {
+                // تنظیمات تاریخ‌شمار مطابق گزارش‌های موجود پروژه
+                // در صورت فعال بودن datepicker سراسری، نیازی به راه‌اندازی مجدد نیست.
+            });
+        });
+    </script>
+}

@@ -295,7 +295,9 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "Warehouse.Create", DisplayName = "ایجاد انبار",     GroupName = "Inventory", IsActive = true },
                 new Permission { Name = "Warehouse.Edit",   DisplayName = "ویرایش انبار",    GroupName = "Inventory", IsActive = true },
                 new Permission { Name = "Warehouse.Delete", DisplayName = "حذف انبار",       GroupName = "Inventory", IsActive = true },
-
+                
+                // Kardex
+                new Permission { Name = "Kardex.View",   DisplayName = "مشاهده کاردکس کالا", GroupName = "Inventory", IsActive = true },
 
                 // Transaction (اسناد حسابداری)
                 new Permission { Name = "Transaction.View",   DisplayName = "مشاهده اسناد", GroupName = "Accounting", IsActive = true },
@@ -553,6 +555,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "دسته‌بندی کالا", Url = "/Inventory/ProductCategories", Icon = "fa-solid fa-folder-open", Permission = "ProductCategory.View", ParentId = inventoryParent.Id, SortOrder = 2, IsActive = true },
                 new Menu { Title = "کالاها", Url = "/Inventory/Products", Icon = "fa-solid fa-cube", Permission = "Product.View", ParentId = inventoryParent.Id, SortOrder = 3, IsActive = true },
                 new Menu { Title = "انبارها", Url = "/Inventory/Warehouses", Icon = "fa-solid fa-warehouse", Permission = "Warehouse.View", ParentId = inventoryParent.Id, SortOrder = 4, IsActive = true },
+                new Menu { Title = "کاردکس کالا", Url = "/Inventory/Kardex", Icon = "fa-solid fa-clipboard-list", Permission = "Kardex.View", ParentId = inventoryParent.Id, SortOrder = 5, IsActive = true },
 
                 // گزارشات
                 new Menu { Title = "گزارش معین", Url = "/Accounting/Reports/Ledger", Icon = "fa-solid fa-book", Permission = "Report.Ledger", ParentId = reportsParent.Id, SortOrder = 1, IsActive = true },
