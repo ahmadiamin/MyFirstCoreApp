@@ -120,6 +120,58 @@ public sealed class SqlServerTestDatabase : IDisposable
             $"DROP DATABASE [{_databaseName}];";
         command.ExecuteNonQuery();
     }
+
+    public async Task<(int ProductId, int WarehouseId)>
+    CreateInventoryDataAsync(int tenantId)
+    {
+        var previousTenant = Tenant.TenantId;
+        Tenant.TenantId = tenantId;
+
+        try
+        {
+            await using var context = NewContext();
+
+            var unit = new MyFirstCoreApp.Domain.Entities.Inventory.Unit
+            {
+                TenantId = tenantId,
+                Name = "عدد",
+                Symbol = "عدد",
+                IsActive = true
+            };
+
+            context.Units.Add(unit);
+            await context.SaveChangesAsync();
+
+            var product = new MyFirstCoreApp.Domain.Entities.Inventory.Product
+            {
+                TenantId = tenantId,
+                Name = "کالای تست",
+                Code = $"TEST-{Guid.NewGuid():N}"[..12],
+                UnitId = unit.Id,
+                IsActive = true
+            };
+
+            var warehouse = new MyFirstCoreApp.Domain.Entities.Inventory.Warehouse
+            {
+                TenantId = tenantId,
+                Code = $"WH-{Guid.NewGuid():N}"[..10],
+                Name = "انبار تست",
+                IsActive = true,
+                IsDefault = true
+            };
+
+            context.Products.Add(product);
+            context.Warehouses.Add(warehouse);
+
+            await context.SaveChangesAsync();
+
+            return (product.Id, warehouse.Id);
+        }
+        finally
+        {
+            Tenant.TenantId = previousTenant;
+        }
+    }
 }
 
 /// <summary>[Fact] که بدون متغیر محیطی سرور SQL، Skip می‌شود.</summary>
@@ -134,3 +186,5 @@ public sealed class SqlServerFactAttribute : FactAttribute
         }
     }
 }
+
+

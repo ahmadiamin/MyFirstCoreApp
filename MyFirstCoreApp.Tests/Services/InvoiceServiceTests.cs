@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Inventory;
 using MyFirstCoreApp.Application.Invoicing;
 using MyFirstCoreApp.Domain.Entities.Accounting;
 using MyFirstCoreApp.Domain.Entities.Contacts;
 using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Domain.Entities.Invoicing;
+using MyFirstCoreApp.Domain.Entities.Tenancy;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Infrastructure.Services;
@@ -190,7 +192,7 @@ public class InvoiceServiceTests : IDisposable
 
         await using var context = _db.NewContext();
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => NewService(context).UpdateAsync(edit, TenantA));
-        Assert.Contains("قطعی", ex.Message);
+     Assert.Contains("قطعی", ex.Message);
     }
 
     // ---------------------------------------------------------------
@@ -460,9 +462,8 @@ public class InvoiceServiceTests : IDisposable
     // Arrange / Helpers
     // ---------------------------------------------------------------
 
-    private InvoiceService NewService(ApplicationDbContext context)
-        => new(context, new TransactionService(context), new SystemAccountService(context), _db.User, _time);
-
+    private InvoiceService NewService(ApplicationDbContext context) =>
+        new(new StockMovementService(context, new WarehouseService(context)), context, new TransactionService(context), new SystemAccountService(context), _db.User, _time); 
     private async Task<Invoice> CreateAsync(InvoiceRequest request)
     {
         await using var context = _db.NewContext();
@@ -472,9 +473,54 @@ public class InvoiceServiceTests : IDisposable
     private async Task<Invoice> CreatePostedSaleAsync(decimal amount)
     {
         var contact = await AddContactAsync();
-        var created = await CreateAsync(NewRequest(InvoiceType.Sale, contact, Item("کالای فروش", 1, amount)));
+
+        var created = await CreateAsync(
+            NewRequest(
+                InvoiceType.Sale,
+                contact,
+                Item("کالای فروش", 1, amount)));
 
         await using var context = _db.NewContext();
+
+        var warehouse = new Warehouse
+        {
+            TenantId = TenantA,
+            Code = "TEST-WH",
+            Name = "انبار تست",
+            IsActive = true,
+            IsDefault = true
+        };
+
+        context.Warehouses.Add(warehouse);
+        await context.SaveChangesAsync();
+
+        var stockMovementService = new StockMovementService(
+            context,
+            new WarehouseService(context));
+
+        // ثبت ورود یک واحد موجودی قبل از فروش
+        var receiptId = await stockMovementService.CreateAsync(
+            new StockMovementRequest
+            {
+                Date = created.Date,
+                MovementType = (int)StockMovementType.Receipt,
+                DestinationWarehouseId = warehouse.Id,
+                Description = "ورود موجودی اولیه برای تست",
+                Items =
+                [
+                    new StockMovementItemRequest
+                {
+                    ProductId = created.Items.Single().ProductId,
+                    Quantity = 1,
+                    UnitCost = amount
+                }
+                ]
+            },
+            TenantA);
+
+        await stockMovementService.PostAsync(receiptId, TenantA);
+
+        // اکنون موجودی کافی برای قطعی‌کردن فاکتور فروش وجود دارد
         await NewService(context).PostAsync(created.Id, TenantA);
 
         return await LoadInvoiceAsync(created.Id);

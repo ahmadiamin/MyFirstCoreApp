@@ -1,0 +1,144 @@
+﻿@{
+    ViewData["Title"] = "انبارها";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa-solid fa-triangle-exclamation"></i> @TempData["Error"]
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-warehouse"></i> فهرست انبارها</h3>
+        <div class="card-tools">
+            <a asp-area="Inventory" asp-controller="Warehouses" asp-action="Create"
+               class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus"></i> انبار جدید
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    </div>
+                    <input type="text" id="txtSearch" class="form-control"
+                           placeholder="جستجو در کد، نام یا آدرس انبار..." />
+                </div>
+            </div>
+            <div class="col-md-7 text-left">
+                <span class="text-muted" id="lblCount"></span>
+            </div>
+        </div>
+
+        <div id="warehousesGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let warehousesGridApi = null;
+
+        $(document).ready(function () {
+            const columnDefs = [
+                AgGridHelper.rowNumberColumn(),
+                { field: 'code', headerName: 'کد انبار', minWidth: 130, flex: 1 },
+                { field: 'name', headerName: 'نام انبار', minWidth: 200, flex: 2 },
+                { field: 'address', headerName: 'آدرس', minWidth: 180, flex: 2 },
+                {
+                    field: 'isDefault',
+                    headerName: 'پیش‌فرض',
+                    width: 120,
+                    cellRenderer: p => p.value
+                        ? '<span class="badge badge-primary">پیش‌فرض</span>'
+                        : '<span class="text-muted">—</span>'
+                },
+                AgGridHelper.statusColumn('isActive'),
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 130,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const d = params.data;
+                        const div = document.createElement('div');
+                        div.className = 'action-buttons';
+
+                        const editBtn = document.createElement('a');
+                        editBtn.href = `/Inventory/Warehouses/Edit/${d.id}`;
+                        editBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn';
+                        editBtn.title = 'ویرایش';
+                        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+                        div.appendChild(editBtn);
+
+                        const deleteBtn = document.createElement('a');
+                        deleteBtn.href = 'javascript:void(0)';
+                        deleteBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn delete-warehouse-btn';
+                        deleteBtn.dataset.id = d.id;
+                        deleteBtn.dataset.title = d.name || '';
+                        deleteBtn.dataset.code = d.code || '';
+                        deleteBtn.title = 'حذف';
+                        deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                        div.appendChild(deleteBtn);
+
+                        return div;
+                    }
+                }
+            ];
+
+            warehousesGridApi = AgGridHelper.create(
+                'warehousesGrid',
+                columnDefs,
+                '/Inventory/Warehouses/GetData',
+                'txtSearch',
+                'lblCount'
+            );
+        });
+
+        $(document).on('click', '.delete-warehouse-btn', function () {
+            const $btn = $(this);
+            const id = $btn.data('id');
+            const title = $btn.data('title');
+            const code = $btn.data('code');
+            const items = [];
+            if (code) items.push({ label: 'کد انبار', value: code });
+            if (title) items.push({ label: 'نام انبار', value: title });
+
+            ModalHelper.confirmDelete({
+                url: '/Inventory/Warehouses/Delete',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                title: 'حذف انبار: ' + title,
+                message: 'اگر انبار در گردش‌های انبار استفاده شده باشد، حذف نمی‌شود. ادامه می‌دهید؟',
+                items: items,
+                onSuccess: function () {
+                    if (warehousesGridApi) {
+                        const ds = warehousesGridApi.getGridOption('datasource');
+                        warehousesGridApi.setGridOption('datasource', ds);
+                    } else {
+                        location.reload();
+                    }
+                }
+            });
+        });
+    </script>
+}

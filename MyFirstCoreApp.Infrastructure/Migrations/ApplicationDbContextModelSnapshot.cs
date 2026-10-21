@@ -1593,6 +1593,161 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.ToTable("ProductImages", (string)null);
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.StockMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("DestinationWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MovementType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("PostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ReferenceInvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReversesMovementId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SourceWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationWarehouseId");
+
+                    b.HasIndex("ReferenceInvoiceId");
+
+                    b.HasIndex("ReversesMovementId")
+                        .IsUnique()
+                        .HasFilter("[ReversesMovementId] IS NOT NULL AND [IsDeleted] = 0");
+
+                    b.HasIndex("SourceWarehouseId");
+
+                    b.HasIndex("TenantId", "Date");
+
+                    b.HasIndex("TenantId", "Number")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("TenantId", "Status", "Date");
+
+                    b.ToTable("StockMovements", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StockMovements_Warehouses", "(\r\n    [MovementType] IN (1, 2)\r\n    AND [SourceWarehouseId] IS NULL\r\n    AND [DestinationWarehouseId] IS NOT NULL\r\n)\r\nOR\r\n(\r\n    [MovementType] = 3\r\n    AND [SourceWarehouseId] IS NOT NULL\r\n    AND [DestinationWarehouseId] IS NULL\r\n)\r\nOR\r\n(\r\n    [MovementType] = 4\r\n    AND [SourceWarehouseId] IS NOT NULL\r\n    AND [DestinationWarehouseId] IS NOT NULL\r\n    AND [SourceWarehouseId] <> [DestinationWarehouseId]\r\n)");
+                        });
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.StockMovementItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("StockMovementId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("UnitCost")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("StockMovementId");
+
+                    b.HasIndex("TenantId", "StockMovementId");
+
+                    b.ToTable("StockMovementItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StockMovementItems_Quantity", "[Quantity] > 0");
+                        });
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.Unit", b =>
                 {
                     b.Property<int>("Id")
@@ -1647,6 +1802,79 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.HasIndex("TenantId", "Name");
 
                     b.ToTable("Units", (string)null);
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.Warehouse", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique()
+                        .HasFilter("[IsDefault] = 1 AND [IsActive] = 1 AND [IsDeleted] = 0");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("TenantId", "Name");
+
+                    b.ToTable("Warehouses", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", b =>
@@ -2458,6 +2686,56 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.StockMovement", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.Warehouse", "DestinationWarehouse")
+                        .WithMany("DestinationMovements")
+                        .HasForeignKey("DestinationWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", "ReferenceInvoice")
+                        .WithMany()
+                        .HasForeignKey("ReferenceInvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.StockMovement", "ReversesMovement")
+                        .WithMany("ReversalMovements")
+                        .HasForeignKey("ReversesMovementId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.Warehouse", "SourceWarehouse")
+                        .WithMany("SourceMovements")
+                        .HasForeignKey("SourceWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DestinationWarehouse");
+
+                    b.Navigation("ReferenceInvoice");
+
+                    b.Navigation("ReversesMovement");
+
+                    b.Navigation("SourceWarehouse");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.StockMovementItem", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.StockMovement", "StockMovement")
+                        .WithMany("Items")
+                        .HasForeignKey("StockMovementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("StockMovement");
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", b =>
                 {
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Contacts.Contact", "Contact")
@@ -2594,6 +2872,20 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("Children");
 
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.StockMovement", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("ReversalMovements");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.Warehouse", b =>
+                {
+                    b.Navigation("DestinationMovements");
+
+                    b.Navigation("SourceMovements");
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", b =>

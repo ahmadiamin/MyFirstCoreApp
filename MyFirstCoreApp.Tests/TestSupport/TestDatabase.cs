@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Domain.Entities.Accounting;
+using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Infrastructure.Persistence.Interceptors;
@@ -107,5 +108,33 @@ public sealed class TestDatabase : IDisposable
         public string? UserId { get; set; }
         public string? UserName => UserId;
         public bool IsAuthenticated => UserId != null;
+    }
+    public async Task<int> AddDefaultWarehouseAsync(int tenantId)
+    {
+        var previous = Tenant.TenantId;
+        Tenant.TenantId = tenantId;
+
+        try
+        {
+            await using var context = NewContext();
+
+            var warehouse = new Warehouse
+            {
+                TenantId = tenantId,
+                Code = $"WH-{tenantId}",
+                Name = "انبار پیش‌فرض",
+                IsActive = true,
+                IsDefault = true
+            };
+
+            context.Warehouses.Add(warehouse);
+            await context.SaveChangesAsync();
+
+            return warehouse.Id;
+        }
+        finally
+        {
+            Tenant.TenantId = previous;
+        }
     }
 }

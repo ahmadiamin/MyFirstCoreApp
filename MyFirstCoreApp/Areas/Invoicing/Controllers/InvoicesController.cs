@@ -755,7 +755,7 @@ public class InvoicesController : Controller
         };
         
         report["ContactBalanceTitle"] = balanceTitle;
-        report["AmountInWords"] = NumToChar.NumToStr(contactBalance.ToString()) + " ریال";
+        report["AmountInWords"] = NumToChar.NumToStr(invoice.TotalAmount.ToString()) + " ریال";
         report["Description"] = invoice.InvoiceType switch
         {
             InvoiceType.PreInvoice => printSettings?.Description,

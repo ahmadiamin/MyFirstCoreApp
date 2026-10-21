@@ -1,0 +1,66 @@
+﻿@model MyFirstCoreApp.Areas.Inventory.ViewModels.Warehouse.WarehouseFormViewModel
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Code"></label>
+            <input asp-for="Code" class="form-control" />
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="form-group">
+            <label asp-for="Address"></label>
+            <input asp-for="Address" class="form-control" />
+            <span asp-validation-for="Address" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="custom-control custom-checkbox mt-2">
+            <input asp-for="IsActive" class="custom-control-input" id="IsActive" />
+            <label asp-for="IsActive" class="custom-control-label" for="IsActive">فعال</label>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="custom-control custom-checkbox mt-2">
+            <input asp-for="IsDefault" class="custom-control-input" id="IsDefault" />
+            <label asp-for="IsDefault" class="custom-control-label" for="IsDefault">انبار پیش‌فرض شرکت</label>
+        </div>
+        <span asp-validation-for="IsDefault" class="text-danger"></span>
+        <small class="form-text text-muted">با انتخاب این گزینه، انبار پیش‌فرض قبلی شرکت جایگزین می‌شود.</small>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const active = document.getElementById('IsActive');
+        const isDefault = document.getElementById('IsDefault');
+        if (!active || !isDefault) return;
+
+        function syncDefault() {
+            if (!active.checked) {
+                isDefault.checked = false;
+                isDefault.disabled = true;
+            } else {
+                isDefault.disabled = false;
+            }
+        }
+
+        active.addEventListener('change', syncDefault);
+        syncDefault();
+    })();
+</script>

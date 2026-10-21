@@ -201,7 +201,10 @@ public class FiscalYearService : IFiscalYearService
             ? FiscalYearRules.DefaultName(request.StartDate)
             : request.Name.Trim();
 
-    private async Task ValidateAsync(FiscalYearRequest request, int tenantId, int? excludeId)
+    private async Task ValidateAsync(
+    FiscalYearRequest request,
+    int tenantId,
+    int? excludeId)
     {
         if (request.StartDate == default)
             throw new InvalidOperationException("تاریخ شروع سال مالی الزامی است.");
@@ -212,22 +215,40 @@ public class FiscalYearService : IFiscalYearService
         if (request.EndDate < request.StartDate)
             throw new InvalidOperationException("تاریخ پایان نباید قبل از تاریخ شروع باشد.");
 
-        var lengthInDays = request.EndDate.DayNumber - request.StartDate.DayNumber + 1;
+        var lengthInDays =
+            request.EndDate.DayNumber - request.StartDate.DayNumber + 1;
+
         if (lengthInDays > MaxYearLengthInDays)
-            throw new InvalidOperationException($"طول سال مالی نباید بیش از {MaxYearLengthInDays} روز باشد.");
+            throw new InvalidOperationException(
+                $"طول سال مالی نباید بیش از {MaxYearLengthInDays} روز باشد.");
 
-        if (!string.IsNullOrWhiteSpace(request.Name) && request.Name.Trim().Length > 100)
-            throw new InvalidOperationException("نام سال مالی حداکثر ۱۰۰ کاراکتر است.");
+        if (!string.IsNullOrWhiteSpace(request.Name) &&
+            request.Name.Trim().Length > 100)
+        {
+            throw new InvalidOperationException(
+                "نام سال مالی حداکثر ۱۰۰ کاراکتر است.");
+        }
 
-        var overlapping = await _context.FiscalYears
-            .Where(f => f.TenantId == tenantId
-                     && f.Id != (excludeId ?? 0)
-                     && f.StartDate <= request.EndDate
-                     && f.EndDate >= request.StartDate)
+        var query = _context.FiscalYears
+            .Where(f =>
+                f.TenantId == tenantId &&
+                f.StartDate <= request.EndDate &&
+                f.EndDate >= request.StartDate);
+
+        if (excludeId.HasValue)
+        {
+            var idToExclude = excludeId.Value;
+            query = query.Where(f => f.Id != idToExclude);
+        }
+
+        var overlapping = await query
             .Select(f => f.Name)
             .FirstOrDefaultAsync();
 
         if (overlapping != null)
-            throw new InvalidOperationException($"این بازه با «{overlapping}» همپوشانی دارد.");
+        {
+            throw new InvalidOperationException(
+                $"این بازه با «{overlapping}» همپوشانی دارد.");
+        }
     }
 }

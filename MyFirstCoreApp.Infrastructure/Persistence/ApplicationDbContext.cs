@@ -54,6 +54,10 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
         public DbSet<ProductAttribute> ProductAttributes { get; set; }
+        
+        public DbSet<Warehouse> Warehouses { get; set; }
+        public DbSet<StockMovement> StockMovements { get; set; }
+        public DbSet<StockMovementItem> StockMovementItems { get; set; }
 
         // Invoicing
         public DbSet<Invoice> Invoices { get; set; }

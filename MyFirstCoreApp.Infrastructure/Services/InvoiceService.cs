@@ -26,18 +26,21 @@ public class InvoiceService : IInvoiceService
     private const string DocumentReferenceType = "Invoice";
 
     private readonly ApplicationDbContext _context;
+    private readonly IStockMovementService _stockMovementService;
     private readonly ITransactionService _transactionService;
     private readonly ISystemAccountService _systemAccounts;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
-
+    private readonly IInvoiceService _invoiceService;
     public InvoiceService(
+        IStockMovementService stockMovementService,
         ApplicationDbContext context,
         ITransactionService transactionService,
         ISystemAccountService systemAccounts,
         ICurrentUser currentUser,
         TimeProvider timeProvider)
     {
+        _stockMovementService = stockMovementService;
         _context = context;
         _transactionService = transactionService;
         _systemAccounts = systemAccounts;
@@ -210,6 +213,8 @@ public class InvoiceService : IInvoiceService
             invoice.Status = InvoiceStatus.Posted;
 
             AddHistory(invoice, InvoiceStatus.Draft, InvoiceStatus.Posted, "قطعی شد");
+
+            await _stockMovementService.CreateFromInvoiceAsync(invoice.Id, tenantId);
             await _context.SaveChangesAsync();
         });
     }
@@ -241,6 +246,13 @@ public class InvoiceService : IInvoiceService
             {
                 var exists = await _context.Transactions.AnyAsync(t => t.Id == invoice.TransactionId.Value);
                 if (exists) documentIds.Add(invoice.TransactionId.Value);
+            }
+
+            if (invoice.InvoiceType is InvoiceType.Sale or InvoiceType.Purchase)
+            {
+                await _stockMovementService.ReverseInvoiceAsync(
+                    invoice.Id,
+                    tenantId);
             }
 
             foreach (var documentId in documentIds)

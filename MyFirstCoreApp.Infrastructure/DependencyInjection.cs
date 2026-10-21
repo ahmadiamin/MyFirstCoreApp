@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MyFirstCoreApp.Application.Attachments;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Infrastructure.Persistence.Interceptors;
@@ -43,6 +44,29 @@ public static class DependencyInjection
 
         // داشبورد (Stored Procedure + Dapper)
         services.AddScoped<IDashboardService, DashboardService>();
+
+        // پیوست عمومی (فایل‌ها بیرون از wwwroot) و قرض
+        services.Configure<AttachmentOptions>(options =>
+        {
+            var section = configuration.GetSection("Attachments");
+
+            if (!string.IsNullOrWhiteSpace(section["RootPath"]))
+                options.RootPath = section["RootPath"]!;
+
+            if (long.TryParse(section["MaxFileSizeBytes"], out var maxSize) && maxSize > 0)
+                options.MaxFileSizeBytes = maxSize;
+
+            if (int.TryParse(section["MaxFilesPerEntity"], out var maxFiles) && maxFiles > 0)
+                options.MaxFilesPerEntity = maxFiles;
+        });
+
+        services.AddSingleton<IAttachmentStore, LocalAttachmentStore>();
+        services.AddScoped<IAttachmentService, AttachmentService>();
+        services.AddScoped<ILoanService, LoanService>();
+
+        services.AddScoped<IStockBalanceService, StockBalanceService>();
+        services.AddScoped<IStockMovementService, StockMovementService>();
+        services.AddScoped<IWarehouseService, WarehouseService>();
 
         return services;
     }
