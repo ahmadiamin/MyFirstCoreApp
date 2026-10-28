@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,60 +8,40 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
 {
     public static class IdentitySeeder
     {
-        public static async Task SeedAsync(
-            IServiceProvider serviceProvider)
+        public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
-
-            var context = scope.ServiceProvider
-                .GetRequiredService<ApplicationDbContext>();
-
-            var roleManager = scope.ServiceProvider
-                .GetRequiredService<RoleManager<IdentityRole>>();
-
-            var userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<ApplicationUser>>();
-
-            var configuration = scope.ServiceProvider
-                .GetRequiredService<IConfiguration>();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
             await context.Database.MigrateAsync();
-
             await SeedRolesAsync(roleManager);
-
+            await SeedTenantOwnerUsersAsync(context, userManager, roleManager);
             await SeedPermissionsAsync(context);
-
-            await SeedRolePermissionsAsync(
-                context,
-                roleManager);
-
+            await SeedRolePermissionsAsync(context, roleManager);
             await SeedMenusAsync(context);
-
-            await SeedAdminUserAsync(
-                userManager,
-                roleManager,
-                configuration);
-
+            await SeedAdminUserAsync(userManager, roleManager, configuration);
         }
 
-        private static async Task SeedRolesAsync(
-            RoleManager<IdentityRole> roleManager)
+        private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
             string[] roles =
             {
-            "Admin",
-            "Manager",
-            "Operator",
-            "User"
-        };
+                "SuperAdmin",
+                "Admin",
+                "TenantOwner",
+                "Manager",
+                "Operator",
+                "User"
+            };
 
             foreach (var roleName in roles)
             {
                 if (!await roleManager.RoleExistsAsync(roleName))
                 {
-                    var result = await roleManager.CreateAsync(
-                        new IdentityRole(roleName));
-
+                    var result = await roleManager.CreateAsync(                        new IdentityRole(roleName));
                     if (!result.Succeeded)
                     {
                         throw new Exception(
@@ -236,6 +215,13 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                     GroupName = "Tenancy",
                     IsActive = true
                 },
+                new Permission
+                {
+                    Name = "SystemSmsSettings.View",
+                    DisplayName = "مشاهده تنظیمات پیامک سامانه",
+                    GroupName = "مدیریت سامانه",
+                    IsActive = true
+                },
 
                 // AccountCategory
                 new Permission { Name = "AccountCategory.View",   DisplayName = "مشاهده دسته‌بندی حساب‌ها", GroupName = "Accounting", IsActive = true },
@@ -259,6 +245,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 // Report
                 new Permission { Name = "Report.Ledger", DisplayName = "گزارش معین", GroupName = "Reports", IsActive = true },
                 new Permission { Name = "Report.Invoice", DisplayName = "گزارش فاکتورها", GroupName = "Reports", IsActive = true },
+                new Permission { Name = "Report.Debtors", DisplayName = "گزارش بدهکاران و بستانکاران", GroupName = "Reports", IsActive = true },
 
                 // TransactionGroup
                 new Permission { Name = "TransactionGroup.View",   DisplayName = "مشاهده گروه تراکنش‌ها", GroupName = "Accounting", IsActive = true },
@@ -271,6 +258,11 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "Contact.Create", DisplayName = "ایجاد طرف حساب",     GroupName = "Contacts", IsActive = true },
                 new Permission { Name = "Contact.Edit",   DisplayName = "ویرایش طرف حساب",    GroupName = "Contacts", IsActive = true },
                 new Permission { Name = "Contact.Delete", DisplayName = "حذف طرف حساب",       GroupName = "Contacts", IsActive = true },
+                new Permission { Name = "CustomerPortalLink.View", DisplayName = "مشاهده لینک‌های پرتال مشتری", GroupName = "Contacts", IsActive = true },
+                new Permission { Name = "CustomerPortalLink.Create", DisplayName = "ساخت لینک پرتال مشتری", GroupName = "Contacts", IsActive = true },
+                new Permission { Name = "CustomerPortalLink.Edit", DisplayName = "ویرایش لینک پرتال مشتری", GroupName = "Contacts", IsActive = true },
+                new Permission { Name = "CustomerPortalLink.Sms", DisplayName = "ارسال پیامک پرتال مشتری", GroupName = "Contacts", IsActive = true },
+                new Permission { Name = "CustomerPortalLink.Revoke", DisplayName = "لغو لینک پرتال مشتری", GroupName = "Contacts", IsActive = true },
 
                 // Unit
                 new Permission { Name = "Unit.View",   DisplayName = "مشاهده واحدها", GroupName = "Inventory", IsActive = true },
@@ -298,6 +290,14 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 
                 // Kardex
                 new Permission { Name = "Kardex.View",   DisplayName = "مشاهده کاردکس کالا", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "StockBalance.View", DisplayName = "مشاهده گزارش موجودی انبارها", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "DormantStock.View", DisplayName = "مشاهده گزارش موجودی راکد", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "MinimumStock.View", DisplayName = "مشاهده هشدار حداقل موجودی", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "InventoryValuation.View", DisplayName = "مشاهده ارزش موجودی", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "StockMovementReport.View", DisplayName = "مشاهده گزارش گردش انبار", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "StockMovement.View", DisplayName = "مشاهده انتقال‌های انبار", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "StockMovement.Create", DisplayName = "ثبت و لغو پیش‌نویس انتقال", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "StockMovement.Post", DisplayName = "قطعی‌کردن انتقال انبار", GroupName = "Inventory", IsActive = true },
 
                 // Transaction (اسناد حسابداری)
                 new Permission { Name = "Transaction.View",   DisplayName = "مشاهده اسناد", GroupName = "Accounting", IsActive = true },
@@ -370,6 +370,19 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "Payment.Edit",   DisplayName = "ویرایش پرداخت",    GroupName = "Banking", IsActive = true },
                 new Permission { Name = "Payment.Delete", DisplayName = "حذف پرداخت",       GroupName = "Banking", IsActive = true },
                 new Permission { Name = "Payment.Post",   DisplayName = "قطعی پرداخت",      GroupName = "Banking", IsActive = true },
+
+                // FiscalYear
+                new Permission { Name = "FiscalYear.View",   DisplayName = "مشاهده سال‌های مالی",      GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "FiscalYear.Create", DisplayName = "ایجاد سال مالی",           GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "FiscalYear.Edit",   DisplayName = "ویرایش سال مالی",          GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "FiscalYear.Close",  DisplayName = "بستن و باز کردن سال مالی", GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "FiscalYear.Delete", DisplayName = "حذف سال مالی",             GroupName = "Accounting", IsActive = true },
+                
+                // Loan
+                new Permission { Name = "Loan.View",   DisplayName = "مشاهده قرض‌ها",   GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "Loan.Create", DisplayName = "ثبت قرض",         GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "Loan.Edit",   DisplayName = "ثبت بازپرداخت قرض", GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "Loan.Delete", DisplayName = "حذف قرض و بازپرداخت", GroupName = "Accounting", IsActive = true },
             };
 
             foreach (var permission in permissions)
@@ -386,42 +399,72 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
             await context.SaveChangesAsync();
         }
 
+        private static async Task SeedTenantOwnerUsersAsync(
+            ApplicationDbContext context, UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager)
+        {
+            if (!await roleManager.RoleExistsAsync("TenantOwner")) return;
+            var ownerIds = await context.UserTenants
+                .Where(x => x.IsOwner && !x.IsDeleted)
+                .Select(x => x.UserId)
+                .Distinct()
+                .ToListAsync();
+            foreach (var ownerId in ownerIds)
+            {
+                var user = await userManager.FindByIdAsync(ownerId);
+                if (user is not null && !await userManager.IsInRoleAsync(user, "TenantOwner"))
+                {
+                    var result = await userManager.AddToRoleAsync(user, "TenantOwner");
+                    if (!result.Succeeded)
+                        throw new InvalidOperationException("Could not assign TenantOwner role: " +
+                            string.Join(", ", result.Errors.Select(x => x.Description)));
+                }
+            }
+        }
+
         private static async Task SeedRolePermissionsAsync(
             ApplicationDbContext context,
             RoleManager<IdentityRole> roleManager)
         {
-            var adminRole = await roleManager.FindByNameAsync("Admin");
-
-            if (adminRole == null)
-                return;
-
-            var allPermissionIds = await context.Permissions
-                .Select(x => x.Id)
-                .ToListAsync();
-
-            var existingPermissionIds = await context.RolePermissions
-                .Where(x => x.RoleId == adminRole.Id)
-                .Select(x => x.PermissionId)
-                .ToListAsync();
-
-            var permissionsToAdd = allPermissionIds
-                .Except(existingPermissionIds)
-                .ToList();
-
-            foreach (var permissionId in permissionsToAdd)
+            var roles = new[] { "SuperAdmin", "Admin", "TenantOwner" };
+            var roleEntities = new Dictionary<string, IdentityRole>();
+            foreach (var roleName in roles)
             {
-                context.RolePermissions.Add(
-                    new RolePermission
-                    {
-                        RoleId = adminRole.Id,
-                        PermissionId = permissionId
-                    });
+                var role = await roleManager.FindByNameAsync(roleName);
+                if (role is not null) roleEntities[roleName] = role;
             }
 
-            if (permissionsToAdd.Count > 0)
+            var permissions = await context.Permissions.ToListAsync();
+            var current = await context.RolePermissions
+                .Where(x => roleEntities.Values.Select(r => r.Id).Contains(x.RoleId)).ToListAsync();
+
+            foreach (var (roleName, role) in roleEntities)
             {
-                await context.SaveChangesAsync();
+                var desired = roleName == "SuperAdmin"
+                    ? permissions.Select(x => x.Id).ToHashSet()
+                    : permissions.Where(x => IsTenantPermission(x.Name)).Select(x => x.Id).ToHashSet();
+                var roleAssignments = current.Where(x => x.RoleId == role.Id).ToList();
+                foreach (var obsolete in roleAssignments.Where(x => !desired.Contains(x.PermissionId)))
+                    context.RolePermissions.Remove(obsolete);
+                var assigned = roleAssignments.Select(x => x.PermissionId).ToHashSet();
+                foreach (var permissionId in desired.Except(assigned))
+                    context.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permissionId });
             }
+
+            await context.SaveChangesAsync();
+        }
+
+        private static bool IsTenantPermission(string name)
+        {
+            if (name.StartsWith("User.", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("Role.", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("Permission.", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("Menu.", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("SystemSmsSettings.", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return !name.StartsWith("Tenancy.", StringComparison.OrdinalIgnoreCase) ||
+                name is "Tenancy.View" or "Tenancy.Create" or "Tenancy.Edit" or "Tenancy.Select";
         }
 
         private static async Task SeedAdminUserAsync(
@@ -441,11 +484,11 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                     "اطلاعات SeedAdmin در User Secrets تنظیم نشده است.");
             }
 
-            var adminRole = await roleManager.FindByNameAsync("Admin");
+            var adminRole = await roleManager.FindByNameAsync("SuperAdmin");
 
             if (adminRole == null)
                 throw new Exception(
-                    "Role 'Admin' پیدا نشد.");
+                    "Role 'SuperAdmin' پیدا نشد.");
 
             var user = await userManager.FindByEmailAsync(email);
 
@@ -475,11 +518,11 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
 
             if (!await userManager.IsInRoleAsync(
                     user,
-                    "Admin"))
+                    "SuperAdmin"))
             {
                 var result = await userManager.AddToRoleAsync(
                     user,
-                    "Admin");
+                    "SuperAdmin");
 
                 if (!result.Succeeded)
                 {
@@ -489,6 +532,9 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                             result.Errors.Select(x => x.Description)));
                 }
             }
+
+            if (await userManager.IsInRoleAsync(user, "Admin"))
+                await userManager.RemoveFromRoleAsync(user, "Admin");
         }
         private static async Task SeedMenusAsync(ApplicationDbContext context)
         {
@@ -504,7 +550,8 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "انبار", Url = null, Icon = "fa-solid fa-cubes", Permission = null, SortOrder = 5, IsActive = true },
                 new Menu { Title = "گزارشات", Url = null, Icon = "fa-solid fa-chart-bar", Permission = null, SortOrder = 6, IsActive = true },
                 new Menu { Title = "فاکتورها", Url = null, Icon = "fa-solid fa-file-invoice", Permission = null, SortOrder = 7, IsActive = true },
-                new Menu { Title = "امور بانکی", Url = null, Icon = "fa-solid fa-building-columns", Permission = null, SortOrder = 8, IsActive = true }
+                new Menu { Title = "امور بانکی", Url = null, Icon = "fa-solid fa-building-columns", Permission = null, SortOrder = 8, IsActive = true },
+                new Menu { Title = "مدیریت سامانه", Url = null, Icon = "fa-solid fa-server", Permission = null, SortOrder = 9, IsActive = true }
             };
 
             foreach (var parent in parents)
@@ -525,6 +572,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
             var reportsParent = await context.Menus.FirstAsync(x => x.Title == "گزارشات" && x.ParentId == null);
             var invoicingParent = await context.Menus.FirstAsync(x => x.Title == "فاکتورها" && x.ParentId == null);
             var bankingParent = await context.Menus.FirstAsync(x => x.Title == "امور بانکی" && x.ParentId == null);
+            var systemParent = await context.Menus.FirstAsync(x => x.Title == "مدیریت سامانه" && x.ParentId == null);
 
             // ============================================
             // ۳. زیرمنوها
@@ -536,6 +584,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "نقش‌ها", Url = "/Admin/Roles", Icon = "fa-solid fa-user-tag", Permission = "Role.View", ParentId = usersParent.Id, SortOrder = 2, IsActive = true },
                 new Menu { Title = "دسترسی‌ها", Url = "/Admin/Permissions", Icon = "fa-solid fa-key", Permission = "Permission.View", ParentId = usersParent.Id, SortOrder = 3, IsActive = true },
                 new Menu { Title = "منوها", Url = "/Admin/Menus", Icon = "fa-solid fa-bars", Permission = "Menu.View", ParentId = usersParent.Id, SortOrder = 4, IsActive = true },
+                new Menu { Title = "پیامک و ثبت‌نام", Url = "/Admin/SystemSettings/Sms", Icon = "fa-solid fa-comment-sms", Permission = "SystemSmsSettings.View", ParentId = systemParent.Id, SortOrder = 5, IsActive = true },
 
                 // اطلاعات پایه
                 new Menu { Title = "شرکت‌ها", Url = "/Tenancy/Tenant", Icon = "fa-solid fa-building", Permission = "Tenancy.View", ParentId = baseParent.Id, SortOrder = 1, IsActive = true },
@@ -546,6 +595,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "گروه تراکنش‌ها", Url = "/Accounting/TransactionGroups", Icon = "fa-solid fa-tags", Permission = "TransactionGroup.View", ParentId = accountingParent.Id, SortOrder = 3, IsActive = true },
                 new Menu { Title = "اسناد حسابداری", Url = "/Accounting/Transactions", Icon = "fa-solid fa-file-lines", Permission = "Transaction.View", ParentId = accountingParent.Id, SortOrder = 4, IsActive = true },
                 new Menu { Title = "سال‌های مالی", Url = "/Accounting/FiscalYears", Icon = "fa-solid fa-calendar-days", Permission = "FiscalYear.View", ParentId = accountingParent.Id, SortOrder = 5, IsActive = true },
+                new Menu { Title = "قرض‌ها", Url = "/Accounting/Loans", Icon = "fa-solid fa-handshake", Permission = "Loan.View", ParentId = accountingParent.Id, SortOrder = 6, IsActive = true },
 
                 // طرف حساب‌ها
                 new Menu { Title = "لیست طرف حساب‌ها", Url = "/Contacts/Contacts", Icon = "fa-solid fa-address-book", Permission = "Contact.View", ParentId = contactsParent.Id, SortOrder = 1, IsActive = true },
@@ -556,13 +606,21 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "کالاها", Url = "/Inventory/Products", Icon = "fa-solid fa-cube", Permission = "Product.View", ParentId = inventoryParent.Id, SortOrder = 3, IsActive = true },
                 new Menu { Title = "انبارها", Url = "/Inventory/Warehouses", Icon = "fa-solid fa-warehouse", Permission = "Warehouse.View", ParentId = inventoryParent.Id, SortOrder = 4, IsActive = true },
                 new Menu { Title = "کاردکس کالا", Url = "/Inventory/Kardex", Icon = "fa-solid fa-clipboard-list", Permission = "Kardex.View", ParentId = inventoryParent.Id, SortOrder = 5, IsActive = true },
+                new Menu { Title = "انتقال بین انبارها", Url = "/Inventory/StockTransfers", Icon = "fa-solid fa-right-left", Permission = "StockMovement.View", ParentId = inventoryParent.Id, SortOrder = 6, IsActive = true },
+                new Menu { Title = "موجودی انبارها", Url = "/Inventory/StockBalances", Icon = "fa-solid fa-boxes-stacked", Permission = "StockBalance.View", ParentId = inventoryParent.Id, SortOrder = 7, IsActive = true },
+                new Menu { Title = "گزارش گردش انبار", Url = "/Inventory/StockMovementReports", Icon = "fa-solid fa-arrow-right-arrow-left", Permission = "StockMovementReport.View", ParentId = inventoryParent.Id, SortOrder = 8, IsActive = true },
+                new Menu { Title = "گزارش موجودی راکد", Url = "/Inventory/DormantStock", Icon = "fa-solid fa-box-open", Permission = "DormantStock.View", ParentId = inventoryParent.Id, SortOrder = 9, IsActive = true },
+                new Menu { Title = "هشدار حداقل موجودی", Url = "/Inventory/InventoryAnalytics/MinimumStock", Icon = "fa-solid fa-triangle-exclamation", Permission = "MinimumStock.View", ParentId = inventoryParent.Id, SortOrder = 10, IsActive = true },
+                new Menu { Title = "ارزش موجودی", Url = "/Inventory/InventoryAnalytics/Valuation", Icon = "fa-solid fa-coins", Permission = "InventoryValuation.View", ParentId = inventoryParent.Id, SortOrder = 11, IsActive = true },
 
                 // گزارشات
                 new Menu { Title = "گزارش معین", Url = "/Accounting/Reports/Ledger", Icon = "fa-solid fa-book", Permission = "Report.Ledger", ParentId = reportsParent.Id, SortOrder = 1, IsActive = true },
                 new Menu { Title = "گزارش تفصیلی", Url = "/Accounting/Reports/Detailed", Icon = "fa-solid fa-list-ul",    Permission = "Report.Ledger", ParentId = reportsParent.Id,  SortOrder = 2,    IsActive = true},
                 new Menu { Title = "گزارش طرف حساب", Url = "/Accounting/Reports/Contact", Icon = "fa-solid fa-address-book",    Permission = "Report.Ledger",    ParentId = reportsParent.Id,    SortOrder = 3,    IsActive = true},
                 new Menu { Title = "گزارش فاکتورها", Url = "/Accounting/Reports/Invoices", Icon = "fa-solid fa-file-invoice-dollar", Permission = "Report.Invoice", ParentId = reportsParent.Id, SortOrder = 4, IsActive = true },
-
+                new Menu { Title = "گزارش بدهکاران",   Url = "/Accounting/Reports/Debtors",   Icon = "fa-solid fa-arrow-down", Permission = "Report.Debtors", ParentId = reportsParent.Id, SortOrder = 5, IsActive = true },
+                new Menu { Title = "گزارش بستانکاران", Url = "/Accounting/Reports/Creditors", Icon = "fa-solid fa-arrow-up",   Permission = "Report.Debtors", ParentId = reportsParent.Id, SortOrder = 6, IsActive = true },
+                
                 // فاکتورها
                 new Menu { Title = "پیش‌فاکتورها", Url = "/Invoicing/Invoices?invoiceType=1", Icon = "fa-solid fa-file-pen", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 1, IsActive = true },
                 new Menu { Title = "فاکتورهای فروش", Url = "/Invoicing/Invoices?invoiceType=2", Icon = "fa-solid fa-cart-shopping", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 2, IsActive = true },

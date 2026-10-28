@@ -175,3 +175,115 @@ public sealed class InvoiceReport
 
     public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling(Count / (double)PageSize);
 }
+
+// ============================================
+// بدهکاران / بستانکاران
+// ============================================
+
+public enum ContactBalanceMode
+{
+    /// <summary>بدهکاران: طرف حساب‌هایی که به ما بدهکارند (مانده‌ی بدهکار).</summary>
+    Debtors = 1,
+
+    /// <summary>بستانکاران: طرف حساب‌هایی که ما به آن‌ها بدهکاریم (مانده‌ی بستانکار).</summary>
+    Creditors = 2
+}
+
+public enum ContactBalanceSort
+{
+    /// <summary>بیشترین مانده اول.</summary>
+    LargestBalance = 1,
+
+    /// <summary>بر اساس نام.</summary>
+    Name = 2,
+
+    /// <summary>قدیمی‌ترین «آخرین فعالیت» اول (طرف حساب‌های راکد).</summary>
+    OldestActivity = 3
+}
+
+public sealed class ContactBalancesQuery
+{
+    public ContactBalanceMode Mode { get; set; } = ContactBalanceMode.Debtors;
+
+    /// <summary>مانده‌ی دفتر تا این تاریخ (دو سر شامل).</summary>
+    public DateOnly AsOf { get; set; }
+
+    /// <summary>فقط طرف حساب‌هایی که مانده‌شان حداقل این مقدار است.</summary>
+    public decimal MinAmount { get; set; }
+
+    /// <summary>جستجو در نام، کد و موبایل.</summary>
+    public string? Search { get; set; }
+
+    public ContactBalanceSort SortBy { get; set; } = ContactBalanceSort.LargestBalance;
+
+    public int PageNumber { get; set; } = 1;
+
+    /// <summary>0 = همه‌ی ردیف‌ها (برای خروجی Excel/چاپ).</summary>
+    public int PageSize { get; set; } = 50;
+}
+
+public sealed class ContactBalanceRow
+{
+    public int ContactId { get; set; }
+    public string? ContactName { get; set; }
+    public string? ContactCode { get; set; }
+    public string? Mobile { get; set; }
+
+    public decimal TotalDebit { get; set; }
+    public decimal TotalCredit { get; set; }
+
+    /// <summary>مانده‌ی مثبت در جهتِ گزارش (بدهکاران: بدهکار−بستانکار؛ بستانکاران: بستانکار−بدهکار).</summary>
+    public decimal Amount { get; set; }
+
+    public DateOnly? LastTransactionDate { get; set; }
+
+    // فاکتورهای بازِ هم‌نوع (وضعیت فعلی)
+    public int OpenInvoiceCount { get; set; }
+    public decimal OpenInvoiceRemaining { get; set; }
+    public decimal Age0To30 { get; set; }
+    public decimal Age31To60 { get; set; }
+    public decimal Age61To90 { get; set; }
+    public decimal Age90Plus { get; set; }
+
+    /// <summary>چک‌های در انتظار وصول/پاس (مبلغ‌شان قبلاً از مانده کم شده است).</summary>
+    public decimal PendingChequeAmount { get; set; }
+
+    /// <summary>
+    /// سایر = مانده − فاکتورهای باز؛ قرض، پیش‌پرداخت تخصیص‌نیافته و اسناد دستی.
+    /// منفی یعنی فاکتورهای باز از مانده بیشتر است (مثلاً پیش‌پرداخت).
+    /// </summary>
+    public decimal OtherAmount => Amount - OpenInvoiceRemaining;
+
+    /// <summary>مانده با فرض اینکه همه‌ی چک‌های در انتظار برگردند.</summary>
+    public decimal AmountIfChequesBounce => Amount + PendingChequeAmount;
+}
+
+public sealed class ContactBalancesReport
+{
+    public ContactBalanceMode Mode { get; set; }
+    public DateOnly AsOf { get; set; }
+
+    public List<ContactBalanceRow> Rows { get; set; } = new();
+
+    // جمع «همه‌ی ردیف‌های فیلترشده» (نه فقط صفحه‌ی جاری)
+    public int Count { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal TotalDebit { get; set; }
+    public decimal TotalCredit { get; set; }
+    public decimal TotalOpenInvoiceRemaining { get; set; }
+    public decimal TotalAge0To30 { get; set; }
+    public decimal TotalAge31To60 { get; set; }
+    public decimal TotalAge61To90 { get; set; }
+    public decimal TotalAge90Plus { get; set; }
+    public decimal TotalPendingCheque { get; set; }
+
+    public decimal TotalOther => TotalAmount - TotalOpenInvoiceRemaining;
+    public decimal TotalIfChequesBounce => TotalAmount + TotalPendingCheque;
+
+    public int PageNumber { get; set; }
+
+    /// <summary>0 = همه.</summary>
+    public int PageSize { get; set; }
+
+    public int TotalPages => PageSize <= 0 ? (Count > 0 ? 1 : 0) : (int)Math.Ceiling(Count / (double)PageSize);
+}

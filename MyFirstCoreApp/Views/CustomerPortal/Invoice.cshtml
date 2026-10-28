@@ -1,0 +1,193 @@
+@using MyFirstCoreApp.Application.Common.Utilities
+@model MyFirstCoreApp.Controllers.CustomerPortalInvoiceViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "فاکتور فروش";
+    var invoice = Model.Data.Invoice;
+}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <title>@ViewData["Title"] @invoice.Number</title>
+    <style>
+        @@font-face {
+            font-family: Vazir;
+            src: url('@Url.Content("~/dist/fonts/Vazir.woff2")') format('woff2');
+            font-weight: 100 900;
+            font-display: swap
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: Vazir,sans-serif;
+            background: #f3f5f8;
+            color: #263238;
+            margin: 0;
+            padding: 24px;
+            font-feature-settings: "ss01";
+            -webkit-font-feature-settings: "ss01"
+        }
+
+        .wrap {
+            max-width: 1000px;
+            width: 100%;
+            margin: auto
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 18px;
+            min-width: 0
+        }
+
+        table {
+            width: 100%;
+            max-width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e9ec;
+            text-align: right;
+            overflow-wrap: anywhere
+        }
+
+        th {
+            background: #f7f8fa
+        }
+
+        .number {
+            text-align: left;
+            white-space: nowrap;
+            direction: ltr;
+            font-variant-numeric: tabular-nums
+        }
+
+        a {
+            color: #1266a5
+        }
+
+        .muted {
+            color: #687782
+        }
+
+        @@media(max-width:700px) {
+            body {
+                padding: 10px
+            }
+
+            .card {
+                padding: 14px
+            }
+
+                .card h2 {
+                    font-size: 1.15rem
+                }
+
+            table, thead, tbody, tfoot, tr, th, td {
+                display: block;
+                width: 100%
+            }
+
+            thead {
+                display: none
+            }
+
+            tbody tr {
+                border: 1px solid #e5e9ec;
+                border-radius: 8px;
+                margin: 0 0 12px;
+                padding: 6px 10px
+            }
+
+            tbody td {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 8px 0;
+                text-align: left
+            }
+
+                tbody td::before {
+                    content: attr(data-label);
+                    font-weight: 600;
+                    text-align: right;
+                    flex: 0 0 40%;
+                    color: #687782
+                }
+
+            tfoot tr {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                border-top: 1px solid #e5e9ec;
+                padding: 8px 0
+            }
+
+            tfoot th {
+                width: auto;
+                text-align: right;
+                padding: 6px 0;
+                background: transparent
+            }
+
+                tfoot th[colspan="3"] {
+                    flex: 1
+                }
+
+                tfoot th.number {
+                    flex: 0 0 auto;
+                    white-space: normal
+                }
+
+            tbody .number {
+                white-space: normal;
+                overflow-wrap: anywhere
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <section class="card">
+            <a href="@Url.Action("Index", "CustomerPortal", new { token = Model.Token })">بازگشت به پرتال</a>
+            <h2>فاکتور فروش شماره @invoice.Number</h2><p>تاریخ: @PersianDate.Format(invoice.Date)</p>
+            @if (!string.IsNullOrWhiteSpace(Model.Data.Description))
+            {
+                <p>@Model.Data.Description</p>
+            }
+            <table>
+                <thead><tr><th>شرح</th><th>مقدار</th><th>قیمت واحد</th><th>جمع</th></tr></thead>
+                <tbody>
+                    @foreach (var item in Model.Data.Items)
+                    {
+                        <tr>
+                            <td data-label="شرح">@item.Description</td>
+                            <td data-label="مقدار">@item.Quantity.ToString("N0")</td>
+                            <td class="number" data-label="قیمت واحد">@item.UnitPrice.ToString("N0")</td>
+                            <td class="number" data-label="جمع">@item.LineTotal.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr><th colspan="3">مبلغ کل</th><th class="number">@invoice.TotalAmount.ToString("N0")</th></tr>
+                    <tr><th colspan="3">پرداخت‌شده</th><th class="number">@invoice.PaidAmount.ToString("N0")</th></tr>
+                    <tr><th colspan="3">مانده</th><th class="number">@invoice.RemainingAmount.ToString("N0")</th></tr>
+                </tfoot>
+            </table>
+        </section>
+    </main>
+</body>
+</html>

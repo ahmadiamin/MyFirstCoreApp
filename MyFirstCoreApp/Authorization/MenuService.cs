@@ -61,6 +61,7 @@ namespace MyFirstCoreApp.Authorization
                         Icon = x.Icon,
                         Children = BuildMenu(x.Id)
                     })
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Url) || x.Children.Count > 0)
                     .ToList();
             }
 

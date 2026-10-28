@@ -23,6 +23,12 @@ namespace MyFirstCoreApp.Authorization
             if (context.User.Identity?.IsAuthenticated != true)
                 return;
 
+            if (context.User.IsInRole("SuperAdmin"))
+            {
+                context.Succeed(requirement);
+                return;
+            }
+
             var userId = context.User.FindFirstValue(
                 ClaimTypes.NameIdentifier);
 

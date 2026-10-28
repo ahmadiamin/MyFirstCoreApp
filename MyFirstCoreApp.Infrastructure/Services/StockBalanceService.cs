@@ -65,7 +65,7 @@ public class StockBalanceService : IStockBalanceService
                 p.Id == productId &&
                 p.TenantId == tenantId &&
                 p.IsActive)
-            .Select(p => new { p.Id, p.Name, p.Code })
+            .Select(p => new { p.Id, p.Name, p.Code, UnitName = p.Unit.Name })
             .FirstOrDefaultAsync();
 
         if (product == null)
@@ -132,6 +132,7 @@ public class StockBalanceService : IStockBalanceService
                 ProductId = product.Id,
                 ProductName = product.Name,
                 ProductCode = product.Code,
+                UnitName = product.UnitName,
                 WarehouseId = w.Id,
                 WarehouseName = w.Name,
                 Quantity =
@@ -139,6 +140,197 @@ public class StockBalanceService : IStockBalanceService
                     - outgoingByWarehouse.GetValueOrDefault(w.Id, 0m)
             })
             .OrderBy(x => x.WarehouseName)
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<StockBalanceDto>> GetAllBalancesAsync(
+        int tenantId,
+        int? warehouseId = null)
+    {
+        if (warehouseId.HasValue && !await _context.Warehouses.AnyAsync(w =>
+                w.Id == warehouseId.Value && w.TenantId == tenantId && w.IsActive))
+            throw new InvalidOperationException("انبار پیدا نشد یا غیرفعال است.");
+
+        var incomingQuery =
+            from item in _context.StockMovementItems.AsNoTracking()
+            join movement in _context.StockMovements.AsNoTracking()
+                on item.StockMovementId equals movement.Id
+            where item.TenantId == tenantId
+                  && movement.TenantId == tenantId
+                  && movement.Status == StockMovementStatus.Posted
+                  && movement.DestinationWarehouseId.HasValue
+                  && (!warehouseId.HasValue || movement.DestinationWarehouseId == warehouseId)
+            group item by new
+            {
+                item.ProductId,
+                WarehouseId = movement.DestinationWarehouseId!.Value
+            }
+            into g
+            select new { g.Key.ProductId, g.Key.WarehouseId, Quantity = g.Sum(x => x.Quantity) };
+
+        var outgoingQuery =
+            from item in _context.StockMovementItems.AsNoTracking()
+            join movement in _context.StockMovements.AsNoTracking()
+                on item.StockMovementId equals movement.Id
+            where item.TenantId == tenantId
+                  && movement.TenantId == tenantId
+                  && movement.Status == StockMovementStatus.Posted
+                  && movement.SourceWarehouseId.HasValue
+                  && (!warehouseId.HasValue || movement.SourceWarehouseId == warehouseId)
+            group item by new
+            {
+                item.ProductId,
+                WarehouseId = movement.SourceWarehouseId!.Value
+            }
+            into g
+            select new { g.Key.ProductId, g.Key.WarehouseId, Quantity = -g.Sum(x => x.Quantity) };
+
+        var movements = await incomingQuery
+            .Concat(outgoingQuery)
+            .ToListAsync();
+
+        var balances = movements
+            .GroupBy(x => new { x.ProductId, x.WarehouseId })
+            .Select(g => new
+            {
+                g.Key.ProductId,
+                g.Key.WarehouseId,
+                Quantity = g.Sum(x => x.Quantity)
+            })
+            .Where(x => x.Quantity != 0)
+            .ToList();
+
+        var productIds = balances.Select(x => x.ProductId).Distinct().ToList();
+        var warehouseIds = balances.Select(x => x.WarehouseId).Distinct().ToList();
+        if (productIds.Count == 0) return [];
+
+        var products = await _context.Products
+            .AsNoTracking()
+            .Where(p => p.TenantId == tenantId && p.IsActive && p.TrackInventory && productIds.Contains(p.Id))
+            .Select(p => new { p.Id, p.Name, p.Code, UnitName = p.Unit.Name })
+            .ToDictionaryAsync(p => p.Id);
+
+        var warehouses = await _context.Warehouses
+            .AsNoTracking()
+            .Where(w => w.TenantId == tenantId && w.IsActive && warehouseIds.Contains(w.Id))
+            .Select(w => new { w.Id, w.Name })
+            .ToDictionaryAsync(w => w.Id);
+
+        return balances
+            .Where(x => products.ContainsKey(x.ProductId) && warehouses.ContainsKey(x.WarehouseId))
+            .Select(x => new StockBalanceDto
+            {
+                ProductId = x.ProductId,
+                ProductName = products[x.ProductId].Name,
+                ProductCode = products[x.ProductId].Code,
+                UnitName = products[x.ProductId].UnitName,
+                WarehouseId = x.WarehouseId,
+                WarehouseName = warehouses[x.WarehouseId].Name,
+                Quantity = x.Quantity
+            })
+            .OrderBy(x => x.WarehouseName)
+            .ThenBy(x => x.ProductName)
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<DormantStockBalanceDto>> GetDormantBalancesAsync(
+        int tenantId,
+        DateOnly from,
+        DateOnly to,
+        int? warehouseId = null,
+        int? productId = null)
+    {
+        if (from > to)
+            throw new InvalidOperationException("تاریخ شروع نباید بعد از تاریخ پایان باشد.");
+
+        if (warehouseId.HasValue && !await _context.Warehouses.AnyAsync(w =>
+                w.Id == warehouseId.Value && w.TenantId == tenantId && w.IsActive))
+            throw new InvalidOperationException("انبار پیدا نشد یا غیرفعال است.");
+
+        if (productId.HasValue && !await _context.Products.AnyAsync(p =>
+                p.Id == productId.Value && p.TenantId == tenantId && p.IsActive && p.TrackInventory))
+            throw new InvalidOperationException("کالا پیدا نشد یا قابل کنترل موجودی نیست.");
+
+        var incoming =
+            from item in _context.StockMovementItems.AsNoTracking()
+            join movement in _context.StockMovements.AsNoTracking()
+                on item.StockMovementId equals movement.Id
+            where item.TenantId == tenantId
+                  && movement.TenantId == tenantId
+                  && movement.Status == StockMovementStatus.Posted
+                  && movement.Date <= to
+                  && movement.DestinationWarehouseId.HasValue
+                  && (!warehouseId.HasValue || movement.DestinationWarehouseId == warehouseId)
+                  && (!productId.HasValue || item.ProductId == productId)
+            select new
+            {
+                item.ProductId,
+                WarehouseId = movement.DestinationWarehouseId!.Value,
+                QuantityDelta = item.Quantity,
+                movement.Date
+            };
+
+        var outgoing =
+            from item in _context.StockMovementItems.AsNoTracking()
+            join movement in _context.StockMovements.AsNoTracking()
+                on item.StockMovementId equals movement.Id
+            where item.TenantId == tenantId
+                  && movement.TenantId == tenantId
+                  && movement.Status == StockMovementStatus.Posted
+                  && movement.Date <= to
+                  && movement.SourceWarehouseId.HasValue
+                  && (!warehouseId.HasValue || movement.SourceWarehouseId == warehouseId)
+                  && (!productId.HasValue || item.ProductId == productId)
+            select new
+            {
+                item.ProductId,
+                WarehouseId = movement.SourceWarehouseId!.Value,
+                QuantityDelta = -item.Quantity,
+                movement.Date
+            };
+
+        var groupedMovements = await incoming.Concat(outgoing)
+            .GroupBy(x => new { x.ProductId, x.WarehouseId })
+            .Select(g => new
+            {
+                g.Key.ProductId,
+                g.Key.WarehouseId,
+                Quantity = g.Sum(x => x.QuantityDelta),
+                LastMovementDate = g.Max(x => x.Date)
+            })
+            .Where(x => x.Quantity > 0 && x.LastMovementDate < from)
+            .ToListAsync();
+
+        if (groupedMovements.Count == 0) return [];
+
+        var productIds = groupedMovements.Select(x => x.ProductId).Distinct().ToList();
+        var warehouseIds = groupedMovements.Select(x => x.WarehouseId).Distinct().ToList();
+        var products = await _context.Products
+            .AsNoTracking()
+            .Where(p => p.TenantId == tenantId && p.IsActive && p.TrackInventory && productIds.Contains(p.Id))
+            .Select(p => new { p.Id, p.Name, p.Code, UnitName = p.Unit.Name })
+            .ToDictionaryAsync(p => p.Id);
+        var warehouses = await _context.Warehouses
+            .AsNoTracking()
+            .Where(w => w.TenantId == tenantId && w.IsActive && warehouseIds.Contains(w.Id))
+            .Select(w => new { w.Id, w.Name })
+            .ToDictionaryAsync(w => w.Id);
+
+        return groupedMovements
+            .Where(x => products.ContainsKey(x.ProductId) && warehouses.ContainsKey(x.WarehouseId))
+            .Select(x => new DormantStockBalanceDto
+            {
+                ProductId = x.ProductId,
+                ProductName = products[x.ProductId].Name,
+                ProductCode = products[x.ProductId].Code,
+                UnitName = products[x.ProductId].UnitName,
+                WarehouseId = x.WarehouseId,
+                WarehouseName = warehouses[x.WarehouseId].Name,
+                Quantity = x.Quantity,
+                LastMovementDate = x.LastMovementDate
+            })
+            .OrderByDescending(x => x.Quantity)
+            .ThenBy(x => x.ProductName)
             .ToList();
     }
 
@@ -164,6 +356,7 @@ public class StockBalanceService : IStockBalanceService
                 item.ProductId,
                 product.Name,
                 product.Code,
+                UnitName = product.Unit.Name,
                 item.Quantity,
                 IsIncoming =
                     movement.DestinationWarehouseId == warehouseId,
@@ -179,13 +372,15 @@ public class StockBalanceService : IStockBalanceService
             {
                 x.ProductId,
                 x.Name,
-                x.Code
+                x.Code,
+                x.UnitName
             })
             .Select(g => new StockBalanceDto
             {
                 ProductId = g.Key.ProductId,
                 ProductName = g.Key.Name,
                 ProductCode = g.Key.Code,
+                UnitName = g.Key.UnitName,
                 WarehouseId = warehouseId,
                 WarehouseName = string.Empty,
                 Quantity =

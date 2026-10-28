@@ -17,6 +17,7 @@ public static class ReportSqlScripts
         "usp_Report_Detailed",
         "usp_Report_Contact",
         "usp_Report_Invoices",
+        "usp_Report_ContactBalances",
         "usp_Dashboard_Summary"
     };
 

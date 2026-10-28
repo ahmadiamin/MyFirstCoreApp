@@ -1,0 +1,119 @@
+@using MyFirstCoreApp.Domain.Enums
+@model MyFirstCoreApp.Areas.Inventory.ViewModels.StockMovementReports.StockMovementReportViewModel
+@{
+    ViewData["Title"] = "گزارش گردش انبار";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-arrow-right-arrow-left"></i> گزارش گردش اسناد انبار</h3>
+    </div>
+    <div class="card-body">
+        <form asp-area="Inventory" asp-controller="StockMovementReports" asp-action="Index" method="get">
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+            <div class="row">
+                <div class="col-md-6 col-lg-3 form-group">
+                    <label asp-for="WarehouseId">انبار</label>
+                    <select asp-for="WarehouseId" asp-items="Model.Warehouses" class="form-control select2">
+                        <option value="">همهٔ انبارها</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-3 form-group">
+                    <label asp-for="ProductId">کالا</label>
+                    <select asp-for="ProductId" asp-items="Model.Products" class="form-control select2">
+                        <option value="">همهٔ کالاها</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-2 form-group">
+                    <label asp-for="MovementType">نوع گردش</label>
+                    <select asp-for="MovementType" class="form-control select2">
+                        <option value="">همه</option>
+                        <option value="@((int)StockMovementType.Opening)">افتتاحیه</option>
+                        <option value="@((int)StockMovementType.Receipt)">رسید</option>
+                        <option value="@((int)StockMovementType.Issue)">حواله خروج</option>
+                        <option value="@((int)StockMovementType.Transfer)">انتقال</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-2 form-group">
+                    <label asp-for="Status">وضعیت</label>
+                    <select asp-for="Status" class="form-control select2">
+                        <option value="">همه وضعیت‌ها</option>
+                        <option value="@((int)StockMovementStatus.Draft)">پیش‌نویس</option>
+                        <option value="@((int)StockMovementStatus.Posted)">قطعی</option>
+                        <option value="@((int)StockMovementStatus.Cancelled)">لغوشده</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-2 form-group">
+                    <label asp-for="FromDate">از تاریخ</label>
+                    <input asp-for="FromDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                </div>
+                <div class="col-md-6 col-lg-2 form-group">
+                    <label asp-for="ToDate">تا تاریخ</label>
+                    <input asp-for="ToDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                </div>
+            </div>
+            <div class="d-flex" style="gap:8px">
+                <button type="submit" name="search" value="true" class="btn btn-primary"><i class="fa fa-search"></i> نمایش گزارش</button>
+                @if (Model.HasSearched && Model.Rows.Count > 0)
+                {
+                    <button type="button" class="btn btn-outline-success" data-csv-table="stockMovementReportTable" data-csv-filename="گزارش-گردش-انبار.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+                }
+                <a asp-action="Index" class="btn btn-secondary">پاک‌کردن فیلترها</a>
+            </div>
+        </form>
+
+        @if (Model.HasSearched)
+        {
+            <hr />
+            <div class="alert alert-info">اسناد پیش‌نویس و لغوشده نیز در صورت انتخاب «همه وضعیت‌ها» نمایش داده می‌شوند؛ فقط اسناد قطعی‌شده در موجودی اثر دارند.</div>
+            <div class="table-responsive">
+                <table id="stockMovementReportTable" class="table table-bordered table-striped">
+                    <thead><tr><th>شماره</th><th>تاریخ</th><th>نوع</th><th>مبدأ</th><th>مقصد</th><th>اقلام</th><th>وضعیت</th><th>شرح</th></tr></thead>
+                    <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr><td colspan="8" class="text-center text-muted">سندی با فیلترهای انتخاب‌شده پیدا نشد.</td></tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>@row.Number</td>
+                            <td>@row.Date</td>
+                            <td>@row.MovementType</td>
+                            <td>@row.SourceWarehouse</td>
+                            <td>@row.DestinationWarehouse</td>
+                            <td>@row.ItemsSummary</td>
+                            <td><span class="badge @(row.Status == "قطعی" ? "badge-success" : row.Status == "پیش‌نویس" ? "badge-warning" : "badge-secondary")">@row.Status</span></td>
+                            <td>@row.Description</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-muted">تعداد اسناد: @Model.Rows.Count</div>
+            @if (ViewData["HasMoreRows"] is true)
+            {
+                <div class="text-warning mt-2">حداکثر ۵۰۰ سند اخیر نمایش داده شده‌اند؛ برای نتیجهٔ کامل‌تر فیلترها را محدود کنید.</div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_CsvExportScripts" />
+    <script>
+        $(function () {
+            $('.select2').select2({ width: '100%', dir: 'rtl', language: 'fa', allowClear: true });
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,
+                initialValueType: 'persian',
+                autoClose: true,
+                observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+
+        });
+    </script>
+}

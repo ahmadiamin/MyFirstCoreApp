@@ -28,6 +28,9 @@ namespace MyFirstCoreApp.Authorization
             if (user.Identity?.IsAuthenticated != true)
                 return false;
 
+            if (user.IsInRole("SuperAdmin"))
+                return true;
+
             await LoadPermissionsAsync(user);
 
             return _permissions!.Contains(permission);

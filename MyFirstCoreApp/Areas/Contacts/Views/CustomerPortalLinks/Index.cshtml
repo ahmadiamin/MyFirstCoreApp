@@ -1,0 +1,117 @@
+@using MyFirstCoreApp.Application.Common.Utilities
+@model MyFirstCoreApp.Areas.Contacts.ViewModels.CustomerPortal.CustomerPortalLinksViewModel
+@{
+    ViewData["Title"] = "دسترسی پرتال مشتری";
+}
+<div class="card">
+    <div class="card-header"><h3 class="card-title">لینک پرتال: @Model.ContactName</h3></div>
+    <div class="card-body">
+        @if (TempData["Success"] is string success) { <div class="alert alert-success">@success</div> }
+        @if (TempData["Error"] is string error) { <div class="alert alert-danger">@error</div> }
+        @if (!string.IsNullOrWhiteSpace(Model.SmsNotice)) { <div class="alert alert-info">@Model.SmsNotice</div> }
+        @if (!string.IsNullOrWhiteSpace(Model.CreatedUrl))
+        {
+            <div class="alert alert-success">
+                لینک جدید ساخته شد. این لینک کامل فقط همین بار نمایش داده می‌شود؛ آن را برای مشتری بفرستید.
+                <div class="input-group mt-2">
+                    <input id="createdPortalUrl" class="form-control ltr" readonly value="@Model.CreatedUrl" />
+                    <div class="input-group-append"><button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('createdPortalUrl').value)">کپی لینک</button></div>
+                </div>
+            </div>
+        }
+
+        <form asp-action="Create" method="post" class="border rounded p-3 mb-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ContactId" />
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <h5>ساخت لینک جدید</h5>
+            <div class="form-row align-items-end">
+                <div class="col-md-3 form-group">
+                    <label asp-for="ExpiresOn">اعتبار تا (شمسی؛ خالی = بدون انقضا)</label>
+                    <input asp-for="ExpiresOn" class="form-control datepicker" dir="ltr" autocomplete="off" placeholder="1405/01/01" />
+                    <span asp-validation-for="ExpiresOn" class="text-danger"></span>
+                </div>
+                <div class="col-md-3 form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input asp-for="CanViewLedger" class="custom-control-input" id="CanViewLedger" />
+                        <label asp-for="CanViewLedger" class="custom-control-label" for="CanViewLedger">مشاهده صورت‌حساب و مانده</label>
+                    </div>
+                </div>
+                <div class="col-md-3 form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input asp-for="CanViewSalesInvoices" class="custom-control-input" id="CanViewSalesInvoices" />
+                        <label asp-for="CanViewSalesInvoices" class="custom-control-label" for="CanViewSalesInvoices">مشاهده فاکتورهای فروش</label>
+                    </div>
+                </div>
+                <div class="col-md-3 form-group"><button type="submit" class="btn btn-primary"><i class="fa fa-link"></i> ساخت لینک</button></div>
+            </div>
+        </form>
+
+        <h5>لینک‌های ساخته‌شده</h5>
+        <div class="table-responsive"><table class="table table-bordered table-striped">
+            <thead><tr><th>ایجاد</th><th>دسترسی‌ها</th><th>لینک</th><th>انقضا</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+            <tbody>
+            @if (Model.Links.Count == 0) { <tr><td colspan="6" class="text-center text-muted">هنوز لینکی ساخته نشده است.</td></tr> }
+            @foreach (var link in Model.Links)
+            {
+                var revoked = link.RevokedAtUtc.HasValue;
+                var expired = link.ExpiresAtUtc.HasValue && link.ExpiresAtUtc.Value <= DateTime.UtcNow;
+                var expiryLocal = link.ExpiresAtUtc.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(link.ExpiresAtUtc.Value, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")) : (DateTime?)null;
+                <tr>
+                    <td>@PersianDate.Format(DateOnly.FromDateTime(link.CreatedAtUtc))</td>
+                    <td>@(link.CanViewLedger ? "صورت‌حساب" : "")@(link.CanViewLedger && link.CanViewSalesInvoices ? " و " : "")@(link.CanViewSalesInvoices ? "فاکتور فروش" : "")</td>
+                    <td>
+                        @if (link.Token is not null)
+                        {
+                            var portalUrl = Url.Action("Index", "CustomerPortal", new { area = "", token = link.Token }, Context.Request.Scheme);
+                            <div class="input-group input-group-sm" style="min-width:280px">
+                                <input class="form-control ltr" readonly value="@portalUrl" aria-label="لینک پرتال مشتری" />
+                                <div class="input-group-append"><button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(this.parentElement.previousElementSibling.value)">کپی</button></div>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">برای این لینک قدیمی، لینک قابل بازیابی نیست؛ لینک تازه بسازید.</span>
+                        }
+                    </td>
+                    <td>@(expiryLocal.HasValue ? PersianDate.Format(DateOnly.FromDateTime(expiryLocal.Value)) : "بدون انقضا")</td>
+                    <td>@(revoked ? "لغوشده" : expired ? "منقضی‌شده" : "فعال")</td>
+                    <td>
+                        @if (!revoked && !expired)
+                        {
+                            <a asp-action="Edit" asp-route-contactId="@Model.ContactId" asp-route-id="@link.Id" class="btn btn-sm btn-outline-primary mb-1">ویرایش</a>
+                            @if (link.Token is not null)
+                            {
+                                <form asp-action="SendSms" method="post" class="d-inline" onsubmit="return confirm('لینک پرتال برای شماره موبایل ثبت‌شده مشتری پیامک شود؟');">
+                                    @Html.AntiForgeryToken()<input type="hidden" name="contactId" value="@Model.ContactId" /><input type="hidden" name="id" value="@link.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success mb-1"><i class="fa fa-sms"></i> ارسال پیامک</button>
+                                </form>
+                            }
+                            <form asp-action="Revoke" method="post" class="d-inline" onsubmit="return confirm('این لینک فوراً لغو شود؟');">
+                                @Html.AntiForgeryToken()<input type="hidden" name="contactId" value="@Model.ContactId" /><input type="hidden" name="id" value="@link.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">لغو لینک</button>
+                            </form>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(link.LastSmsRequestId))
+                        {
+                            <a asp-action="SmsStatus" asp-route-contactId="@Model.ContactId" asp-route-id="@link.Id" class="btn btn-sm btn-outline-info mb-1">وضعیت پیامک</a>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+        <a asp-area="Contacts" asp-controller="Contacts" asp-action="Index" class="btn btn-secondary">بازگشت</a>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(function () {
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD', initialValue: true, initialValueType: 'persian', autoClose: true, observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+        });
+    </script>
+}

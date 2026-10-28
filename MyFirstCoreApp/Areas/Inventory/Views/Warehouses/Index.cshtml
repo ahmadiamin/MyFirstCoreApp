@@ -23,6 +23,10 @@
     <div class="card-header">
         <h3 class="card-title"><i class="fa-solid fa-warehouse"></i> فهرست انبارها</h3>
         <div class="card-tools">
+            <a asp-area="Inventory" asp-controller="StockTransfers" asp-action="Index"
+               class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-right-left"></i> انتقال بین انبارها
+            </a>
             <a asp-area="Inventory" asp-controller="Warehouses" asp-action="Create"
                class="btn btn-primary btn-sm">
                 <i class="fa-solid fa-plus"></i> انبار جدید

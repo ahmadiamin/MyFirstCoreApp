@@ -34,6 +34,10 @@ public class ProductFormViewModel
     [Display(Name = "قیمت فروش")]
     public decimal SalePrice { get; set; }
 
+    [Display(Name = "حداقل موجودی")]
+    [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "حداقل موجودی نمی‌تواند منفی باشد")]
+    public decimal? MinimumStock { get; set; }
+
     [Display(Name = "نرخ مالیات (درصد)")]
     public decimal? TaxRate { get; set; }
 

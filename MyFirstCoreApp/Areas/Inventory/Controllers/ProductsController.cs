@@ -116,6 +116,7 @@ public class ProductsController : Controller
             ProductCategoryId = model.ProductCategoryId,
             LastPurchasePrice = model.LastPurchasePrice,
             SalePrice = model.SalePrice,
+            MinimumStock = model.MinimumStock,
             TaxRate = model.TaxRate,
             TrackInventory = model.TrackInventory,
             IsActive = model.IsActive
@@ -151,6 +152,7 @@ public class ProductsController : Controller
             ProductCategoryId = entity.ProductCategoryId,
             LastPurchasePrice = entity.LastPurchasePrice,
             SalePrice = entity.SalePrice,
+            MinimumStock = entity.MinimumStock,
             TaxRate = entity.TaxRate,
             TrackInventory = entity.TrackInventory,
             IsActive = entity.IsActive,
@@ -191,6 +193,7 @@ public class ProductsController : Controller
         entity.ProductCategoryId = model.ProductCategoryId;
         entity.LastPurchasePrice = model.LastPurchasePrice;
         entity.SalePrice = model.SalePrice;
+        entity.MinimumStock = model.MinimumStock;
         entity.TaxRate = model.TaxRate;
         entity.TrackInventory = model.TrackInventory;
 

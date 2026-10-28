@@ -46,6 +46,9 @@ public class Product : TenantEntity
     /// </summary>
     public decimal SalePrice { get; set; }
 
+    /// <summary>حداقل موجودی هدف برای هشدار تأمین مجدد؛ null یعنی غیرفعال.</summary>
+    public decimal? MinimumStock { get; set; }
+
     /// <summary>
     /// تاریخ آخرین قیمت
     /// </summary>

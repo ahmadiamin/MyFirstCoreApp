@@ -1,0 +1,62 @@
+@model MyFirstCoreApp.Areas.Contacts.ViewModels.CustomerPortal.CustomerPortalShareEditViewModel
+@{
+    ViewData["Title"] = "ویرایش دسترسی پرتال مشتری";
+}
+<div class="card">
+    <div class="card-header"><h3 class="card-title">ویرایش لینک پرتال: @Model.ContactName</h3></div>
+    <div class="card-body">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @if (!string.IsNullOrWhiteSpace(Model.PortalUrl))
+        {
+            <div class="form-group">
+                <label for="portalUrl">لینک قابل ارسال برای مشتری</label>
+                <div class="input-group">
+                    <input id="portalUrl" class="form-control ltr" readonly value="@Model.PortalUrl" />
+                    <div class="input-group-append"><button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('portalUrl').value)">کپی لینک</button></div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">این لینک قبل از امکان بازیابی ساخته شده است. لینک فعلی قابل نمایش نیست؛ برای ارسال لینک به مشتری، یک لینک جدید بسازید. این لینک فعلی همچنان طبق وضعیتش کار می‌کند.</div>
+        }
+
+        <form asp-action="Edit" method="post" class="border rounded p-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ContactId" />
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ContactName" />
+            <div class="form-row align-items-end">
+                <div class="col-md-4 form-group">
+                    <label asp-for="ExpiresOn">اعتبار تا (شمسی؛ خالی = بدون انقضا)</label>
+                    <input asp-for="ExpiresOn" class="form-control datepicker" dir="ltr" autocomplete="off" placeholder="1405/01/01" />
+                </div>
+                <div class="col-md-3 form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input asp-for="CanViewLedger" class="custom-control-input" id="CanViewLedger" />
+                        <label asp-for="CanViewLedger" class="custom-control-label" for="CanViewLedger">مشاهده صورت‌حساب و مانده</label>
+                    </div>
+                </div>
+                <div class="col-md-3 form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input asp-for="CanViewSalesInvoices" class="custom-control-input" id="CanViewSalesInvoices" />
+                        <label asp-for="CanViewSalesInvoices" class="custom-control-label" for="CanViewSalesInvoices">مشاهده فاکتورهای فروش</label>
+                    </div>
+                </div>
+                <div class="col-md-2 form-group"><button type="submit" class="btn btn-primary">ذخیره تغییرات</button></div>
+            </div>
+        </form>
+        <a asp-action="Index" asp-route-contactId="@Model.ContactId" class="btn btn-secondary mt-3">بازگشت به فهرست</a>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(function () {
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD', initialValue: false, autoClose: true, observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+        });
+    </script>
+}

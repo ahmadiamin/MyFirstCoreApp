@@ -1,0 +1,67 @@
+@model MyFirstCoreApp.Areas.Inventory.ViewModels.StockTransfers.StockTransferListViewModel
+@{
+    ViewData["Title"] = "انتقال بین انبارها";
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title"><i class="fa-solid fa-right-left"></i> انتقال کالا بین انبارها</h3>
+        <a asp-action="Create" class="btn btn-primary"><i class="fa fa-plus"></i> انتقال جدید</a>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            ثبت انتقال ابتدا یک پیش‌نویس می‌سازد. با قطعی‌کردن سند، موجودی مبدأ کم و به موجودی مقصد اضافه می‌شود.
+        </div>
+        @if (Model.Transfers.Count > 0)
+        {
+            <button type="button" class="btn btn-outline-success mb-3" data-csv-table="stockTransfersTable" data-csv-filename="انتقال-بین-انبارها.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+        }
+        <div class="table-responsive">
+            <table id="stockTransfersTable" class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>شماره</th><th>تاریخ</th><th>از انبار</th><th>به انبار</th>
+                        <th>اقلام</th><th>وضعیت</th><th>شرح</th><th data-csv-exclude>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (Model.Transfers.Count == 0)
+                {
+                    <tr><td colspan="8" class="text-center text-muted">هنوز انتقالی ثبت نشده است.</td></tr>
+                }
+                @foreach (var transfer in Model.Transfers)
+                {
+                    <tr>
+                        <td>@transfer.Number</td><td>@transfer.Date</td>
+                        <td>@transfer.SourceWarehouse</td><td>@transfer.DestinationWarehouse</td>
+                        <td title="@transfer.ItemsSummary">@transfer.ItemsSummary</td>
+                        <td><span class="badge @(transfer.Status == "قطعی" ? "badge-success" : transfer.Status == "پیش‌نویس" ? "badge-warning" : "badge-secondary")">@transfer.Status</span></td>
+                        <td>@transfer.Description</td>
+                        <td class="text-nowrap" data-csv-exclude>
+                            @if (transfer.Status == "پیش‌نویس")
+                            {
+                                <form asp-action="Post" method="post" class="d-inline" onsubmit="return confirm('انتقال قطعی شود؟ موجودی مبدأ کنترل خواهد شد.');">
+                                    @Html.AntiForgeryToken()<input type="hidden" name="id" value="@transfer.Id" />
+                                    <button type="submit" class="btn btn-sm btn-success"><i class="fa fa-check"></i> قطعی‌کردن</button>
+                                </form>
+                                <form asp-action="Cancel" method="post" class="d-inline" onsubmit="return confirm('پیش‌نویس انتقال لغو شود؟');">
+                                    @Html.AntiForgeryToken()<input type="hidden" name="id" value="@transfer.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa fa-times"></i> لغو</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Transfers.Count == 200)
+        {
+            <small class="text-muted">۲۰۰ انتقال اخیر نمایش داده شده‌اند.</small>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_CsvExportScripts" />
+}

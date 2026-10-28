@@ -113,7 +113,7 @@
                 {
                     headerName: 'عملیات',
                     colId: 'actions',
-                    width: 150,
+                    width: 185,
                     sortable: false,
                     filter: false,
                     pinned: 'left',
@@ -130,6 +130,15 @@
                         editBtn.title = 'ویرایش';
                         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
                         div.appendChild(editBtn);
+
+                        if (d.contactType === 1 || d.contactType === 3) {
+                            const portalBtn = document.createElement('a');
+                            portalBtn.href = `/Contacts/CustomerPortalLinks?contactId=${encodeURIComponent(d.id)}`;
+                            portalBtn.className = 'btn btn-sm btn-outline-info action-icon-btn';
+                            portalBtn.title = 'لینک پرتال مشتری';
+                            portalBtn.innerHTML = '<i class="fa-solid fa-link"></i>';
+                            div.appendChild(portalBtn);
+                        }
 
                         // 🗑 حذف
                         const deleteBtn = document.createElement('a');

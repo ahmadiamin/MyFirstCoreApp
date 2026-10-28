@@ -11,6 +11,12 @@ public class InvoiceItemViewModel
     [Display(Name = "کالا")]
     public int ProductId { get; set; }
 
+    [Display(Name = "انبار")]
+    public int? WarehouseId { get; set; }
+
+    /// <summary>null means a product has not been selected yet.</summary>
+    public bool? TrackInventory { get; set; }
+
     // 🆕 برای MagicSuggest
     [Display(Name = "نام کالا")]
     public string? ProductName { get; set; }

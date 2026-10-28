@@ -155,11 +155,13 @@ public class InvoicesController : Controller
             InvoiceType = invoiceType,
             ContactOptions = await GetContactOptionsAsync(),
             InvoiceTypeOptions = GetInvoiceTypeOptions(),
+            WarehouseOptions = await GetWarehouseOptionsAsync(tenantId.Value),
             Items = new List<InvoiceItemViewModel>
             {
                 new() { ProductOptions = productOptions, Quantity = 1 }
             }
         };
+        model.DefaultWarehouseId = GetDefaultWarehouseId(model.WarehouseOptions);
 
         return View(model);
     }
@@ -248,6 +250,8 @@ public class InvoicesController : Controller
             {
                 Id = it.Id,
                 ProductId = it.ProductId,
+                WarehouseId = it.WarehouseId,
+                TrackInventory = it.Product?.TrackInventory,
                 ProductName = it.Product?.Name,
                 Description = it.Description,
                 Quantity = it.Quantity,
@@ -255,8 +259,10 @@ public class InvoicesController : Controller
                 DiscountPercent = it.DiscountPercent,
                 TaxRate = it.TaxRate,
                 ProductOptions = productOptions
-            }).ToList()
+            }).ToList(),
+            WarehouseOptions = await GetWarehouseOptionsAsync(tenantId.Value)
         };
+        model.DefaultWarehouseId = GetDefaultWarehouseId(model.WarehouseOptions);
 
         return View(model);
     }
@@ -312,6 +318,8 @@ public class InvoicesController : Controller
             .Include(i => i.Contact)
             .Include(i => i.Items)
                 .ThenInclude(it => it.Product)
+            .Include(i => i.Items)
+                .ThenInclude(it => it.Warehouse)
             .Include(i => i.Transaction)
             .Include(i => i.Histories)
             .Include(i => i.ReferenceInvoice)
@@ -521,7 +529,8 @@ public class InvoicesController : Controller
                 code = p.Code,
                 salePrice = invoiceType == InvoiceType.Purchase ? p.LastPurchasePrice : p.SalePrice,
                 unitName = p.Unit != null ? p.Unit.Name : "عدد",
-                taxRate = p.TaxRate ?? 0
+                taxRate = p.TaxRate ?? 0,
+                trackInventory = p.TrackInventory
             })
             .ToListAsync();
 
@@ -679,9 +688,8 @@ public class InvoicesController : Controller
         report["ContactName"] = invoice.Contact?.Name ?? "";       
         report["ContactAddress"] = string.IsNullOrWhiteSpace(invoice.Contact?.Address)
             ? ""
-            : $"آدرس {invoice.Contact.Address}";
-        report["ContactPhone"] =
-            invoice.Contact?.Mobile ?? invoice.Contact?.Phone ?? "";
+            : $"آدرس: {invoice.Contact.Address}";
+        report["ContactPhone"] = invoice.Contact?.Mobile ?? invoice.Contact?.Phone ?? "";
 
         report["TotalAmount"] = invoice.TotalAmount;
         var printSettings = await _context.InvoicePrintSettings
@@ -829,6 +837,7 @@ public class InvoicesController : Controller
                 .Select(i => new InvoiceItemRequest
                 {
                     ProductId = i.ProductId,
+                    WarehouseId = i.WarehouseId,
                     NewProductName = i.ProductId > 0 ? null : i.ProductName,
                     Description = i.Description,
                     Quantity = i.Quantity,
@@ -846,10 +855,39 @@ public class InvoicesController : Controller
 
         model.ContactOptions = await GetContactOptionsAsync();
         model.InvoiceTypeOptions = GetInvoiceTypeOptions();
+        var tenantId = _currentTenant.TenantId;
+        model.WarehouseOptions = tenantId.HasValue
+            ? await GetWarehouseOptionsAsync(tenantId.Value)
+            : new();
+        model.DefaultWarehouseId = GetDefaultWarehouseId(model.WarehouseOptions);
 
         foreach (var item in model.Items)
+        {
             item.ProductOptions = productOptions;
+        }
     }
+
+    private async Task<List<SelectListItem>> GetWarehouseOptionsAsync(int tenantId)
+    {
+        var warehouses = await _context.Warehouses
+            .Where(w => w.TenantId == tenantId && w.IsActive)
+            .OrderByDescending(w => w.IsDefault)
+            .ThenBy(w => w.Name)
+            .Select(w => new { w.Id, w.Name, w.IsDefault })
+            .ToListAsync();
+
+        return warehouses.Select(w => new SelectListItem
+        {
+            Value = w.Id.ToString(),
+            Text = w.Name + (w.IsDefault ? " (پیش‌فرض)" : ""),
+            Selected = w.IsDefault
+        }).ToList();
+    }
+
+    private static int? GetDefaultWarehouseId(List<SelectListItem> options)
+        => int.TryParse(options.FirstOrDefault(x => x.Selected)?.Value, out var id)
+            ? id
+            : null;
 
     private async Task<List<SelectListItem>> GetProductOptionsAsync()
     {

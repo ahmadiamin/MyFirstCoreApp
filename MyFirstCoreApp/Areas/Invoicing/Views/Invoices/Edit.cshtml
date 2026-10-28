@@ -95,7 +95,7 @@
         // ============================================
         // 🆕 راه‌اندازی MagicSuggest کالا برای یه ردیف
         // ============================================
-                function initProductMagicSuggestForRow(index, initialId, initialName) {
+                function initProductMagicSuggestForRow(index, initialId, initialName, initialTrackInventory) {
             var containerId = 'product_ms_' + index;
             var $container = $('.product-magicsuggest[data-index="' + index + '"]');
 
@@ -112,7 +112,7 @@
                 type: 'GET',
                 success: function (r) {
                     var initialData = r.data.map(function (p) {
-                        return { id: p.id, name: p.name, code: p.code, salePrice: p.salePrice, unitName: p.unitName, taxRate: p.taxRate };
+                        return { id: p.id, name: p.name, code: p.code, salePrice: p.salePrice, unitName: p.unitName, taxRate: p.taxRate, trackInventory: p.trackInventory };
                     });
 
                     // 🆕 let به‌جای var
@@ -144,7 +144,7 @@
 
                     // 🆕 مقدار اولیه
                     if (initialId && initialId > 0 && initialName) {
-                        ms.addToSelection([{ id: initialId, name: initialName }]);
+                        ms.addToSelection([{ id: initialId, name: initialName, trackInventory: initialTrackInventory !== 'false' }]);
                     }
 
                     // 🆕 **فقط این `ms`** رو هندل کن
@@ -152,6 +152,11 @@
                         var selection = ms.getSelection();
                         if (selection && selection.length > 0) {
                             var item = selection[0];
+                            var $row = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr');
+                            var tracksInventory = item.trackInventory !== false;
+                            $row.find('.warehouse-picker').toggle(tracksInventory);
+                            $row.find('.warehouse-not-applicable').toggle(!tracksInventory);
+                            if (!tracksInventory) $row.find('.warehouse-select').val('');
                             if (item.id && item.id > 0) {
                                 if (isProductDuplicate(item.id, index)) {
                                     alert('این کالا قبلاً در فاکتور ثبت شده است.');
@@ -163,7 +168,6 @@
                                 $('#ProductId_Hidden_' + index).val(item.id);
                                 $('#ProductName_Hidden_' + index).val(item.name);
 
-                                var $row = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr');
                                 if ($row.length > 0) {
                                     if (item.salePrice !== undefined && item.salePrice !== null) {
                                         $row.find('.price-input').val(formatNumberWithComma(item.salePrice.toString()));
@@ -180,6 +184,9 @@
                         } else {
                             $('#ProductId_Hidden_' + index).val('');
                             $('#ProductName_Hidden_' + index).val('');
+                            var $cell = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr').find('.warehouse-cell');
+                            $cell.find('.warehouse-picker').show();
+                            $cell.find('.warehouse-not-applicable').hide();
                         }
                     });
 
@@ -214,7 +221,7 @@
                                 data: { q: query },
                                 success: function (r) {
                                     var data = r.data.map(function (p) {
-                                        return { id: p.id, name: p.name, code: p.code, salePrice: p.salePrice, unitName: p.unitName, taxRate: p.taxRate };
+                                        return { id: p.id, name: p.name, code: p.code, salePrice: p.salePrice, unitName: p.unitName, taxRate: p.taxRate, trackInventory: p.trackInventory };
                                     });
                                     ms.setData(data);
                                 }
@@ -371,7 +378,8 @@
                 var idx = $(this).data('index');
                 var initId = $(this).data('initial-id');
                 var initName = $(this).data('initial-name');
-                initProductMagicSuggestForRow(idx, initId, initName);
+                var initTrackInventory = $(this).data('initial-track-inventory');
+                initProductMagicSuggestForRow(idx, initId, initName, initTrackInventory);
             });
 
             // ============================================
@@ -394,6 +402,14 @@
                            id="ProductId_Hidden_${newIndex}" value="0" />
                     <input type="hidden" name="Items[${newIndex}].ProductName"
                            id="ProductName_Hidden_${newIndex}" value="" />
+                </td>
+                <td class="warehouse-cell" data-label="انبار">
+                    <span class="warehouse-picker">
+                    <select name="Items[${newIndex}].WarehouseId" class="form-control warehouse-select">
+                        ${$('#warehouseOptionsTemplate').html()}
+                    </select>
+                    </span>
+                    <span class="warehouse-not-applicable" style="display:none">—</span>
                 </td>
                 <td data-label="تعداد">
                     <input type="text" name="Items[${newIndex}].Quantity"
@@ -449,7 +465,7 @@
                     $row.find('.item-number').text(i + 1);
 
                     // ۲. hidden inputs
-                    $row.find('input[name^="Items["]').each(function () {
+                    $row.find('[name^="Items["]').each(function () {
                         var $inp = $(this);
                         var name = $inp.attr('name');
                         // نام را از Items[عدد].FieldName به Items[i].FieldName تبدیل کن
@@ -488,7 +504,8 @@
                             $ms.data('initial-name', currentProductName);
 
                             // دوباره راه‌اندازی
-                            initProductMagicSuggestForRow(i, currentProductId, currentProductName);
+                            var currentTrackInventory = $ms.data('initial-track-inventory');
+                            initProductMagicSuggestForRow(i, currentProductId, currentProductName, currentTrackInventory);
                         } else {
                             $ms.attr('data-index', i);
                         }

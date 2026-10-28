@@ -52,23 +52,18 @@ namespace MyFirstCoreApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(
-            ProfileViewModel model)
+        public async Task<IActionResult> Profile(ProfileViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user =
-                await _userManager.GetUserAsync(User);
-
+            var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return Challenge();
 
             user.FullName = model.FullName;
             user.PhoneNumber = model.PhoneNumber;
-
-            var result =
-                await _userManager.UpdateAsync(user);
+            var result = await _userManager.UpdateAsync(user);
 
             if (!result.Succeeded)
             {
@@ -78,38 +73,26 @@ namespace MyFirstCoreApp.Controllers
                         string.Empty,
                         error.Description);
                 }
-
                 return View(model);
             }
 
-            if (!string.Equals(
-                    user.Email,
-                    model.Email,
-                    StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase))
             {
-                var emailResult =
-                    await _userManager.SetEmailAsync(
-                        user,
-                        model.Email);
+                var emailResult = await _userManager.SetEmailAsync(user, model.Email);
 
                 if (!emailResult.Succeeded)
                 {
                     foreach (var error in emailResult.Errors)
                     {
-                        ModelState.AddModelError(
-                            string.Empty,
-                            error.Description);
+                        ModelState.AddModelError(string.Empty, error.Description);
                     }
-
                     return View(model);
                 }
             }
 
-            TempData["Success"] =
-                "اطلاعات پروفایل با موفقیت ذخیره شد.";
+            TempData["Success"] = "اطلاعات پروفایل با موفقیت ذخیره شد.";
 
-            return RedirectToAction(
-                nameof(Profile));
+            return RedirectToAction(nameof(Profile));
         }
 
         [HttpPost]
@@ -118,26 +101,18 @@ namespace MyFirstCoreApp.Controllers
         {
             if (file == null || file.Length == 0)
             {
-                TempData["Error"] =
-                    "لطفاً یک تصویر انتخاب کنید.";
-
+                TempData["Error"] = "لطفاً یک تصویر انتخاب کنید.";
                 return RedirectToAction(nameof(Profile));
             }
 
-            var user =
-                await _userManager.GetUserAsync(User);
-
+            var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return Challenge();
 
             try
             {
-                await _userService.ChangeProfileImageAsync(
-                    user.Id,
-                    file);
-
-                TempData["Success"] =
-                    "تصویر پروفایل با موفقیت تغییر کرد.";
+                await _userService.ChangeProfileImageAsync(user.Id, file);
+                TempData["Success"] = "تصویر پروفایل با موفقیت تغییر کرد.";
             }
             catch (Exception ex)
             {
@@ -151,24 +126,18 @@ namespace MyFirstCoreApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveProfileImage()
         {
-            var user =
-                await _userManager.GetUserAsync(User);
-
+            var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return Challenge();
 
             try
             {
-                await _userService.DeletePrimaryProfileImageAsync(
-                    user.Id);
-
-                TempData["Success"] =
-                    "تصویر پروفایل حذف شد.";
+                await _userService.DeletePrimaryProfileImageAsync(user.Id);
+                TempData["Success"] = "تصویر پروفایل حذف شد.";
             }
             catch (Exception ex)
             {
-                TempData["Error"] =
-                    ex.Message;
+                TempData["Error"] = ex.Message;
             }
 
             return RedirectToAction(nameof(Profile));
@@ -182,77 +151,57 @@ namespace MyFirstCoreApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword(
-    ChangePasswordViewModel model)
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user =
-                await _userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return Challenge();
 
             var result =
-                await _userManager.ChangePasswordAsync(
-                    user,
-                    model.CurrentPassword,
-                    model.NewPassword);
+                await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
 
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors)
                 {
-                    ModelState.AddModelError(
-                        string.Empty,
-                        error.Description);
+                    ModelState.AddModelError(string.Empty, error.Description);
                 }
 
                 return View(model);
             }
 
             user.PasswordChangedAt = DateTime.UtcNow;
-
-            var updateResult =
-                await _userManager.UpdateAsync(user);
-
+            var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
                 foreach (var error in updateResult.Errors)
                 {
-                    ModelState.AddModelError(
-                        string.Empty,
-                        error.Description);
+                    ModelState.AddModelError(string.Empty, error.Description);
                 }
 
                 return View(model);
             }
 
-            TempData["Success"] =
-                "رمز عبور با موفقیت تغییر کرد.";
-
+            TempData["Success"] = "رمز عبور با موفقیت تغییر کرد.";
             return RedirectToAction(nameof(Profile));
-
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SignOutOtherSessions()
         {
-            var user =
-                await _userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return Challenge();
 
             await _userManager.UpdateSecurityStampAsync(user);
-
             await _signInManager.RefreshSignInAsync(user);
-
-            TempData["Success"] =
-                "از تمام نشست‌های دیگر حساب شما خارج شد.";
-
+            TempData["Success"] = "از تمام نشست‌های دیگر حساب شما خارج شد.";
             return RedirectToAction(nameof(Profile));
         }
     }

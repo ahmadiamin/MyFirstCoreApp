@@ -10,11 +10,15 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Domain.Entities.Identity;
 
 namespace MyFirstCoreApp.Areas.Identity.Pages.Account
 {
+    [EnableRateLimiting("RegistrationSms")]
     public class RegisterModel : PageModel
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
@@ -23,13 +27,15 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly ISystemSmsService _systemSms;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            ISystemSmsService systemSms)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -37,6 +43,7 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _systemSms = systemSms;
         }
 
         /// <summary>
@@ -72,17 +79,23 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
             [EmailAddress]
-            [Display(Name = "Email")]
+            [Display(Name = "ایمیل")]
             public string Email { get; set; }
+
+            [Display(Name = "موبایل")]
+            public string PhoneNumber { get; set; }
+
+            [Required]
+            [Display(Name = "روش احراز هویت")]
+            public string VerificationMethod { get; set; } = "Email";
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [Required]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+            [StringLength(100, ErrorMessage = "طول عبارت وارد شده {0}، باید حداقل {2} و حداکثر {1} کاراکتر باشد.", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "Password")]
             public string Password { get; set; }
@@ -93,7 +106,7 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
             /// </summary>
             [DataType(DataType.Password)]
             [Display(Name = "Confirm password")]
-            [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+            [Compare("Password", ErrorMessage = "رمز عبور و تکرار رمز عبور مطابقت ندارند.")]
             public string ConfirmPassword { get; set; }
         }
 
@@ -108,18 +121,64 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            Input ??= new InputModel();
+            var useSms = string.Equals(Input.VerificationMethod, "Sms", StringComparison.OrdinalIgnoreCase);
+            var email = Input.Email?.Trim();
+            var mobile = NormalizeMobile(Input.PhoneNumber);
+
+            if (!useSms && !string.Equals(Input.VerificationMethod, "Email", StringComparison.OrdinalIgnoreCase))
+                ModelState.AddModelError("Input.VerificationMethod", "روش احراز هویت معتبر نیست.");
+
+            if (useSms && !System.Text.RegularExpressions.Regex.IsMatch(mobile, "^09[0-9]{9}$"))
+                ModelState.AddModelError("Input.PhoneNumber", "برای تأیید پیامکی، موبایل باید ۱۱ رقم و با 09 شروع شود.");
+            if (!useSms && string.IsNullOrWhiteSpace(email))
+                ModelState.AddModelError("Input.Email", "برای تأیید ایمیلی، ایمیل الزامی است.");
+            if (useSms)
+            {
+                var smsSettings = await _systemSms.GetSummaryAsync();
+                if (!smsSettings.RegistrationSmsEnabled || !smsSettings.ApiKeyConfigured)
+                    ModelState.AddModelError(string.Empty, "تأیید موبایل در حال حاضر فعال نیست؛ روش ایمیل را انتخاب کنید.");
+                else if (await _userManager.Users.AnyAsync(x => x.PhoneNumber == mobile))
+                    ModelState.AddModelError("Input.PhoneNumber", "این شماره موبایل قبلاً ثبت شده است.");
+            }
+
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
                 user.FullName = Input.FullName;
-
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                user.PhoneNumber = string.IsNullOrWhiteSpace(mobile) ? null : mobile;
+                var username = useSms ? mobile : email!;
+                await _userStore.SetUserNameAsync(user, username, CancellationToken.None);
+                if (!string.IsNullOrWhiteSpace(email))
+                    await _emailStore.SetEmailAsync(user, email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
+
+                    var ownerRoleResult = await _userManager.AddToRoleAsync(user, "TenantOwner");
+                    if (!ownerRoleResult.Succeeded)
+                    {
+                        await _userManager.DeleteAsync(user);
+                        foreach (var error in ownerRoleResult.Errors)
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        return Page();
+                    }
+
+                    if (useSms)
+                    {
+                        var verificationCode = await _userManager.GenerateChangePhoneNumberTokenAsync(user, mobile);
+                        var sendResult = await _systemSms.SendRegistrationCodeAsync(mobile, verificationCode);
+                        if (!sendResult.IsAccepted)
+                        {
+                            await _userManager.DeleteAsync(user);
+                            ModelState.AddModelError(string.Empty, sendResult.Message);
+                            return Page();
+                        }
+
+                        return RedirectToPage("./ConfirmPhone", new { userId = user.Id, returnUrl });
+                    }
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -223,6 +282,19 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
                     $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
                     $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
             }
+        }
+
+        private static string NormalizeMobile(string mobile)
+        {
+            if (string.IsNullOrWhiteSpace(mobile)) return string.Empty;
+            var result = new StringBuilder(mobile.Length);
+            foreach (var character in mobile.Trim())
+            {
+                if (character is >= '\u06F0' and <= '\u06F9') result.Append((char)('0' + character - '\u06F0'));
+                else if (character is >= '\u0660' and <= '\u0669') result.Append((char)('0' + character - '\u0660'));
+                else result.Append(character);
+            }
+            return result.ToString();
         }
 
         private IUserEmailStore<ApplicationUser> GetEmailStore()

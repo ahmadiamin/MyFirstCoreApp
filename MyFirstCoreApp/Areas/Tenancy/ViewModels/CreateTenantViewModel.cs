@@ -28,4 +28,39 @@ public class CreateTenantViewModel
     [Display(Name = "آدرس")]
     [MaxLength(1000)]
     public string? Address { get; set; }
+
+    [Display(Name = "کلید API پیامک")]
+    [MaxLength(1000)]
+    public string? SmsApiKeyInput { get; set; }
+
+    [Display(Name = "شماره خط پیامک")]
+    [MaxLength(50)]
+    public string SmsLineNumber { get; set; } = "90008361";
+
+    [Display(Name = "الگوی پیامک لینک پرتال")]
+    [MaxLength(1000)]
+    public string? SmsPortalLinkText { get; set; }
+
+    public bool SmsApiKeyConfigured { get; set; }
+    public bool ClearSmsApiKey { get; set; }
+
+    [Display(Name = "فعال‌سازی یادآوری سررسید چک‌ها")]
+    public bool SmsChequeReminderEnabled { get; set; }
+
+    [Display(Name = "ارسال یک روز قبل")]
+    public bool SmsChequeReminderDayBeforeEnabled { get; set; }
+
+    [Display(Name = "ارسال در روز سررسید")]
+    public bool SmsChequeReminderDueDayEnabled { get; set; }
+
+    [Display(Name = "ساعت ارسال")]
+    public string SmsChequeReminderTime { get; set; } = "09:00";
+
+    [Display(Name = "موبایل دریافت‌کنندهٔ یادآوری‌ها")]
+    [MaxLength(30)]
+    public string? SmsChequeReminderMobile { get; set; }
+
+    [Display(Name = "الگوی پیامک یادآوری چک")]
+    [MaxLength(1000)]
+    public string? SmsChequeReminderText { get; set; }
 }

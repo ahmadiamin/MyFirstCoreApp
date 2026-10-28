@@ -73,7 +73,7 @@
 {
     <!-- خلاصه‌ی مالی -->
     <div class="row">
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-3 col-md-12 col-sm-6">
             <div class="small-box bg-info">
                 <div class="inner">
                     <h3>@summary.CashAndBankBalance.ToString("N0")</h3>
@@ -82,7 +82,7 @@
                 <div class="icon"><i class="fa fa-wallet"></i></div>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-3 col-md-12 col-sm-6">
             <div class="small-box bg-success">
                 <div class="inner">
                     <h3>@summary.ReceivableBalance.ToString("N0")</h3>
@@ -91,7 +91,7 @@
                 <div class="icon"><i class="fa fa-hand-holding-dollar"></i></div>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-3 col-md-12 col-sm-6">
             <div class="small-box bg-danger">
                 <div class="inner">
                     <h3>@summary.PayableBalance.ToString("N0")</h3>
@@ -100,7 +100,7 @@
                 <div class="icon"><i class="fa fa-file-invoice-dollar"></i></div>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-3 col-md-12 col-sm-6">
             <div class="small-box bg-primary">
                 <div class="inner">
                     <h3>@((summary.SalesTotal - summary.PurchasesTotal).ToString("N0"))</h3>
@@ -253,7 +253,7 @@
         <div class="col-lg-6">
             <div class="card card-outline card-success">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fa fa-arrow-down"></i> بدهکاران برتر (از ما طلب دارند... یعنی به ما بدهکارند)</h3>
+                    <h3 class="card-title"><i class="fa fa-arrow-down"></i> بدهکاران برتر (به ما بدهکارند)</h3>
                 </div>
                 <div class="card-body p-0">
                     <table class="table table-sm mb-0">
@@ -301,6 +301,20 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+        
+    <!-- گزارش کامل بدهکاران -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card-footer text-center">
+                <a asp-area="Accounting" asp-controller="Reports" asp-action="Debtors">گزارش کامل بدهکاران</a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card-footer text-center">
+                <a asp-area="Accounting" asp-controller="Reports" asp-action="Creditors">گزارش کامل بستانکاران</a>
             </div>
         </div>
     </div>

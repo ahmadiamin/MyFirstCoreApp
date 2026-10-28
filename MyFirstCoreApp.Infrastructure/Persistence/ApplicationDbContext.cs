@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Domain.Common;
 using MyFirstCoreApp.Domain.Entities.Accounting;
+using MyFirstCoreApp.Domain.Entities.Attachments;
 using MyFirstCoreApp.Domain.Entities.Banking;
 using MyFirstCoreApp.Domain.Entities.Contacts;
 using MyFirstCoreApp.Domain.Entities.Identity;
@@ -34,6 +35,11 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         // Tenancy
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<UserTenant> UserTenants { get; set; }
+        public DbSet<TenantSmsSetting> TenantSmsSettings { get; set; }
+        public DbSet<SystemSmsSetting> SystemSmsSettings { get; set; }
+
+        //Attachment
+        public DbSet<Attachment> Attachments { get; set; }
 
         // Accounting
         public DbSet<AccountCategory> AccountCategories { get; set; }
@@ -47,6 +53,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
 
         // Contacts
         public DbSet<Contact> Contacts { get; set; }
+        public DbSet<CustomerPortalShare> CustomerPortalShares { get; set; }
 
         // Inventory
         public DbSet<Unit> Units { get; set; }
@@ -68,6 +75,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
 
         // Banking
         public DbSet<Cheque> Cheques { get; set; }
+        public DbSet<ChequeSmsReminderDispatch> ChequeSmsReminderDispatches { get; set; }
         public DbSet<ChequeHistory> ChequeHistories { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<PaymentAllocation> PaymentAllocations { get; set; }

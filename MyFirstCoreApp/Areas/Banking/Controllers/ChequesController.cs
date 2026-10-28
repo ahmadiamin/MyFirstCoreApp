@@ -26,6 +26,8 @@ public class ChequesController : Controller
     private readonly ApplicationDbContext _context;
     private readonly ICurrentTenant _currentTenant;
     private readonly IChequeService _chequeService;
+    private readonly IFarazSmsService _farazSmsService;
+    private readonly ITenantSmsSettingsService _tenantSmsSettings;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ChequesController> _logger;
 
@@ -33,12 +35,16 @@ public class ChequesController : Controller
         ApplicationDbContext context,
         ICurrentTenant currentTenant,
         IChequeService chequeService,
+        IFarazSmsService farazSmsService,
+        ITenantSmsSettingsService tenantSmsSettings,
         TimeProvider timeProvider,
         ILogger<ChequesController> logger)
     {
         _context = context;
         _currentTenant = currentTenant;
         _chequeService = chequeService;
+        _farazSmsService = farazSmsService;
+        _tenantSmsSettings = tenantSmsSettings;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -52,6 +58,41 @@ public class ChequesController : Controller
     {
         ViewBag.Direction = direction;
         return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Cheque.Edit")]
+    public async Task<IActionResult> SendReminderSms(int id, CancellationToken cancellationToken)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Json(new { success = false, message = NoTenantMessage });
+
+        var cheque = await _context.Cheques.AsNoTracking()
+            .Where(x => x.Id == id && x.TenantId == tenantId.Value && !x.IsDeleted &&
+                (x.Status == ChequeStatus.InProgress || x.Status == ChequeStatus.RePresented))
+            .Select(x => new
+            {
+                x.TenantId,
+                x.ChequeNumber,
+                x.Amount,
+                x.DueDate,
+                BankAccountName = x.BankAccount != null && !x.BankAccount.IsDeleted &&
+                    x.BankAccount.TenantId == tenantId.Value ? x.BankAccount.Name : "حساب نامشخص"
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (cheque is null)
+            return Json(new { success = false, message = "چک در جریان برای ارسال یادآوری پیدا نشد." });
+
+        var settings = await _tenantSmsSettings.GetForSendingAsync(tenantId.Value, cancellationToken);
+        if (string.IsNullOrWhiteSpace(settings?.ChequeReminderMobile))
+            return Json(new { success = false, message = "شماره موبایل شرکت در تنظیمات یادآوری چک ثبت نشده است." });
+
+        var result = await _farazSmsService.SendChequeReminderAsync(
+            tenantId.Value, settings.ChequeReminderMobile, cheque.ChequeNumber, cheque.Amount,
+            cheque.DueDate, cheque.BankAccountName, "ارسال دستی", null, cancellationToken);
+
+        return Json(new { success = result.IsAccepted, message = result.Message });
     }
 
     [HttpPost]

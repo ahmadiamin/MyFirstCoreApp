@@ -20,7 +20,7 @@
     <div class="col-md-3">
         <div class="form-group">
             <label asp-for="InvoiceType"></label>
-            <select asp-for="InvoiceType" class="form-control" asp-items="Model.InvoiceTypeOptions"></select>
+            <select asp-for="InvoiceType" class="form-control select2" asp-items="Model.InvoiceTypeOptions"></select>
             <span asp-validation-for="InvoiceType" class="text-danger"></span>
         </div>
     </div>
@@ -55,6 +55,7 @@
             <tr>
                 <th style="width: 40px;">#</th>
                 <th style="width: 250px;">کالا</th>
+                <th style="width: 160px;">انبار</th>
                 <th style="width: 100px;">تعداد</th>
                 <th style="width: 130px;">قیمت واحد</th>
                 <th style="width: 100px;">تخفیف %</th>
@@ -73,7 +74,8 @@
                         <div class="product-magicsuggest magicsuggest-container"
                              data-index="@i"
                              data-initial-id="@Model.Items[i].ProductId"
-                             data-initial-name="@(Model.Items[i].ProductName ?? "")">
+                             data-initial-name="@(Model.Items[i].ProductName ?? "")"
+                             data-initial-track-inventory="@(Model.Items[i].TrackInventory?.ToString().ToLowerInvariant() ?? "true")">
                         </div>
                         <input type="hidden" name="Items[@i].ProductId"
                                id="ProductId_Hidden_@i"
@@ -81,6 +83,26 @@
                         <input type="hidden" name="Items[@i].ProductName"
                                id="ProductName_Hidden_@i"
                                value="@(Model.Items[i].ProductName ?? "")" />
+                    </td>
+                    <td class="warehouse-cell" data-label="انبار">
+                        <span class="warehouse-picker" style="@(Model.Items[i].TrackInventory == false ? "display:none" : null)">
+                        <select name="Items[@i].WarehouseId" class="form-control warehouse-select">
+                            <option value="">انبار پیش‌فرض</option>
+                            @foreach (var warehouse in Model.WarehouseOptions)
+                            {
+                                var selectedWarehouseId = Model.Items[i].WarehouseId ?? Model.DefaultWarehouseId;
+                                if (selectedWarehouseId?.ToString() == warehouse.Value)
+                                {
+                                    <option value="@warehouse.Value" selected>@warehouse.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@warehouse.Value">@warehouse.Text</option>
+                                }
+                            }
+                        </select>
+                        </span>
+                        <span class="warehouse-not-applicable" style="@(Model.Items[i].TrackInventory == false ? null : "display:none")">—</span>
                     </td>
                     <td data-label="تعداد">
                         <input type="text" name="Items[@i].Quantity"
@@ -117,11 +139,26 @@
         </tbody>
         <tfoot>
             <tr style="height: 100px;">
-                <td colspan="8"></td>
+                <td colspan="9"></td>
             </tr>
         </tfoot>
     </table>
 </div>
+
+<select id="warehouseOptionsTemplate" class="d-none" aria-hidden="true" tabindex="-1">
+    <option value="">انبار پیش‌فرض</option>
+    @foreach (var warehouse in Model.WarehouseOptions)
+    {
+        if (Model.DefaultWarehouseId?.ToString() == warehouse.Value)
+        {
+            <option value="@warehouse.Value" selected>@warehouse.Text</option>
+        }
+        else
+        {
+            <option value="@warehouse.Value">@warehouse.Text</option>
+        }
+    }
+</select>
 
 <button type="button" class="btn btn-sm btn-success" id="addItem">
     <i class="fa fa-plus"></i> افزودن قلم

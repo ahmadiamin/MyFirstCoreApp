@@ -10,28 +10,23 @@ public static class AttachmentPolicies
 {
     public static string[] View(AttachmentEntityType type) => type switch
     {
-        AttachmentEntityType.Transaction => new[] { "Transaction.View", "Loan.View" },
-        AttachmentEntityType.Cheque => new[] { "Cheque.View" },
-        AttachmentEntityType.Payment => new[] { "Payment.View" },
-        AttachmentEntityType.Invoice => new[] { "Invoice.View" },
-        AttachmentEntityType.Product => new[] { "Product.View" },
-        AttachmentEntityType.Contact => new[] { "Contact.View" },
-        _ => Array.Empty<string>()
+        AttachmentEntityType.Transaction => ["Transaction.View", "Loan.View"],
+        AttachmentEntityType.Cheque => ["Cheque.View"],
+        AttachmentEntityType.Payment => ["Payment.View"],
+        AttachmentEntityType.Invoice => ["Invoice.View"],
+        AttachmentEntityType.Product => ["Product.View"],
+        AttachmentEntityType.Contact => ["Contact.View"],
+        _ => []
     };
 
     public static string[] Edit(AttachmentEntityType type) => type switch
     {
-        AttachmentEntityType.Transaction => new[] { "Transaction.Edit", "Loan.Edit", "Loan.Create" },
-        AttachmentEntityType.Cheque => new[] { "Cheque.Edit" },
-        AttachmentEntityType.Payment => new[] { "Payment.Edit" },
-        AttachmentEntityType.Invoice => new[] { "Invoice.Edit" },
-        AttachmentEntityType.Product => new[] { "Product.Edit" },
-        AttachmentEntityType.Contact => new[] { "Contact.Edit" },
-        _ => Array.Empty<string>()
+        AttachmentEntityType.Transaction => ["Transaction.Edit", "Loan.Edit", "Loan.Create"],
+        AttachmentEntityType.Cheque => ["Cheque.Edit"],
+        AttachmentEntityType.Payment => ["Payment.Edit"],
+        AttachmentEntityType.Invoice => ["Invoice.Edit"],
+        AttachmentEntityType.Product => ["Product.Edit"],
+        AttachmentEntityType.Contact => ["Contact.Edit"],
+        _ => []
     };
-
-    internal static string[] Edit(object entityType)
-    {
-        throw new NotImplementedException();
-    }
 }

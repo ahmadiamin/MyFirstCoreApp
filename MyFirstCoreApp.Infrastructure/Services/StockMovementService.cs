@@ -574,39 +574,46 @@ public class StockMovementService : IStockMovementService
                 "برای این فاکتور قبلاً گردش انبار قطعی و فعال ثبت شده است.");
         }
 
-        var warehouseId =
-            await _warehouseService.GetDefaultWarehouseIdAsync(tenantId);
-
         var isSale = invoice.InvoiceType == InvoiceType.Sale;
+        int? defaultWarehouseId = null;
+        if (trackedItems.Any(item => !item.WarehouseId.HasValue))
+            defaultWarehouseId = await _warehouseService.GetDefaultWarehouseIdAsync(tenantId);
 
-        var request = new StockMovementRequest
+        var movementsByWarehouse = trackedItems
+            .GroupBy(item => item.WarehouseId ?? defaultWarehouseId!.Value)
+            .ToList();
+
+        foreach (var warehouseGroup in movementsByWarehouse)
         {
-            Date = invoice.Date,
-            MovementType = isSale
-                ? (int)StockMovementType.Issue
-                : (int)StockMovementType.Receipt,
-
-            SourceWarehouseId = isSale ? warehouseId : null,
-            DestinationWarehouseId = isSale ? null : warehouseId,
-
-            ReferenceInvoiceId = invoice.Id,
-
-            Description = isSale
-                ? $"خروج کالا بابت فاکتور فروش شماره {invoice.Number}"
-                : $"ورود کالا بابت فاکتور خرید شماره {invoice.Number}",
-
-            Items = trackedItems.Select(item => new StockMovementItemRequest
+            var request = new StockMovementRequest
             {
-                ProductId = item.ProductId,
-                Quantity = item.Quantity,
-                UnitCost = isSale ? null : item.UnitPrice,
-                Description = item.Description
-            }).ToList()
-        };
+                Date = invoice.Date,
+                MovementType = isSale
+                    ? (int)StockMovementType.Issue
+                    : (int)StockMovementType.Receipt,
 
-        var movementId = await CreateAsync(request, tenantId);
+                SourceWarehouseId = isSale ? warehouseGroup.Key : null,
+                DestinationWarehouseId = isSale ? null : warehouseGroup.Key,
 
-        await PostAsync(movementId, tenantId);
+                ReferenceInvoiceId = invoice.Id,
+
+                Description = isSale
+                    ? $"خروج کالا بابت فاکتور فروش شماره {invoice.Number}"
+                    : $"ورود کالا بابت فاکتور خرید شماره {invoice.Number}",
+
+                Items = warehouseGroup.Select(item => new StockMovementItemRequest
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    UnitCost = isSale ? null : item.UnitPrice,
+                    Description = item.Description
+                }).ToList()
+            };
+
+            var movementId = await CreateAsync(request, tenantId);
+            await PostAsync(movementId, tenantId);
+        }
+
     }
 
 
@@ -635,63 +642,60 @@ public class StockMovementService : IStockMovementService
                     throw new InvalidOperationException(
                         "گردش انبار فعال برای این فاکتور پیدا نشد.");
 
-                if (movements.Count > 1)
-                    throw new InvalidOperationException(
-                        "برای این فاکتور بیش از یک گردش انبار فعال وجود دارد.");
-
-                var original = movements[0];
-
-                if (original.Items.Count == 0)
-                    throw new InvalidOperationException(
-                        "گردش انبار اصلی فاقد ردیف کالا است.");
-
-                var isReversingIssue =
-                    original.MovementType == StockMovementType.Issue;
-
-                var reversalDate = DateOnly.FromDateTime(DateTime.Today);
-
-                var reversal = new StockMovement
+                foreach (var original in movements)
                 {
-                    TenantId = tenantId,
-                    Number = await GenerateNumberAsync(reversalDate, tenantId),
-                    Date = reversalDate,
-                    MovementType = isReversingIssue
-                        ? StockMovementType.Receipt
-                        : StockMovementType.Issue,
-                    Status = StockMovementStatus.Draft,
+                    if (original.Items.Count == 0)
+                        throw new InvalidOperationException(
+                            "گردش انبار اصلی فاقد ردیف کالا است.");
 
-                    // خروج اصلی ← ورود معکوس
-                    // ورود اصلی ← خروج معکوس
-                    SourceWarehouseId = isReversingIssue
-                        ? null
-                        : original.DestinationWarehouseId,
+                    var isReversingIssue =
+                        original.MovementType == StockMovementType.Issue;
 
-                    DestinationWarehouseId = isReversingIssue
-                        ? original.SourceWarehouseId
-                        : null,
+                    var reversalDate = DateOnly.FromDateTime(DateTime.Today);
 
-                    ReferenceInvoiceId = invoiceId,
-                    ReversesMovementId = original.Id,
-                    Description = $"گردش معکوس سند {original.Number}",
+                    var reversal = new StockMovement
+                    {
+                        TenantId = tenantId,
+                        Number = await GenerateNumberAsync(reversalDate, tenantId),
+                        Date = reversalDate,
+                        MovementType = isReversingIssue
+                            ? StockMovementType.Receipt
+                            : StockMovementType.Issue,
+                        Status = StockMovementStatus.Draft,
 
-                    Items = BuildItems(
-                        original.Items.Select(x =>
-                            new StockMovementItemRequest
-                            {
-                                ProductId = x.ProductId,
-                                Quantity = x.Quantity,
-                                UnitCost = x.UnitCost,
-                                Description = x.Description
-                            }).ToList(),
-                        tenantId)
-                };
+                        // خروج اصلی ← ورود معکوس
+                        // ورود اصلی ← خروج معکوس
+                        SourceWarehouseId = isReversingIssue
+                            ? null
+                            : original.DestinationWarehouseId,
 
-                _context.StockMovements.Add(reversal);
-                await _context.SaveChangesAsync();
+                        DestinationWarehouseId = isReversingIssue
+                            ? original.SourceWarehouseId
+                            : null,
 
-                // از همان تراکنش جاری استفاده می‌کند.
-                // اگر موجودی برای خروج معکوس کافی نباشد، عملیات کامل Rollback می‌شود.
-                await PostAsync(reversal.Id, tenantId);
+                        ReferenceInvoiceId = invoiceId,
+                        ReversesMovementId = original.Id,
+                        Description = $"گردش معکوس سند {original.Number}",
+
+                        Items = BuildItems(
+                            original.Items.Select(x =>
+                                new StockMovementItemRequest
+                                {
+                                    ProductId = x.ProductId,
+                                    Quantity = x.Quantity,
+                                    UnitCost = x.UnitCost,
+                                    Description = x.Description
+                                }).ToList(),
+                            tenantId)
+                    };
+
+                    _context.StockMovements.Add(reversal);
+                    await _context.SaveChangesAsync();
+
+                    // از همان تراکنش جاری استفاده می‌کند.
+                    // اگر موجودی برای خروج معکوس کافی نباشد، عملیات کامل Rollback می‌شود.
+                    await PostAsync(reversal.Id, tenantId);
+                }
             });
     }
     public Task<decimal> GetBalanceAsync(

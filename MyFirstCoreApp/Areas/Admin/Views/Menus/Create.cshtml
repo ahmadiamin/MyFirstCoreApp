@@ -106,7 +106,7 @@
                         <label asp-for="ParentId"></label>
 
                         <select asp-for="ParentId"
-                                class="form-control">
+                                class="form-control select2">
 
                             <option value="">
                                 -- منوی ریشه --
@@ -135,7 +135,7 @@
                         <label asp-for="Permission"></label>
 
                         <select asp-for="Permission"
-                                class="form-control">
+                                class="form-control select2">
 
                             <option value="">
                                 -- بدون محدودیت دسترسی --
@@ -232,4 +232,15 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            $('.select2').select2({
+                width: '100%',
+                dir: 'rtl',
+                language: 'fa',
+                placeholder: 'انتخاب کنید',
+                allowClear: true
+            });
+        });
+    </script>
 }

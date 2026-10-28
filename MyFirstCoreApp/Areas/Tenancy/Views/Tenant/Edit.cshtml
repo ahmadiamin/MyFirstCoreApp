@@ -62,6 +62,86 @@
                     </div>
                 </div>
             </div>
+
+            <hr />
+            <h5><i class="fa fa-sms"></i> تنظیمات پیامک پرتال مشتری</h5>
+            <p class="text-muted">کلید API فقط هنگام ثبت یا جایگزینی ارسال می‌شود و پس از ذخیره قابل مشاهده نیست. برای حفظ کلید فعلی، این فیلد را خالی بگذارید.</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="SmsApiKeyInput">کلید API ثابت FarazSMS</label>
+                        <input asp-for="SmsApiKeyInput" type="password" class="form-control ltr" dir="ltr" autocomplete="new-password" />
+                        <span asp-validation-for="SmsApiKeyInput" class="text-danger"></span>
+                        <small class="form-text text-muted">وضعیت: @(Model.SmsApiKeyConfigured ? "کلید ثبت شده است" : "کلیدی ثبت نشده است")</small>
+                    </div>
+                    @if (Model.SmsApiKeyConfigured)
+                    {
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input asp-for="ClearSmsApiKey" class="custom-control-input" id="ClearSmsApiKey" />
+                                <label asp-for="ClearSmsApiKey" class="custom-control-label" for="ClearSmsApiKey">پاک‌کردن کلید ذخیره‌شده</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="SmsLineNumber">شماره خط ارسال</label>
+                        <input asp-for="SmsLineNumber" class="form-control ltr" dir="ltr" placeholder="90008361" />
+                        <span asp-validation-for="SmsLineNumber" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label asp-for="SmsPortalLinkText">متن الگوی لینک پرتال</label>
+                        <textarea asp-for="SmsPortalLinkText" class="form-control" rows="2" placeholder="لینک پرتال مشتری: %var1%"></textarea>
+                        <span asp-validation-for="SmsPortalLinkText" class="text-danger"></span>
+                        <small class="form-text text-muted">این متن باید دقیقاً با الگوی ساخته‌شده در پنل FarazSMS یکسان باشد و متغیر %var1% را داشته باشد. طول مجاز متغیر var1 در پنل باید برای لینک کامل کافی باشد.</small>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+            <h5><i class="fa fa-bell"></i> یادآوری پیامکی سررسید چک‌ها</h5>
+            <p class="text-muted">این یادآوری‌ها برای شرکت شما ارسال می‌شوند؛ شماره موبایل طرف حسابِ چک گیرندهٔ پیامک نیست. زمان بر اساس ساعت ایران است و پیامک‌ها با schedule به FarazSMS سپرده می‌شوند.</p>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="custom-control custom-checkbox mb-3">
+                        <input asp-for="SmsChequeReminderEnabled" class="custom-control-input" />
+                        <label asp-for="SmsChequeReminderEnabled" class="custom-control-label">فعال‌سازی یادآوری سررسید</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input asp-for="SmsChequeReminderDayBeforeEnabled" class="custom-control-input" />
+                        <label asp-for="SmsChequeReminderDayBeforeEnabled" class="custom-control-label">ارسال یک روز قبل</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input asp-for="SmsChequeReminderDueDayEnabled" class="custom-control-input" />
+                        <label asp-for="SmsChequeReminderDueDayEnabled" class="custom-control-label">ارسال در روز سررسید</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="SmsChequeReminderTime">ساعت ارسال (به وقت ایران)</label>
+                        <input asp-for="SmsChequeReminderTime" type="time" class="form-control ltr" dir="ltr" />
+                        <span asp-validation-for="SmsChequeReminderTime" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="SmsChequeReminderMobile">موبایل خود شرکت برای دریافت یادآوری‌ها</label>
+                        <input asp-for="SmsChequeReminderMobile" class="form-control ltr" dir="ltr"
+                               inputmode="tel" placeholder="09120000000" />
+                        <span asp-validation-for="SmsChequeReminderMobile" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label asp-for="SmsChequeReminderText">الگوی پیامک یادآوری</label>
+                        <textarea asp-for="SmsChequeReminderText" class="form-control" rows="2"
+                                  placeholder="یادآوری چک %var1% به مبلغ %var2% سررسید %var3% از حساب %var4%"></textarea>
+                        <span asp-validation-for="SmsChequeReminderText" class="text-danger"></span>
+                        <small class="form-text text-muted">این الگو باید در پنل FarazSMS نیز تعریف شده باشد و دقیقاً شامل %var1% (شماره چک)، %var2% (مبلغ)، %var3% (سررسید شمسی) و %var4% (حساب بانکی، جهت و زمان یادآوری) باشد. ظرفیت متغیر %var4% را برای طول واقعی مقدار آن در پنل کافی در نظر بگیرید.</small>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="card-footer">

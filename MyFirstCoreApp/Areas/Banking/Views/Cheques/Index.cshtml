@@ -157,8 +157,8 @@
                 {
                     headerName: 'عملیات',
                     colId: 'actions',
-                    width: 300,
-                    minWidth: 300,
+                    width: 340,
+                    minWidth: 340,
                     sortable: false,
                     filter: false,
                     pinned: 'left',
@@ -175,6 +175,16 @@
                         viewBtn.title = 'مشاهده';
                         viewBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
                         div.appendChild(viewBtn);
+
+                        if (d.status === 1 || d.status === 3) {
+                            const reminderBtn = document.createElement('button');
+                            reminderBtn.type = 'button';
+                            reminderBtn.className = 'btn btn-sm btn-outline-info action-icon-btn cheque-reminder-btn';
+                            reminderBtn.dataset.id = d.id;
+                            reminderBtn.title = 'ارسال پیامک یادآوری';
+                            reminderBtn.innerHTML = '<i class="fa-solid fa-comment-sms"></i>';
+                            div.appendChild(reminderBtn);
+                        }
 
                         // ============================================
                         // در جریان (Status=1)
@@ -362,6 +372,25 @@
             const id = $(this).data('id');
             const action = $(this).data('action');
             handleChequeWorkflow(id, action);
+        });
+
+        $(document).on('click', '.cheque-reminder-btn', function () {
+            const id = $(this).data('id');
+            ModalHelper.show({
+                title: 'ارسال پیامک یادآوری',
+                icon: 'fa-solid fa-comment-sms',
+                body: '<p>پیامک با مقادیر همین چک، بدون زمان‌بندی، به موبایل شرکت ارسال شود؟</p>',
+                buttons: [
+                    { text: 'انصراف', class: 'btn-secondary', icon: 'fa-solid fa-times', dismiss: true },
+                    { text: 'ارسال پیامک', class: 'btn-info', icon: 'fa-solid fa-paper-plane', action: 'confirm' }
+                ],
+                onConfirm: function () {
+                    sendChequeRequest('/Banking/Cheques/SendReminderSms', {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    }, 'پیامک یادآوری ارسال شد');
+                }
+            });
         });
 
         function handleChequeWorkflow(id, action) {

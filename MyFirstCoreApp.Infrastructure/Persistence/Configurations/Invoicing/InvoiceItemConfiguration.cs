@@ -38,11 +38,17 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
             .HasForeignKey(x => x.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.Warehouse)
+            .WithMany()
+            .HasForeignKey(x => x.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // فیلتر Tenant
         builder.HasQueryFilter(x => !x.IsDeleted);
 
         // ایندکس‌ها
         builder.HasIndex(x => x.InvoiceId);
         builder.HasIndex(x => x.ProductId);
+        builder.HasIndex(x => x.WarehouseId);
     }
 }

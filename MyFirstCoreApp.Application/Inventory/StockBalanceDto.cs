@@ -11,6 +11,8 @@ public class StockBalanceDto
 
     public string? ProductCode { get; set; }
 
+    public string UnitName { get; set; } = string.Empty;
+
     public int WarehouseId { get; set; }
 
     public string WarehouseName { get; set; } = string.Empty;

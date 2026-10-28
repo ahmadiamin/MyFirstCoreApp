@@ -7,6 +7,7 @@
   <ItemGroup>
     <None Remove="Persistence\Sql\usp_Dashboard_Summary.sql" />
     <None Remove="Persistence\Sql\usp_Report_Contact.sql" />
+    <None Remove="Persistence\Sql\usp_Report_ContactBalances.sql" />
     <None Remove="Persistence\Sql\usp_Report_Detailed.sql" />
     <None Remove="Persistence\Sql\usp_Report_Invoices.sql" />
     <None Remove="Persistence\Sql\usp_Report_Ledger.sql" />
@@ -15,6 +16,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Persistence\Sql\usp_Dashboard_Summary.sql" />
     <EmbeddedResource Include="Persistence\Sql\usp_Report_Contact.sql" />
+    <EmbeddedResource Include="Persistence\Sql\usp_Report_ContactBalances.sql" />
     <EmbeddedResource Include="Persistence\Sql\usp_Report_Detailed.sql" />
     <EmbeddedResource Include="Persistence\Sql\usp_Report_Invoices.sql" />
     <EmbeddedResource Include="Persistence\Sql\usp_Report_Ledger.sql" />

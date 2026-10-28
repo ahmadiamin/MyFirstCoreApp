@@ -19,5 +19,14 @@ public interface IReportService
 
     Task<ContactReport> GetContactAsync(ContactReportQuery query, CancellationToken cancellationToken = default);
 
+    /// <summary>گزارش مشتری در دامنهٔ Tenant مشخص؛ فقط برای سرویس لینک عمومیِ اعتبارسنجی‌شده.</summary>
+    Task<ContactReport> GetContactAsync(int tenantId, ContactReportQuery query, CancellationToken cancellationToken = default);
+
     Task<InvoiceReport> GetInvoicesAsync(InvoiceReportQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// بدهکاران یا بستانکاران: مانده‌ی دفتر هر طرف حساب تا تاریخ، سن بدهی از روی فاکتورهای باز،
+    /// چک‌های در انتظار و جمع کل (روی همه‌ی ردیف‌های فیلترشده). PageSize = 0 یعنی همه‌ی ردیف‌ها.
+    /// </summary>
+    Task<ContactBalancesReport> GetContactBalancesAsync(ContactBalancesQuery query, CancellationToken cancellationToken = default);
 }

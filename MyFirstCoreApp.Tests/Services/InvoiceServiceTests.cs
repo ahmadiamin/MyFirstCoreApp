@@ -78,6 +78,81 @@ public class InvoiceServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Create_ServiceProduct_IgnoresWarehouseSelection()
+    {
+        int serviceId;
+        await using (var context = _db.NewContext())
+        {
+            var unit = new Unit { TenantId = TenantA, Name = "خدمت", Symbol = "خدمت", IsActive = true };
+            context.Units.Add(unit);
+            await context.SaveChangesAsync();
+            var service = new Product
+            {
+                TenantId = TenantA,
+                Name = "خدمت مشاوره",
+                UnitId = unit.Id,
+                IsActive = true,
+                TrackInventory = false
+            };
+            context.Products.Add(service);
+            await context.SaveChangesAsync();
+            serviceId = service.Id;
+        }
+
+        var contactId = await AddContactAsync();
+        var request = NewRequest(InvoiceType.Sale, contactId,
+            new InvoiceItemRequest
+            {
+                ProductId = serviceId,
+                WarehouseId = int.MaxValue,
+                Quantity = 1,
+                UnitPrice = 1_000
+            });
+
+        var created = await CreateAsync(request);
+
+        Assert.Null(created.Items.Single().WarehouseId);
+    }
+
+    [Fact]
+    public async Task Create_PurchaseUpdatesExistingProductLastPurchasePrice()
+    {
+        int productId;
+        await using (var context = _db.NewContext())
+        {
+            var unit = new Unit { TenantId = TenantA, Name = "عدد", Symbol = "عدد", IsActive = true };
+            context.Units.Add(unit);
+            await context.SaveChangesAsync();
+            var product = new Product
+            {
+                TenantId = TenantA,
+                Name = "کالای خریداری‌شده",
+                UnitId = unit.Id,
+                IsActive = true,
+                TrackInventory = true,
+                LastPurchasePrice = 100
+            };
+            context.Products.Add(product);
+            await context.SaveChangesAsync();
+            productId = product.Id;
+        }
+
+        var contactId = await AddContactAsync();
+        await CreateAsync(NewRequest(InvoiceType.Purchase, contactId,
+            new InvoiceItemRequest
+            {
+                ProductId = productId,
+                Quantity = 2,
+                UnitPrice = 250
+            }));
+
+        await using var verify = _db.NewContext();
+        var updatedProduct = await verify.Products.SingleAsync(p => p.Id == productId);
+        Assert.Equal(250, updatedProduct.LastPurchasePrice);
+        Assert.NotNull(updatedProduct.LastPriceUpdatedAt);
+    }
+
+    [Fact]
     public async Task Create_InvalidRequests_AreRejected_AndLeaveNothingBehind()
     {
         var cases = new (Action<InvoiceRequest> Mutate, string Expected)[]

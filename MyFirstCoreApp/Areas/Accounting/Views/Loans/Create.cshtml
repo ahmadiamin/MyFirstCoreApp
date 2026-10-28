@@ -1,0 +1,113 @@
+﻿@model MyFirstCoreApp.Areas.Accounting.ViewModels.Loan.LoanFormViewModel
+@{
+    ViewData["Title"] = Model.Direction == MyFirstCoreApp.Domain.Enums.LoanDirection.Given ? "ثبت قرض داده‌شده" : "ثبت قرض گرفته‌شده";
+}
+
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa fa-handshake"></i> @ViewData["Title"]</h3>
+    </div>
+
+    <form asp-area="Accounting" asp-controller="Loans" asp-action="Create" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <input type="hidden" asp-for="Direction" />
+
+            <div class="alert alert-info py-2">
+                @if (Model.Direction == MyFirstCoreApp.Domain.Enums.LoanDirection.Given)
+                {
+                    <span>پول از حساب انتخاب‌شده خارج می‌شود و طرف حساب به ما بدهکار می‌شود.</span>
+                }
+                else
+                {
+                    <span>پول به حساب انتخاب‌شده وارد می‌شود و ما به طرف حساب بدهکار می‌شویم.</span>
+                }
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="ContactId"></label>
+                        <select asp-for="ContactId" asp-items="Model.ContactOptions" class="form-control select2">
+                            <option value="">-- انتخاب --</option>
+                        </select>
+                        <span asp-validation-for="ContactId" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="AccountId"></label>
+                        <select asp-for="AccountId" asp-items="Model.AccountOptions" class="form-control select2">
+                            <option value="">-- انتخاب --</option>
+                        </select>
+                        <span asp-validation-for="AccountId" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="Date"></label>
+                        <input asp-for="Date" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                        <span asp-validation-for="Date" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="AmountText"></label>
+                        <input asp-for="AmountText" class="form-control ltr persian-number persian-number-comma" autocomplete="off" dir="ltr" placeholder="مثلاً 5,000,000" />
+                        <span asp-validation-for="AmountText" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="form-group">
+                        <label asp-for="Description"></label>
+                        <input asp-for="Description" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Receipt"></label>
+                        <input asp-for="Receipt" type="file" class="form-control-file" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                        <small class="form-text text-muted">فقط jpg، png، webp یا pdf؛ حداکثر ۵ مگابایت. رسید نامعتبر یعنی قرض ثبت نمی‌شود.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> ثبت</button>
+            <a asp-action="Index" class="btn btn-secondary"><i class="fa fa-arrow-right"></i> انصراف</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            $('.datepicker').each(function () {
+                var $input = $(this);
+                var val = $input.val();
+                $input.persianDatepicker({
+                    format: 'YYYY/MM/DD', initialValue: false, autoClose: true, observer: true,
+                    calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                    toolbox: { calendarSwitch: { enabled: false } }
+                });
+                if (val) $input.persianDatepicker('setDate', val);
+            });
+
+            // Select2
+            $('.select2').select2({
+                dir: 'rtl',
+                placeholder: '-- انتخاب --',
+                allowClear: true,
+                width: '100%',
+                language: 'fa'
+            });
+
+        });
+    </script>
+}

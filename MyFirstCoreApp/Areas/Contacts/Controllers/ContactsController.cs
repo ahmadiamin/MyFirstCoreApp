@@ -292,71 +292,72 @@ public class ContactsController : Controller
 
     // POST: /Contacts/Contacts/GetData
     [HttpPost]
-[Authorize(Policy = "Contact.View")]
-public async Task<IActionResult> GetData([FromBody] AgGridRequest request)
-{
-    var tenantId = _currentTenant.TenantId;
-    if (!tenantId.HasValue)
-        return Json(new { success = false, message = "Tenant not found" });
-
-    var query = _context.Contacts
-        .Where(x => x.TenantId == tenantId.Value);
-
-    // 🆕 جستجو
-    if (!string.IsNullOrWhiteSpace(request.Search))
+    [Authorize(Policy = "Contact.View")]
+    public async Task<IActionResult> GetData([FromBody] AgGridRequest request)
     {
-        var s = request.Search.Trim();
-        query = query.Where(x =>
-            x.Name.Contains(s) ||
-            (x.Code != null && x.Code.Contains(s)) ||
-            (x.Mobile != null && x.Mobile.Contains(s)) ||
-            (x.Phone != null && x.Phone.Contains(s)) ||
-            (x.NationalId != null && x.NationalId.Contains(s)));
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue)
+            return Json(new { success = false, message = "Tenant not found" });
+
+        var query = _context.Contacts
+            .Where(x => x.TenantId == tenantId.Value);
+
+        // 🆕 جستجو
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var s = request.Search.Trim();
+            query = query.Where(x =>
+                x.Name.Contains(s) ||
+                (x.Code != null && x.Code.Contains(s)) ||
+                (x.Mobile != null && x.Mobile.Contains(s)) ||
+                (x.Phone != null && x.Phone.Contains(s)) ||
+                (x.NationalId != null && x.NationalId.Contains(s)));
+        }
+
+        // 🆕 شمارش کل
+        var total = await query.CountAsync();
+
+        // 🆕 مرتب‌سازی
+        query = (request.SortBy, request.SortDir) switch
+        {
+            ("name", "asc") => query.OrderBy(x => x.Name),
+            ("name", "desc") => query.OrderByDescending(x => x.Name),
+            ("code", "asc") => query.OrderBy(x => x.Code),
+            ("code", "desc") => query.OrderByDescending(x => x.Code),
+            ("currentBalance", "asc") => query.OrderBy(x => x.CurrentBalance),
+            ("currentBalance", "desc") => query.OrderByDescending(x => x.CurrentBalance),
+            _ => query.OrderBy(x => x.Name)
+        };
+
+        // 🆕 صفحه‌بندی
+        var items = await query
+            .Skip(request.StartRow)
+            .Take(request.EndRow - request.StartRow)
+            .Select(x => new
+            {
+                id = x.Id,
+                name = x.Name,
+                code = x.Code,
+                strContactType = GetContactTypeName(x.ContactType),
+                contactType = (int)x.ContactType,
+                mobile = x.Mobile,
+                phone = x.Phone,
+                currentBalance = x.CurrentBalance,
+                isActive = x.IsActive
+            })
+            .ToListAsync();
+
+        return Json(new
+        {
+            success = true,
+            rows = items,
+            lastRow = total
+        });
     }
 
-    // 🆕 شمارش کل
-    var total = await query.CountAsync();
+    // ---- Helper ----
 
-    // 🆕 مرتب‌سازی
-    query = (request.SortBy, request.SortDir) switch
-    {
-        ("name", "asc") => query.OrderBy(x => x.Name),
-        ("name", "desc") => query.OrderByDescending(x => x.Name),
-        ("code", "asc") => query.OrderBy(x => x.Code),
-        ("code", "desc") => query.OrderByDescending(x => x.Code),
-        ("currentBalance", "asc") => query.OrderBy(x => x.CurrentBalance),
-        ("currentBalance", "desc") => query.OrderByDescending(x => x.CurrentBalance),
-        _ => query.OrderBy(x => x.Name)
-    };
-
-    // 🆕 صفحه‌بندی
-    var items = await query
-        .Skip(request.StartRow)
-        .Take(request.EndRow - request.StartRow)
-        .Select(x => new
-        {
-            id = x.Id,
-            name = x.Name,
-            code = x.Code,
-            contactType = GetContactTypeName(x.ContactType),
-            mobile = x.Mobile,
-            phone = x.Phone,
-            currentBalance = x.CurrentBalance,
-            isActive = x.IsActive
-        })
-        .ToListAsync();
-
-    return Json(new
-    {
-        success = true,
-        rows = items,
-        lastRow = total
-    });
-}
-
-// ---- Helper ----
-
-private static List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> GetContactTypeOptions()
+    private static List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> GetContactTypeOptions()
     {
         return new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
         {

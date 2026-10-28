@@ -1,0 +1,77 @@
+﻿@using MyFirstCoreApp.Application.Common.Utilities
+@inject TimeProvider Clock
+@model MyFirstCoreApp.ViewComponents.AttachmentsViewModel
+
+<div class="card card-outline card-secondary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-paperclip"></i>
+            پیوست‌ها (@Model.Items.Count)
+        </h3>
+    </div>
+
+    @if (Model.Items.Any())
+    {
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-sm mb-0">
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="Attachments" asp-action="Download" asp-route-id="@item.Id" target="_blank">
+                                    <i class="fa @(item.ContentType == "application/pdf" ? "fa-file-pdf" : "fa-file-image")"></i>
+                                    @item.FileName
+                                </a>
+                                <a asp-controller="Attachments" asp-action="Download" asp-route-id="@item.Id" asp-route-download="true"
+                                   class="text-muted mr-1" title="دانلود"><i class="fa fa-download"></i></a>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <div class="small text-muted">@item.Description</div>
+                                }
+                            </td>
+                            <td class="text-nowrap small text-muted">@((item.SizeBytes / 1024.0).ToString("N0")) KB</td>
+                            <td class="text-nowrap small text-muted" dir="ltr">
+                                @PersianDate.Format(Clock.ToLocalDate(item.UploadedAt))
+                            </td>
+                            <td class="text-left">
+                                @if (Model.CanEdit)
+                                {
+                                    <form asp-controller="Attachments" asp-action="Delete" asp-route-id="@item.Id"
+                                          asp-route-returnUrl="@Model.ReturnUrl" method="post" class="d-inline"
+                                          onsubmit="return confirm('این پیوست حذف شود؟');">
+                                        <button type="submit" class="btn btn-xs btn-outline-danger" title="حذف">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="card-body text-muted">هنوز پیوستی ثبت نشده است.</div>
+    }
+
+    @if (Model.CanEdit)
+    {
+        <div class="card-footer">
+            <form asp-controller="Attachments" asp-action="Upload" method="post" enctype="multipart/form-data" class="form-inline">
+                <input type="hidden" name="entityType" value="@((int)Model.EntityType)" />
+                <input type="hidden" name="entityId" value="@Model.EntityId" />
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                <input type="file" name="file" class="form-control-file ml-2" accept=".jpg,.jpeg,.png,.webp,.pdf" required />
+                <input type="text" name="description" class="form-control form-control-sm ml-2" placeholder="توضیح (اختیاری)" maxlength="500" />
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="fa fa-upload"></i> افزودن
+                </button>
+            </form>
+            <small class="form-text text-muted">فقط jpg، png، webp یا pdf؛ حداکثر ۵ مگابایت.</small>
+        </div>
+    }
+</div>

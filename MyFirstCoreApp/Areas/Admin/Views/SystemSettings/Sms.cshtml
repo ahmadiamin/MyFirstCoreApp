@@ -1,0 +1,54 @@
+@model MyFirstCoreApp.Areas.Admin.ViewModels.SystemSmsSettingsViewModel
+
+@{
+    ViewData["Title"] = "تنظیمات پیامک سامانه";
+}
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+<div class="card card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fa fa-comment-sms"></i> پیامک سامانه</h3></div>
+    <form asp-action="Sms" method="post">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <p class="text-muted">این تنظیمات فقط برای تأیید موبایل هنگام ثبت‌نام استفاده می‌شود و از تنظیمات پیامک شرکت‌ها جداست.</p>
+            <div class="form-group">
+                <label asp-for="ApiKeyInput">کلید API ثابت FarazSMS</label>
+                <input asp-for="ApiKeyInput" type="password" class="form-control ltr" dir="ltr" autocomplete="new-password" />
+                <span asp-validation-for="ApiKeyInput" class="text-danger"></span>
+                <small class="form-text text-muted">وضعیت: @(Model.ApiKeyConfigured ? "کلید ثبت شده است" : "کلیدی ثبت نشده است"). برای نگه‌داشتن کلید فعلی، این فیلد را خالی بگذارید.</small>
+            </div>
+            @if (Model.ApiKeyConfigured)
+            {
+                <div class="custom-control custom-checkbox mb-3">
+                    <input asp-for="ClearApiKey" class="custom-control-input" />
+                    <label asp-for="ClearApiKey" class="custom-control-label">پاک‌کردن کلید ذخیره‌شده</label>
+                </div>
+            }
+            <div class="form-group">
+                <label asp-for="LineNumber">شماره خط ارسال</label>
+                <input asp-for="LineNumber" class="form-control ltr" dir="ltr" placeholder="90008361" />
+                <span asp-validation-for="LineNumber" class="text-danger"></span>
+            </div>
+            <div class="custom-control custom-checkbox mb-3">
+                <input asp-for="RegistrationSmsEnabled" class="custom-control-input" />
+                <label asp-for="RegistrationSmsEnabled" class="custom-control-label">فعال‌سازی تأیید ثبت‌نام با موبایل</label>
+            </div>
+            <div class="form-group">
+                <label asp-for="RegistrationSmsPatternCode">کد الگوی پیامک در FarazSMS</label>
+                <input asp-for="RegistrationSmsPatternCode" class="form-control ltr" dir="ltr" />
+                <span asp-validation-for="RegistrationSmsPatternCode" class="text-danger"></span>
+                <small class="form-text text-muted">در پنل FarazSMS یک الگوی دسته OTP با متغیر var1 بسازید و کد الگو را اینجا وارد کنید.</small>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> ذخیره تنظیمات</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

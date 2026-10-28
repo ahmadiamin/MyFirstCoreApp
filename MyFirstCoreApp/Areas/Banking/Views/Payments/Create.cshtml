@@ -82,6 +82,13 @@
                     const v = $(this).val();
                     const num = parseFloat(toEnglishNumber(v).replace(/,/g, '')) || 0;
                     total += num;
+
+                    const $input = $(this);
+                    const invoiceRemaining = parseFloat($input.data('remaining')) || 0;
+                    const remainingAfterAllocation = invoiceRemaining - num;
+                    const $remaining = $input.closest('tr').find('.invoice-remaining-after');
+                    $remaining.text(formatNumberWithComma(remainingAfterAllocation.toString()));
+                    $remaining.toggleClass('text-danger', remainingAfterAllocation < 0);
                 });
 
                 const remaining = amount - total;
@@ -118,7 +125,7 @@
                 tbody.empty();
 
                 if (invoices.length === 0) {
-                    tbody.append('<tr><td colspan="6" class="text-center text-muted">فاکتور بازی وجود ندارد.</td></tr>');
+                    tbody.append('<tr><td colspan="7" class="text-center text-muted">فاکتور بازی وجود ندارد.</td></tr>');
                     updateTotals();
                     return;
                 }
@@ -148,6 +155,7 @@
                     html += '  <td class="persian-number-comma">' + Number(inv.total).toLocaleString('en-US') + '</td>';
                     html += '  <td class="persian-number-comma text-warning">' + Number(inv.remaining).toLocaleString('en-US') + '</td>';
                     html += '  <td><input type="text" name="Allocations[' + idx + '].Amount" class="form-control form-control-sm allocation-amount persian-number persian-number-comma" data-remaining="' + inv.remaining + '" value="' + (allocate > 0 ? formatNumberWithComma(allocate.toString()) : '0') + '" /></td>';
+                    html += '  <td class="invoice-remaining-after persian-number-comma text-success">' + Number(inv.remaining - allocate).toLocaleString('en-US') + '</td>';
                     html += '</tr>';
                 });
 

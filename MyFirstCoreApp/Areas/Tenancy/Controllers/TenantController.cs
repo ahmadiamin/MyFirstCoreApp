@@ -22,19 +22,22 @@ public class TenantController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ICurrentUser _currentUser;
+    private readonly ITenantSmsSettingsService _smsSettings;
 
     public TenantController(
         ApplicationDbContext context,
         ITenantService tenantService,
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        ITenantSmsSettingsService smsSettings)
     {
         _context = context;
         _tenantService = tenantService;
         _userManager = userManager;
         _signInManager = signInManager;
         _currentUser = currentUser;
+        _smsSettings = smsSettings;
     }
 
     // GET: /Tenancy/Tenant
@@ -46,7 +49,9 @@ public class TenantController : Controller
         if (string.IsNullOrEmpty(userId))
             return Challenge();
 
-        var tenants = await _tenantService.GetUserTenantsAsync(userId);
+        var tenants = User.IsInRole("SuperAdmin")
+            ? await _context.Tenants.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Name).ToListAsync()
+            : await _tenantService.GetUserTenantsAsync(userId);
         return View(tenants);
     }
 
@@ -101,7 +106,9 @@ public class TenantController : Controller
         if (string.IsNullOrEmpty(userId))
             return Challenge();
 
-        var tenants = await _tenantService.GetUserTenantsAsync(userId);
+        var tenants = User.IsInRole("SuperAdmin")
+            ? await _context.Tenants.AsNoTracking().Where(x => !x.IsDeleted && x.IsActive).OrderBy(x => x.Name).ToListAsync()
+            : await _tenantService.GetUserTenantsAsync(userId);
 
         // حالت ۱: هیچ Tenant نداره → Create
         if (!tenants.Any())
@@ -151,7 +158,7 @@ public class TenantController : Controller
         if (string.IsNullOrEmpty(userId))
             return Challenge();
 
-        if (!await _tenantService.IsUserMemberAsync(tenantId, userId))
+        if (!User.IsInRole("SuperAdmin") && !await _tenantService.IsUserMemberAsync(tenantId, userId))
             return Forbid();
 
         // ست کردن به‌عنوان پیش‌فرض
@@ -218,10 +225,12 @@ public class TenantController : Controller
         if (string.IsNullOrEmpty(userId)) return Json(new { success = false });
 
         // 🆕 فقط Tenant هایی که کاربر عضوشونه
-        var query = _context.UserTenants
-            .Where(ut => ut.UserId == userId && !ut.IsDeleted)
-            .Select(ut => ut.Tenant)
-            .Where(t => !t.IsDeleted);
+        var query = User.IsInRole("SuperAdmin")
+            ? _context.Tenants.IgnoreQueryFilters().Where(t => !t.IsDeleted)
+            : _context.UserTenants
+                .Where(ut => ut.UserId == userId && !ut.IsDeleted)
+                .Select(ut => ut.Tenant)
+                .Where(t => !t.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
@@ -267,7 +276,7 @@ public class TenantController : Controller
             return Challenge();
 
         // چک کن کاربر مالک یا عضو این Tenant هست
-        if (!await _tenantService.IsUserOwnerAsync(id, userId))
+        if (!User.IsInRole("SuperAdmin") && !await _tenantService.IsUserOwnerAsync(id, userId))
             return Forbid();
 
         var entity = await _tenantService.GetByIdAsync(id);
@@ -280,8 +289,11 @@ public class TenantController : Controller
             NationalId = entity.NationalId,
             EconomicCode = entity.EconomicCode,
             Phone = entity.Phone,
-            Address = entity.Address
+            Address = entity.Address,
+            SmsLineNumber = string.Empty
         };
+
+        await PopulateSmsSettingsSummaryAsync(id, model);
 
         ViewBag.TenantId = id;
 
@@ -298,12 +310,51 @@ public class TenantController : Controller
         if (string.IsNullOrEmpty(userId))
             return Challenge();
 
-        if (!await _tenantService.IsUserOwnerAsync(id, userId))
+        if (!User.IsInRole("SuperAdmin") && !await _tenantService.IsUserOwnerAsync(id, userId))
             return Forbid();
+
+        if (string.IsNullOrWhiteSpace(model.SmsLineNumber))
+            ModelState.AddModelError(nameof(model.SmsLineNumber), "شماره خط پیامک را وارد کنید.");
+
+        var validReminderTime = TimeOnly.TryParse(model.SmsChequeReminderTime, out var chequeReminderTime);
+        if (!validReminderTime)
+            ModelState.AddModelError(nameof(model.SmsChequeReminderTime), "ساعت ارسال معتبر نیست.");
+        if (model.SmsChequeReminderEnabled &&
+            (string.IsNullOrWhiteSpace(model.SmsChequeReminderText) ||
+             new[] { "%var1%", "%var2%", "%var3%", "%var4%" }
+                 .Any(token => !model.SmsChequeReminderText.Contains(token, StringComparison.Ordinal))))
+            ModelState.AddModelError(nameof(model.SmsChequeReminderText),
+                "الگوی فعال باید شامل متغیرهای %var1% تا %var4% باشد.");
+        if (model.SmsChequeReminderEnabled &&
+            !model.SmsChequeReminderDayBeforeEnabled && !model.SmsChequeReminderDueDayEnabled)
+            ModelState.AddModelError(nameof(model.SmsChequeReminderEnabled),
+                "حداقل یکی از زمان‌های یادآوری را انتخاب کنید.");
+        if (model.SmsChequeReminderEnabled &&
+            !System.Text.RegularExpressions.Regex.IsMatch(NormalizeMobileDigits(model.SmsChequeReminderMobile),
+                "^09[0-9]{9}$"))
+            ModelState.AddModelError(nameof(model.SmsChequeReminderMobile),
+                "شماره موبایل شرکت باید ۱۱ رقم و با 09 شروع شود.");
 
         if (!ModelState.IsValid)
         {
             ViewBag.TenantId = id;
+            await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
+            return View(model);
+        }
+
+        if (model.ClearSmsApiKey && !string.IsNullOrWhiteSpace(model.SmsApiKeyInput))
+        {
+            ModelState.AddModelError(nameof(model.SmsApiKeyInput), "برای جایگزینی کلید، گزینهٔ پاک‌کردن را خالی بگذارید.");
+            ViewBag.TenantId = id;
+            await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
+            return View(model);
+        }
+        if (!string.IsNullOrWhiteSpace(model.SmsPortalLinkText) &&
+            !model.SmsPortalLinkText.Contains("%var1%", StringComparison.Ordinal))
+        {
+            ModelState.AddModelError(nameof(model.SmsPortalLinkText), "الگوی پیامک باید شامل متغیر %var1% باشد.");
+            ViewBag.TenantId = id;
+            await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
             return View(model);
         }
 
@@ -318,9 +369,64 @@ public class TenantController : Controller
         entity.Address = model.Address?.Trim();
         entity.UpdatedAt = DateTime.UtcNow;
 
+        var currentSmsSettings = await _smsSettings.GetSummaryAsync(id);
+        var smsLineNumber = model.SmsLineNumber ?? string.Empty;
+        var smsSettingsChanged = model.ClearSmsApiKey ||
+            !string.IsNullOrWhiteSpace(model.SmsApiKeyInput) ||
+            !string.Equals(smsLineNumber.Trim(), currentSmsSettings.LineNumber, StringComparison.Ordinal) ||
+            !string.Equals(model.SmsPortalLinkText?.Trim(), currentSmsSettings.PortalLinkText, StringComparison.Ordinal) ||
+            model.SmsChequeReminderEnabled != currentSmsSettings.ChequeReminderEnabled ||
+            model.SmsChequeReminderDayBeforeEnabled != currentSmsSettings.ChequeReminderDayBeforeEnabled ||
+            model.SmsChequeReminderDueDayEnabled != currentSmsSettings.ChequeReminderDueDayEnabled ||
+            chequeReminderTime != currentSmsSettings.ChequeReminderTime ||
+            !string.Equals(NormalizeMobileDigits(model.SmsChequeReminderMobile),
+                currentSmsSettings.ChequeReminderMobile, StringComparison.Ordinal) ||
+            !string.Equals(model.SmsChequeReminderText?.Trim(), currentSmsSettings.ChequeReminderText, StringComparison.Ordinal);
+        if (smsSettingsChanged)
+        {
+            await _smsSettings.SaveAsync(id, model.SmsApiKeyInput, model.ClearSmsApiKey,
+                smsLineNumber, model.SmsPortalLinkText, userId,
+                model.SmsChequeReminderEnabled, model.SmsChequeReminderDayBeforeEnabled,
+                model.SmsChequeReminderDueDayEnabled, chequeReminderTime,
+                model.SmsChequeReminderMobile, model.SmsChequeReminderText);
+        }
+
         await _tenantService.UpdateAsync(entity);
 
         TempData["Success"] = "اطلاعات شرکت با موفقیت ویرایش شد.";
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task PopulateSmsSettingsSummaryAsync(int tenantId, CreateTenantViewModel model,
+        bool preserveReminderInput = false)
+    {
+        var settings = await _smsSettings.GetSummaryAsync(tenantId);
+        model.SmsApiKeyConfigured = settings.ApiKeyConfigured;
+        if (string.IsNullOrWhiteSpace(model.SmsLineNumber))
+            model.SmsLineNumber = settings.LineNumber;
+        if (model.SmsPortalLinkText is null)
+            model.SmsPortalLinkText = settings.PortalLinkText;
+        if (!preserveReminderInput)
+        {
+            model.SmsChequeReminderEnabled = settings.ChequeReminderEnabled;
+            model.SmsChequeReminderDayBeforeEnabled = settings.ChequeReminderDayBeforeEnabled;
+            model.SmsChequeReminderDueDayEnabled = settings.ChequeReminderDueDayEnabled;
+            model.SmsChequeReminderTime = settings.ChequeReminderTime.ToString("HH:mm");
+            model.SmsChequeReminderMobile = settings.ChequeReminderMobile;
+            model.SmsChequeReminderText = settings.ChequeReminderText;
+        }
+    }
+
+    private static string NormalizeMobileDigits(string? mobile)
+    {
+        if (string.IsNullOrWhiteSpace(mobile)) return string.Empty;
+        var result = new System.Text.StringBuilder(mobile.Length);
+        foreach (var character in mobile.Trim())
+        {
+            if (character is >= '\u06F0' and <= '\u06F9') result.Append((char)('0' + character - '\u06F0'));
+            else if (character is >= '\u0660' and <= '\u0669') result.Append((char)('0' + character - '\u0660'));
+            else result.Append(character);
+        }
+        return result.ToString();
     }
 }

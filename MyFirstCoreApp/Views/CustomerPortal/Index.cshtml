@@ -1,0 +1,262 @@
+@using MyFirstCoreApp.Application.Common.Utilities
+@model MyFirstCoreApp.Controllers.CustomerPortalPublicViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "پرتال مشتری";
+}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <title>@ViewData["Title"] - @Model.Data.TenantName</title>
+    <style>
+        @@font-face {
+            font-family: Vazir;
+            src: url('@Url.Content("~/dist/fonts/Vazir.woff2")') format('woff2');
+            font-weight: 100 900;
+            font-display: swap
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: Vazir,sans-serif;
+            background: #f3f5f8;
+            color: #263238;
+            margin: 0;
+            padding: 24px;
+            font-feature-settings: "ss01";
+            -webkit-font-feature-settings: "ss01"
+        }
+
+        .wrap {
+            max-width: 1100px;
+            width: 100%;
+            margin: auto
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 8px #0000000a;
+            min-width: 0
+        }
+
+        .muted {
+            color: #687782
+        }
+
+        .table-wrap {
+            width: 100%;
+            max-width: 100%;
+            overflow: visible
+        }
+
+        table {
+            width: 100%;
+            max-width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e9ec;
+            text-align: right;
+            overflow-wrap: anywhere
+        }
+
+        th {
+            background: #f7f8fa
+        }
+
+        .number {
+            text-align: left;
+            white-space: nowrap;
+            direction: ltr;
+            font-variant-numeric: tabular-nums
+        }
+
+        .pill {
+            display: inline-block;
+            background: #eef4ff;
+            border-radius: 20px;
+            padding: 5px 10px
+        }
+
+        a {
+            color: #1266a5;
+            text-decoration: none
+        }
+
+        .button {
+            display: inline-block;
+            border: 1px solid #1266a5;
+            border-radius: 5px;
+            padding: 7px 11px
+        }
+
+        .balance {
+            font-size: 1.5rem;
+            font-weight: bold
+        }
+
+        .pagination {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            padding-top: 15px
+        }
+
+        @@media(max-width:700px) {
+            body {
+                padding: 10px
+            }
+
+            .card {
+                padding: 14px
+            }
+
+                .card h2, .card h3 {
+                    font-size: 1.15rem
+                }
+
+            .table-wrap table, .table-wrap thead, .table-wrap tbody, .table-wrap tr, .table-wrap th, .table-wrap td {
+                display: block;
+                width: 100%
+            }
+
+            .table-wrap thead {
+                display: none
+            }
+
+            .table-wrap tr {
+                border: 1px solid #e5e9ec;
+                border-radius: 8px;
+                margin: 0 0 12px;
+                padding: 6px 10px;
+                background: #fff
+            }
+
+            .table-wrap td {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 8px 0;
+                text-align: left
+            }
+
+                .table-wrap td::before {
+                    content: attr(data-label);
+                    font-weight: 600;
+                    text-align: right;
+                    flex: 0 0 40%;
+                    color: #687782
+                }
+
+                .table-wrap td[colspan]::before {
+                    content: none
+                }
+
+            .table-wrap .number {
+                white-space: normal;
+                overflow-wrap: anywhere
+            }
+
+            .table-wrap td:has(.button) {
+                justify-content: flex-start
+            }
+
+                .table-wrap td:has(.button)::before {
+                    content: attr(data-label)
+                }
+
+            .balance {
+                font-size: 1.3rem
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <header class="card"><h2>@Model.Data.TenantName</h2><div class="muted">اطلاعات حساب مشتری: <strong>@Model.Data.CustomerName</strong></div></header>
+        @if (Model.Data.CanViewLedger && Model.Data.Ledger is not null)
+        {
+            <section class="card">
+                <h3>صورت‌حساب و مانده</h3><p class="muted">مانده مثبت یعنی بدهی مشتری به شرکت.</p>
+                <div class="balance">@Model.Data.Ledger.ClosingBalance.ToString("N0") ریال</div>
+                <div class="muted">بدهکار: @Model.Data.Ledger.TotalDebit.ToString("N0")　|　بستانکار: @Model.Data.Ledger.TotalCredit.ToString("N0")</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>تاریخ</th><th>شماره سند</th><th>شرح</th><th>حساب</th><th>بدهکار</th><th>بستانکار</th><th>مانده</th></tr></thead>
+                        <tbody>
+                            @if (Model.Data.Ledger.Lines.Count == 0)
+                            {
+                                <tr><td colspan="7" class="muted">در بازهٔ جاری گردش ثبت‌شده‌ای وجود ندارد.</td></tr>
+                            }
+                            @foreach (var line in Model.Data.Ledger.Lines)
+                            {
+                                <tr><td data-label="تاریخ">@PersianDate.Format(line.Date)</td><td data-label="شماره سند">@line.TransactionNumber</td><td data-label="شرح">@line.Description</td><td data-label="حساب">@line.AccountName</td><td class="number" data-label="بدهکار">@line.Debit.ToString("N0")</td><td class="number" data-label="بستانکار">@line.Credit.ToString("N0")</td><td class="number" data-label="مانده">@line.RunningBalance.ToString("N0")</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        }
+        @if (Model.Data.CanViewSalesInvoices)
+        {
+            <section class="card">
+                <h3>فاکتورهای فروش</h3><div class="table-wrap">
+                    <table>
+                        <thead><tr><th>شماره</th><th>تاریخ</th><th>مبلغ</th><th>پرداخت‌شده</th><th>مانده</th><th>جزئیات</th></tr></thead>
+                        <tbody>
+                            @if (Model.Data.Invoices.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="6" class="muted">فاکتور فروش قطعی‌شده‌ای ثبت نشده است.</td>
+                                </tr>
+                            }
+                            @foreach (var invoice in Model.Data.Invoices)
+                            {
+                                <tr>
+                                    <td data-label="شماره">@invoice.Number</td>
+                                    <td data-label="تاریخ">@PersianDate.Format(invoice.Date)</td>
+                                    <td class="number" data-label="مبلغ">@invoice.TotalAmount.ToString("N0")</td>
+                                    <td class="number" data-label="پرداخت‌شده">@invoice.PaidAmount.ToString("N0")</td>
+                                    <td class="number" data-label="مانده">@invoice.RemainingAmount.ToString("N0")</td>
+                                    <td data-label="جزئیات"><a class="button" href="@Url.Action("Invoice", "CustomerPortal", new { token = Model.Token, invoiceId = invoice.Id })">مشاهده فاکتور</a>                        </td>
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+                @if (Model.Data.InvoicePageCount > 1)
+                {
+                    <nav class="pagination">
+                        @if (Model.Data.InvoicePage > 1)
+                        {
+                            <a class="button" href="@Url.Action("Index", "CustomerPortal", new { token = Model.Token, page = Model.Data.InvoicePage - 1 })">قبلی</a>
+                        }
+                        <span class="pill">صفحه @Model.Data.InvoicePage از @Model.Data.InvoicePageCount</span>
+                        @if (Model.Data.InvoicePage < Model.Data.InvoicePageCount)
+                        {
+                            <a class="button" href="@Url.Action("Index", "CustomerPortal", new { token = Model.Token, page = Model.Data.InvoicePage + 1 })">بعدی</a>
+                        }
+                    </nav>
+                }
+            </section>
+        }
+    </main>
+</body>
+</html>

@@ -397,6 +397,7 @@ public class InvoiceService : IInvoiceService
                 {
                     TenantId = tenantId,
                     ProductId = i.ProductId,
+                    WarehouseId = i.WarehouseId,
                     Description = i.Description,
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice,
@@ -557,11 +558,33 @@ public class InvoiceService : IInvoiceService
             .Distinct()
             .ToList();
 
+        var existingProducts = new Dictionary<int, Product>();
         if (existingIds.Count > 0)
         {
-            var found = await _context.Products.CountAsync(p => existingIds.Contains(p.Id));
-            if (found != existingIds.Count)
+            var products = await _context.Products
+                .Where(p => p.TenantId == tenantId && existingIds.Contains(p.Id))
+                .ToListAsync();
+            if (products.Count != existingIds.Count)
                 throw new InvalidOperationException("کالای انتخاب‌شده معتبر نیست.");
+
+            existingProducts = products.ToDictionary(p => p.Id);
+        }
+
+        var warehouseIds = request.Items
+            .Where(i => i.WarehouseId.HasValue &&
+                (i.ProductId <= 0 || existingProducts[i.ProductId].TrackInventory))
+            .Select(i => i.WarehouseId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (warehouseIds.Count > 0)
+        {
+            var validWarehouseCount = await _context.Warehouses.CountAsync(w =>
+                w.TenantId == tenantId && w.IsActive && warehouseIds.Contains(w.Id));
+
+            if (validWarehouseCount != warehouseIds.Count)
+                throw new InvalidOperationException(
+                    "یکی از انبارهای انتخاب‌شده وجود ندارد، غیرفعال است یا متعلق به شرکت جاری نیست.");
         }
 
         Unit? defaultUnit = null;
@@ -570,6 +593,7 @@ public class InvoiceService : IInvoiceService
         foreach (var item in request.Items)
         {
             var productId = item.ProductId;
+            var trackInventory = productId <= 0 || existingProducts[productId].TrackInventory;
 
             if (productId <= 0)
             {
@@ -594,11 +618,18 @@ public class InvoiceService : IInvoiceService
 
                 productId = product.Id;
             }
+            else if (request.InvoiceType == InvoiceType.Purchase)
+            {
+                var product = existingProducts[productId];
+                product.LastPurchasePrice = item.UnitPrice;
+                product.LastPriceUpdatedAt = DateTime.UtcNow;
+            }
 
             items.Add(new InvoiceItem
             {
                 TenantId = tenantId,
                 ProductId = productId,
+                WarehouseId = trackInventory ? item.WarehouseId : null,
                 Description = item.Description?.Trim(),
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,

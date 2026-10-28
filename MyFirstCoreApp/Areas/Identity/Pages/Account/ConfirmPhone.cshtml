@@ -1,0 +1,35 @@
+@page
+@model ConfirmPhoneModel
+@{
+    ViewData["Title"] = "تأیید موبایل";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card card-primary">
+            <div class="card-header text-center"><h3 class="card-title float-none">تأیید شماره موبایل</h3></div>
+            <div class="card-body">
+                <p class="text-center text-muted">کد پیامک‌شده را وارد کنید تا حساب شما فعال شود.</p>
+                @if (ViewData["Message"] is string message) { <div class="alert alert-success">@message</div> }
+                <form method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <input asp-for="Input.UserId" type="hidden" />
+                    <input asp-for="Input.ReturnUrl" type="hidden" />
+                    <div class="form-group">
+                        <label asp-for="Input.Code"></label>
+                        <input asp-for="Input.Code" class="form-control ltr" dir="ltr" inputmode="numeric" autocomplete="one-time-code" />
+                        <span asp-validation-for="Input.Code" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">تأیید موبایل</button>
+                </form>
+                <form method="post" asp-page-handler="Resend" class="mt-2">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="Input.UserId" type="hidden" />
+                    <input asp-for="Input.ReturnUrl" type="hidden" />
+                    <button type="submit" class="btn btn-outline-secondary btn-block">ارسال دوباره کد</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,21 @@
+@model MyFirstCoreApp.Application.CustomerPortal.CustomerPortalSmsStatusViewModel
+@{
+    ViewData["Title"] = "وضعیت تحویل پیامک";
+}
+<div class="card">
+    <div class="card-header"><h3 class="card-title">وضعیت پیامک پرتال: @Model.ContactName</h3></div>
+    <div class="card-body">
+        <p>@Model.Report.Message</p>
+        @if (!string.IsNullOrWhiteSpace(Model.Report.RequestId))
+        {
+            <p>شناسه درخواست: <span class="ltr">@Model.Report.RequestId</span></p>
+        }
+        @if (!Model.Report.HttpSuccess)
+        {
+            <div class="alert alert-warning">دریافت وضعیت تحویل از سرویس ناموفق بود.</div>
+        }
+        <h5>گزارش سرویس پیامک</h5>
+        <pre class="border rounded p-3" dir="ltr" style="white-space:pre-wrap;overflow-wrap:anywhere">@Model.Report.ResponseJson</pre>
+        <a asp-action="Index" asp-route-contactId="@Model.ContactId" class="btn btn-secondary">بازگشت</a>
+    </div>
+</div>

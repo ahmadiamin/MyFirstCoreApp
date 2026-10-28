@@ -19,6 +19,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         // قیمت‌ها
         builder.Property(x => x.LastPurchasePrice).HasPrecision(18, 0);
         builder.Property(x => x.SalePrice).HasPrecision(18, 0);
+        builder.Property(x => x.MinimumStock).HasPrecision(18, 3);
         builder.Property(x => x.TaxRate).HasPrecision(5, 2);
 
         // رابطه با دسته

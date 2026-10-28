@@ -25,4 +25,18 @@ public interface IStockBalanceService
     Task<IReadOnlyList<StockBalanceDto>> GetProductBalancesAsync(
         int productId,
         int tenantId);
+
+    /// <summary>
+    /// موجودی تمام کالاها به تفکیک انبار، با امکان محدودکردن به یک انبار
+    /// </summary>
+    Task<IReadOnlyList<StockBalanceDto>> GetAllBalancesAsync(
+        int tenantId,
+        int? warehouseId = null);
+
+    Task<IReadOnlyList<DormantStockBalanceDto>> GetDormantBalancesAsync(
+        int tenantId,
+        DateOnly from,
+        DateOnly to,
+        int? warehouseId = null,
+        int? productId = null);
 }

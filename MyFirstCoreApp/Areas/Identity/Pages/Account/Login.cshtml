@@ -42,11 +42,11 @@
                                 <i class="fa fa-envelope"></i>
 
                                 <strong>
-                                    ایمیل شما تأیید نشده است.
+                                    راه تأیید حساب شما کامل نشده است.
                                 </strong>
 
                                 <p class="mb-2 mt-2">
-                                    برای ورود به سیستم ابتدا باید آدرس ایمیل خود را تأیید کنید.
+                                    برای ورود به سیستم ابتدا آدرس ایمیل خود را تأیید کنید.
                                 </p>
 
                                 <a asp-page="./ResendEmailConfirmation"
@@ -61,6 +61,16 @@
 
                             </div>
                         }
+                        @if (Model.PhoneNotConfirmed)
+                        {
+                            <div class="alert alert-warning text-right">
+                                <i class="fa fa-mobile-alt"></i>
+                                شماره موبایل شما هنوز تأیید نشده است.
+                                <a asp-page="./ConfirmPhone" asp-route-userId="@Model.ConfirmationUserId" class="btn btn-warning btn-sm mr-2">
+                                    ادامه تأیید موبایل
+                                </a>
+                            </div>
+                        }
                     </div>
 
 
@@ -68,7 +78,7 @@
                     <div class="form-group">
 
                         <label asp-for="Input.Email">
-                            ایمیل
+                            ایمیل یا موبایل
                         </label>
 
                         <div class="input-group">
@@ -85,7 +95,7 @@
                                    class="form-control"
                                    autocomplete="username"
                                    aria-required="true"
-                                   placeholder="ایمیل خود را وارد کنید" />
+                                   placeholder="ایمیل یا موبایل (برای پیامک، با 09)" />
 
                         </div>
 

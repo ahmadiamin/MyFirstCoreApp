@@ -1,0 +1,163 @@
+@model MyFirstCoreApp.Areas.Inventory.ViewModels.StockTransfers.StockTransferViewModel
+@{
+    ViewData["Title"] = "ثبت انتقال بین انبارها";
+}
+
+<div class="card card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-right-left"></i> ثبت انتقال بین انبارها</h3></div>
+    <form asp-action="Create" method="post" id="transferForm">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div asp-validation-summary="All" class="alert alert-danger"></div>
+            @if (Model.Warehouses.Count < 2)
+            {
+                <div class="alert alert-warning">برای انتقال، حداقل دو انبار فعال لازم است.</div>
+            }
+            @if (Model.Products.Count == 0)
+            {
+                <div class="alert alert-warning">کالای فعالِ دارای کنترل موجودی برای انتقال وجود ندارد.</div>
+            }
+            <div class="row">
+                <div class="col-md-3 form-group">
+                    <label asp-for="Date">تاریخ</label>
+                    <input asp-for="Date" class="form-control datepicker" autocomplete="off" dir="ltr" placeholder="1405/01/01" />
+                    <span asp-validation-for="Date" class="text-danger"></span>
+                </div>
+                <div class="col-md-4 form-group">
+                    <label asp-for="SourceWarehouseId">انبار مبدأ</label>
+                    <select asp-for="SourceWarehouseId" asp-items="Model.Warehouses" class="form-control select2">
+                        <option value="">-- انتخاب انبار مبدأ --</option>
+                    </select>
+                </div>
+                <div class="col-md-4 form-group">
+                    <label asp-for="DestinationWarehouseId">انبار مقصد</label>
+                    <select asp-for="DestinationWarehouseId" asp-items="Model.Warehouses" class="form-control select2">
+                        <option value="">-- انتخاب انبار مقصد --</option>
+                    </select>
+                </div>
+                <div class="col-md-12 form-group">
+                    <label asp-for="Description">شرح</label>
+                    <input asp-for="Description" class="form-control" maxlength="500" placeholder="مثلاً انتقال کالا به شعبهٔ دوم" />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0">اقلام انتقال</h5>
+                <button type="button" id="addTransferItem" class="btn btn-sm btn-outline-primary"><i class="fa fa-plus"></i> افزودن کالا</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead><tr><th style="width:70%">کالا</th><th>مقدار</th><th style="width:60px"></th></tr></thead>
+                    <tbody id="transferItems">
+                    @for (var i = 0; i < Model.Items.Count; i++)
+                    {
+                        <tr class="transfer-item">
+                            <td>
+                                    <select name="Items[@i].ProductId" class="form-control product-select select2" required>
+                                    <option value="">-- انتخاب کالا --</option>
+                                    @foreach (var product in Model.Products)
+                                    {
+                                        if (Model.Items[i].ProductId.ToString() == product.Value)
+                                        {
+                                            <option value="@product.Value" selected>@product.Text</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@product.Value">@product.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </td>
+                            <td><input name="Items[@i].Quantity" value="@Model.Items[i].Quantity" class="form-control" type="number" min="0.000001" step="any" required /></td>
+                            <td><button type="button" class="btn btn-sm btn-outline-danger remove-item" title="حذف ردیف"><i class="fa fa-trash"></i></button></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            <template id="transferItemTemplate">
+                <tr class="transfer-item">
+                    <td><select class="form-control product-select select2" required><option value="">-- انتخاب کالا --</option>@foreach (var product in Model.Products){<option value="@product.Value">@product.Text</option>}</select></td>
+                    <td><input class="form-control" type="number" min="0.000001" step="any" value="1" required /></td>
+                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-item" title="حذف ردیف"><i class="fa fa-trash"></i></button></td>
+                </tr>
+            </template>
+        </div>
+        <div class="card-footer d-flex" style="gap:8px">
+            <button type="submit" class="btn btn-primary" @(Model.Warehouses.Count < 2 || Model.Products.Count == 0 ? "disabled" : null)><i class="fa fa-save"></i> ذخیره پیش‌نویس</button>
+            <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({
+                dir: 'rtl',
+                placeholder: '-- انتخاب کنید --',
+                allowClear: true,
+                width: '100%',
+                language: 'fa'
+            });
+
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,               // 🆕
+                initialValueType: 'persian',      // 🆕
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                },
+                toolbox: {
+                    calendarSwitch: {
+                        enabled: false
+                    }
+                }
+            });
+        });
+    </script>
+    <script>
+        (function () {
+            
+            const body = document.getElementById('transferItems');
+            const template = document.getElementById('transferItemTemplate');
+            function reindex() {
+                body.querySelectorAll('.transfer-item').forEach((row, index) => {
+                    row.querySelector('.product-select').name = `Items[${index}].ProductId`;
+                    row.querySelector('input[type="number"]').name = `Items[${index}].Quantity`;
+                });
+            }
+            document.getElementById('addTransferItem').addEventListener('click', () => {
+                body.appendChild(template.content.cloneNode(true));
+                $(body.lastElementChild).find('.select2').select2({
+                    dir: 'rtl',
+                    placeholder: '-- انتخاب کنید --',
+                    allowClear: true,
+                    width: '100%',
+                    language: 'fa'
+                });
+                reindex();
+            });
+            body.addEventListener('click', event => {
+                const button = event.target.closest('.remove-item');
+                if (!button) return;
+                if (body.querySelectorAll('.transfer-item').length <= 1) {
+                    button.closest('tr').querySelector('.product-select').value = '';
+                    button.closest('tr').querySelector('input[type="number"]').value = '1';
+                    return;
+                }
+                button.closest('tr').remove();
+                reindex();
+            });
+            reindex();
+        })();
+    </script>
+}

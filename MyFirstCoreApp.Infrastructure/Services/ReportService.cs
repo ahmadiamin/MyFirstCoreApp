@@ -145,12 +145,19 @@ public class ReportService : IReportService
 
     public async Task<ContactReport> GetContactAsync(ContactReportQuery query, CancellationToken cancellationToken = default)
     {
+        return await GetContactAsync(RequireTenant(), query, cancellationToken);
+    }
+
+    public async Task<ContactReport> GetContactAsync(
+        int tenantId, ContactReportQuery query, CancellationToken cancellationToken = default)
+    {
         ValidateRange(query.From, query.To);
-        var tenantId = RequireTenant();
+        if (tenantId <= 0) throw new InvalidOperationException("شرکت معتبر نیست.");
 
         var contact = await _context.Contacts
             .AsNoTracking()
-            .Where(c => c.Id == query.ContactId && c.TenantId == tenantId)
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == query.ContactId && c.TenantId == tenantId && !c.IsDeleted)
             .Select(c => new { c.Name, c.Code, c.Mobile, c.Phone, c.ContactType })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new InvalidOperationException("طرف حساب پیدا نشد.");
@@ -244,6 +251,88 @@ public class ReportService : IReportService
                 PaidAmount = r.PaidAmount,
                 SettlementDiscount = r.SettlementDiscount,
                 RemainingAmount = r.RemainingAmount
+            }).ToList()
+        };
+    }
+
+    // ============================================
+    // بدهکاران / بستانکاران
+    // ============================================
+
+    public async Task<ContactBalancesReport> GetContactBalancesAsync(
+        ContactBalancesQuery query, CancellationToken cancellationToken = default)
+    {
+        if (query.AsOf == default)
+            throw new InvalidOperationException("تاریخ گزارش الزامی است.");
+
+        if (!Enum.IsDefined(query.Mode))
+            throw new InvalidOperationException("نوع گزارش نامعتبر است.");
+
+        if (query.MinAmount < 0)
+            throw new InvalidOperationException("حداقل مبلغ نمی‌تواند منفی باشد.");
+
+        var tenantId = RequireTenant();
+
+        var debtors = query.Mode == ContactBalanceMode.Debtors;
+        var pageSize = query.PageSize <= 0 ? 0 : Math.Min(query.PageSize, MaxPageSize);
+        var pageNumber = Math.Max(query.PageNumber, 1);
+
+        var parameters = new DynamicParameters();
+        parameters.Add("TenantId", tenantId, DbType.Int32);
+        AddDate(parameters, "AsOfDate", query.AsOf);
+        parameters.Add("Mode", (int)query.Mode, DbType.Int32);
+        parameters.Add("MinAmount", query.MinAmount, DbType.Decimal);
+        parameters.Add("Search", string.IsNullOrWhiteSpace(query.Search) ? null : query.Search.Trim(), DbType.String, size: 100);
+
+        // بدهکاران ↔ فاکتور فروش و چک دریافتنی؛ بستانکاران ↔ فاکتور خرید و چک پرداختنی
+        parameters.Add("InvoiceType", (int)(debtors ? InvoiceType.Sale : InvoiceType.Purchase), DbType.Int32);
+        parameters.Add("InvoiceStatusPosted", (int)InvoiceStatus.Posted, DbType.Int32);
+        parameters.Add("ChequeDirection", (int)(debtors ? ChequeDirection.Received : ChequeDirection.Issued), DbType.Int32);
+        parameters.Add("ChequeStatusInProgress", (int)ChequeStatus.InProgress, DbType.Int32);
+        parameters.Add("ChequeStatusRePresented", (int)ChequeStatus.RePresented, DbType.Int32);
+
+        parameters.Add("SortBy", (int)query.SortBy, DbType.Int32);
+        parameters.Add("PageNumber", pageNumber, DbType.Int32);
+        parameters.Add("PageSize", pageSize, DbType.Int32);
+
+        var (summary, rows) = await QueryAsync<BalancesSummaryRow, BalanceRow>(
+            "dbo.usp_Report_ContactBalances", parameters, cancellationToken);
+
+        return new ContactBalancesReport
+        {
+            Mode = query.Mode,
+            AsOf = query.AsOf,
+            Count = summary.Count,
+            TotalAmount = summary.TotalAmount,
+            TotalDebit = summary.TotalDebit,
+            TotalCredit = summary.TotalCredit,
+            TotalOpenInvoiceRemaining = summary.TotalOpenInvoiceRemaining,
+            TotalAge0To30 = summary.TotalAge0To30,
+            TotalAge31To60 = summary.TotalAge31To60,
+            TotalAge61To90 = summary.TotalAge61To90,
+            TotalAge90Plus = summary.TotalAge90Plus,
+            TotalPendingCheque = summary.TotalPendingCheque,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            Rows = rows.Select(r => new ContactBalanceRow
+            {
+                ContactId = r.ContactId,
+                ContactName = r.ContactName,
+                ContactCode = r.ContactCode,
+                Mobile = r.Mobile,
+                TotalDebit = r.TotalDebit,
+                TotalCredit = r.TotalCredit,
+                Amount = r.Amount,
+                LastTransactionDate = r.LastTransactionDate.HasValue
+                    ? DateOnly.FromDateTime(r.LastTransactionDate.Value)
+                    : null,
+                OpenInvoiceCount = r.OpenInvoiceCount,
+                OpenInvoiceRemaining = r.OpenInvoiceRemaining,
+                Age0To30 = r.Age0To30,
+                Age31To60 = r.Age31To60,
+                Age61To90 = r.Age61To90,
+                Age90Plus = r.Age90Plus,
+                PendingChequeAmount = r.PendingChequeAmount
             }).ToList()
         };
     }
@@ -371,6 +460,39 @@ public class ReportService : IReportService
         public decimal Debit { get; set; }
         public decimal Credit { get; set; }
         public decimal RunningBalance { get; set; }
+    }
+
+    private sealed class BalancesSummaryRow
+    {
+        public int Count { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal TotalDebit { get; set; }
+        public decimal TotalCredit { get; set; }
+        public decimal TotalOpenInvoiceRemaining { get; set; }
+        public decimal TotalAge0To30 { get; set; }
+        public decimal TotalAge31To60 { get; set; }
+        public decimal TotalAge61To90 { get; set; }
+        public decimal TotalAge90Plus { get; set; }
+        public decimal TotalPendingCheque { get; set; }
+    }
+
+    private sealed class BalanceRow
+    {
+        public int ContactId { get; set; }
+        public string? ContactName { get; set; }
+        public string? ContactCode { get; set; }
+        public string? Mobile { get; set; }
+        public decimal TotalDebit { get; set; }
+        public decimal TotalCredit { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime? LastTransactionDate { get; set; }
+        public int OpenInvoiceCount { get; set; }
+        public decimal OpenInvoiceRemaining { get; set; }
+        public decimal Age0To30 { get; set; }
+        public decimal Age31To60 { get; set; }
+        public decimal Age61To90 { get; set; }
+        public decimal Age90Plus { get; set; }
+        public decimal PendingChequeAmount { get; set; }
     }
 
     private sealed class InvoiceSummaryRow

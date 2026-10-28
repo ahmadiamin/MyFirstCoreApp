@@ -30,6 +30,9 @@ public sealed class InvoiceItemRequest
     /// <summary>کالای موجود. اگر 0 باشد باید NewProductName پر باشد.</summary>
     public int ProductId { get; set; }
 
+    /// <summary>انبار مقصد خرید یا مبدأ فروش؛ برای ورودی‌های قدیمی اختیاری است.</summary>
+    public int? WarehouseId { get; set; }
+
     /// <summary>نام کالای جدید (ساخت سریع).</summary>
     public string? NewProductName { get; set; }
 

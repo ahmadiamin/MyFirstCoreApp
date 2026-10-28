@@ -14,6 +14,8 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
     public class LoginModel : PageModel
     {
         public bool EmailNotConfirmed { get; set; }
+        public bool PhoneNotConfirmed { get; set; }
+        public string ConfirmationUserId { get; set; }
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
@@ -65,7 +67,7 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [Required]
-            [EmailAddress]
+            [Display(Name = "ایمیل یا موبایل")]
             public string Email { get; set; }
 
             /// <summary>
@@ -105,7 +107,9 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByEmailAsync(Input.Email);
+                var identifier = NormalizeMobile(Input.Email.Trim());
+                var user = await _userManager.FindByEmailAsync(Input.Email.Trim())
+                    ?? await _userManager.FindByNameAsync(identifier);
                 if (user == null)
                 {
                     ModelState.AddModelError(
@@ -124,17 +128,20 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
                     return Page();
                 }
 
-                if (!await _userManager.IsEmailConfirmedAsync(user))
+                if (!user.EmailConfirmed && !user.PhoneNumberConfirmed)
                 {
-                    EmailNotConfirmed = true;
+                    PhoneNotConfirmed = !string.IsNullOrWhiteSpace(user.PhoneNumber) &&
+                        string.Equals(NormalizeMobile(user.PhoneNumber), identifier, StringComparison.Ordinal);
+                    EmailNotConfirmed = !PhoneNotConfirmed && !string.IsNullOrWhiteSpace(user.Email);
+                    ConfirmationUserId = PhoneNotConfirmed ? user.Id : null;
                     ModelState.AddModelError(
                         string.Empty,
-                        "ایمیل شما هنوز تأیید نشده است. لطفاً ابتدا ایمیل خود را تأیید کنید.");
+                        "ایمیل یا موبایل شما هنوز تأیید نشده است. لطفاً ابتدا آن را تأیید کنید.");
 
                     return Page();
                 }
 
-                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(user.UserName!, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
@@ -172,6 +179,19 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
                 return Page();
             }
                         return Page();
+        }
+
+        private static string NormalizeMobile(string value)
+        {
+            value = value.Trim();
+            var result = new System.Text.StringBuilder(value.Length);
+            foreach (var character in value)
+            {
+                if (character is >= '\u06F0' and <= '\u06F9') result.Append((char)('0' + character - '\u06F0'));
+                else if (character is >= '\u0660' and <= '\u0669') result.Append((char)('0' + character - '\u0660'));
+                else result.Append(character);
+            }
+            return result.ToString();
         }
     }
 }

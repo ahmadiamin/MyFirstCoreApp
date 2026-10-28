@@ -17,6 +17,13 @@ public static class DependencyInjection
     {
         // ساعت ایران (برای «امروز» در تاریخ سند، بازه‌ی پیش‌فرض گزارش و ...)
         services.AddSingleton<TimeProvider, IranTimeProvider>();
+        services.AddDataProtection();
+        services.AddHttpClient<IFarazSmsService, FarazSmsService>(client =>
+            client.Timeout = TimeSpan.FromSeconds(20));
+        services.AddScoped<ITenantSmsSettingsService, TenantSmsSettingsService>();
+        services.AddHttpClient<ISystemSmsService, SystemSmsService>(client =>
+            client.Timeout = TimeSpan.FromSeconds(20));
+        services.AddHostedService<ChequeReminderHostedService>();
 
         // Audit + TenantId + حذف نرم در یک نقطه.
         // Scoped است چون به ICurrentUser و ICurrentTenant (وابسته به درخواست) نیاز دارد؛
@@ -66,6 +73,8 @@ public static class DependencyInjection
 
         services.AddScoped<IStockBalanceService, StockBalanceService>();
         services.AddScoped<IStockMovementService, StockMovementService>();
+        services.AddScoped<IInventoryAnalyticsService, InventoryAnalyticsService>();
+        services.AddScoped<ICustomerPortalService, CustomerPortalService>();
         services.AddScoped<IWarehouseService, WarehouseService>();
 
         return services;

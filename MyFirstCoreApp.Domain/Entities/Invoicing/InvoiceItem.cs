@@ -17,6 +17,13 @@ public class InvoiceItem : TenantEntity
     public Inventory.Product Product { get; set; } = null!;
 
     /// <summary>
+    /// انبار مقصد در خرید یا انبار مبدأ در فروش. برای فاکتورهای قدیمی null می‌ماند
+    /// و هنگام قطعی‌کردن از انبار پیش‌فرض شرکت استفاده می‌شود.
+    /// </summary>
+    public int? WarehouseId { get; set; }
+    public Inventory.Warehouse? Warehouse { get; set; }
+
+    /// <summary>
     /// شرح (اختیاری)
     /// </summary>
     public string? Description { get; set; }

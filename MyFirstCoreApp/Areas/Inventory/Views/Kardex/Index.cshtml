@@ -121,8 +121,13 @@
                 </div>
             </div>
 
+            @if (Model.Rows.Count > 0)
+            {
+                <button type="button" class="btn btn-outline-success mb-3" data-csv-table="kardexTable" data-csv-filename="کاردکس-کالا.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+            }
+
             <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover">
+                <table id="kardexTable" class="table table-bordered table-striped table-hover">
                     <thead>
                         <tr>
                             <th style="min-width: 110px;">تاریخ</th>
@@ -230,6 +235,7 @@
 </div>
 
 @section Scripts {
+    <partial name="_CsvExportScripts" />
     <script>
         $(function () {
             $('.select2').select2({
@@ -240,9 +246,24 @@
                 allowClear: true
             });
 
-            $('.datepicker').each(function () {
-                // تنظیمات تاریخ‌شمار مطابق گزارش‌های موجود پروژه
-                // در صورت فعال بودن datepicker سراسری، نیازی به راه‌اندازی مجدد نیست.
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,               // 🆕
+                initialValueType: 'persian',      // 🆕
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                },
+                toolbox: {
+                    calendarSwitch: {
+                        enabled: false
+                    }
+                }
             });
         });
     </script>

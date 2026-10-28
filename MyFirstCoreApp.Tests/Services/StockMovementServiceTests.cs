@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Inventory;
+using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Domain.Entities.Contacts;
 using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Domain.Entities.Invoicing;
@@ -88,7 +89,8 @@ public sealed class StockMovementServiceTests : IDisposable
         int productId,
         int warehouseId,
         StockMovementType type,
-        decimal quantity)
+        decimal quantity,
+        decimal unitCost = 100m)
     {
         var previousTenant = _db.Tenant.TenantId;
         _db.Tenant.TenantId = TenantA;
@@ -123,7 +125,7 @@ public sealed class StockMovementServiceTests : IDisposable
                     {
                         ProductId = productId,
                         Quantity = quantity,
-                        UnitCost = 100
+                        UnitCost = unitCost
                     }
                 ]
             };
@@ -213,9 +215,30 @@ public sealed class StockMovementServiceTests : IDisposable
             null,
             TenantA);
 
+        await using var reportContext = _db.NewContext();
+        var stockBalanceService = new StockBalanceService(reportContext);
+        var allBalances = await stockBalanceService.GetAllBalancesAsync(TenantA);
+        var sourceBalance = Assert.Single(allBalances, x =>
+            x.ProductId == productId && x.WarehouseId == sourceWarehouseId);
+        var destinationBalance = Assert.Single(allBalances, x =>
+            x.ProductId == productId && x.WarehouseId == destinationWarehouseId);
+        var filteredBalances = await stockBalanceService.GetAllBalancesAsync(
+            TenantA, destinationWarehouseId);
+        var dormantBalances = await stockBalanceService.GetDormantBalancesAsync(
+            TenantA, TestDate.AddDays(2), TestDate.AddDays(4));
+
         // Assert
         Assert.Equal(6m, sourceKardex.Last().Balance);
         Assert.Equal(4m, destinationKardex.Last().Balance);
+        Assert.Equal(6m, sourceBalance.Quantity);
+        Assert.Equal(4m, destinationBalance.Quantity);
+        Assert.Single(filteredBalances);
+        Assert.Equal(destinationWarehouseId, filteredBalances[0].WarehouseId);
+        Assert.Equal(2, dormantBalances.Count);
+        Assert.Contains(dormantBalances, x =>
+            x.ProductId == productId && x.WarehouseId == sourceWarehouseId && x.Quantity == 6m);
+        Assert.Contains(dormantBalances, x =>
+            x.ProductId == productId && x.WarehouseId == destinationWarehouseId && x.Quantity == 4m);
     }
     [Fact]
     public async Task GetKardex_DoesNotExposeAnotherTenantMovements()
@@ -821,7 +844,7 @@ public sealed class StockMovementServiceTests : IDisposable
         Assert.Equal(3m, result[1].Incoming);
         Assert.Equal(10m, result[1].Balance);
     }
-    private async Task<int> CreateInvoiceAsync(int productId, InvoiceType invoiceType, decimal quantity, decimal unitPrice = 100m)
+    private async Task<int> CreateInvoiceAsync(int productId, InvoiceType invoiceType, decimal quantity, decimal unitPrice = 100m, int? warehouseId = null)
     {
         var previousTenant = _db.Tenant.TenantId;
         _db.Tenant.TenantId = TenantA;
@@ -853,6 +876,7 @@ public sealed class StockMovementServiceTests : IDisposable
                     new InvoiceItem
                 {
                     ProductId = productId,
+                    WarehouseId = warehouseId,
                     Quantity = quantity,
                     UnitPrice = unitPrice,
                     DiscountPercent = 0,
@@ -914,6 +938,44 @@ public sealed class StockMovementServiceTests : IDisposable
             TenantA);
 
         Assert.Equal(5m, kardex.Last().Balance);
+    }
+
+    [Fact]
+    public async Task CreateFromInvoice_Purchase_UsesSelectedWarehouse()
+    {
+        var (productId, defaultWarehouseId) = await CreateInventoryDataAsync();
+        int selectedWarehouseId;
+
+        await using (var context = _db.NewContext())
+        {
+            var warehouse = new Warehouse
+            {
+                TenantId = TenantA,
+                Code = "WH-SELECTED",
+                Name = "انبار انتخابی",
+                IsActive = true
+            };
+            context.Warehouses.Add(warehouse);
+            await context.SaveChangesAsync();
+            selectedWarehouseId = warehouse.Id;
+        }
+
+        var invoiceId = await CreateInvoiceAsync(
+            productId, InvoiceType.Purchase, 4m, warehouseId: selectedWarehouseId);
+
+        await using (var context = _db.NewContext())
+            await NewService(context).CreateFromInvoiceAsync(invoiceId, TenantA);
+
+        await using var verify = _db.NewContext();
+        var movement = await verify.StockMovements
+            .SingleAsync(x => x.ReferenceInvoiceId == invoiceId);
+
+        Assert.Equal(selectedWarehouseId, movement.DestinationWarehouseId);
+        Assert.NotEqual(defaultWarehouseId, movement.DestinationWarehouseId);
+        Assert.Equal(0m, await NewService(verify).GetBalanceAsync(
+            productId, defaultWarehouseId, TenantA));
+        Assert.Equal(4m, await NewService(verify).GetBalanceAsync(
+            productId, selectedWarehouseId, TenantA));
     }
     [Fact]
     public async Task CreateFromInvoice_Twice_ThrowsException()
@@ -1353,7 +1415,7 @@ public sealed class StockMovementServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ReverseInvoice_MultipleActiveOriginalMovements_ThrowsException()
+    public async Task ReverseInvoice_ReversesAllActiveOriginalMovements()
     {
         var (productId, warehouseId) = await CreateInventoryDataAsync();
 
@@ -1390,8 +1452,7 @@ public sealed class StockMovementServiceTests : IDisposable
             await service.PostAsync(movementId, TenantA);
         }
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.ReverseInvoiceAsync(invoiceId, TenantA));
+        await service.ReverseInvoiceAsync(invoiceId, TenantA);
 
         var movements = await context.StockMovements
             .IgnoreQueryFilters()
@@ -1400,14 +1461,83 @@ public sealed class StockMovementServiceTests : IDisposable
                 x.ReferenceInvoiceId == invoiceId)
             .ToListAsync();
 
-        Assert.Equal(2, movements.Count);
-        Assert.All(
-            movements,
-            x => Assert.Equal(StockMovementStatus.Posted, x.Status));
+        Assert.Equal(4, movements.Count);
+        Assert.Equal(2, movements.Count(x => x.ReversesMovementId.HasValue));
+        Assert.All(movements, x => Assert.Equal(StockMovementStatus.Posted, x.Status));
+    }
 
-        Assert.All(
-            movements,
-            x => Assert.Null(x.ReversesMovementId));
+    [Fact]
+    public async Task InventoryAnalytics_UsesMovingWeightedAverageAndValuesTransfersAtSourceAverage()
+    {
+        var (productId, sourceId) = await CreateInventoryDataAsync();
+        await CreateAndPostAsync(productId, sourceId, StockMovementType.Receipt, 10m, 100m);
+        await CreateAndPostAsync(productId, sourceId, StockMovementType.Issue, 4m);
+        await CreateAndPostAsync(productId, sourceId, StockMovementType.Receipt, 10m, 200m);
+
+        int destinationId;
+        await using (var context = _db.NewContext())
+        {
+            var destination = new Warehouse
+            {
+                TenantId = TenantA,
+                Code = "WH-VALUATION",
+                Name = "انبار ارزش‌گذاری",
+                IsActive = true
+            };
+            context.Warehouses.Add(destination);
+            await context.SaveChangesAsync();
+            destinationId = destination.Id;
+        }
+
+        await using (var context = _db.NewContext())
+        {
+            var service = NewService(context);
+            var transferId = await service.CreateAsync(new StockMovementRequest
+            {
+                Date = TestDate.AddDays(1),
+                MovementType = (int)StockMovementType.Transfer,
+                SourceWarehouseId = sourceId,
+                DestinationWarehouseId = destinationId,
+                Items = [new StockMovementItemRequest { ProductId = productId, Quantity = 4m }]
+            }, TenantA);
+            await service.PostAsync(transferId, TenantA);
+        }
+
+        _db.Tenant.TenantId = TenantA;
+        await using var reportContext = _db.NewContext();
+        var report = new InventoryAnalyticsService(reportContext);
+        var rows = await report.GetInventoryValuationAsync(TenantA, TestDate.AddDays(1));
+        var source = Assert.Single(rows, x => x.WarehouseId == sourceId);
+        var destinationRow = Assert.Single(rows, x => x.WarehouseId == destinationId);
+
+        Assert.Equal(12m, source.Quantity);
+        Assert.Equal(1950m, source.TotalValue);
+        Assert.Equal(4m, destinationRow.Quantity);
+        Assert.Equal(650m, destinationRow.TotalValue);
+        Assert.Equal(2600m, rows.Sum(x => x.TotalValue));
+    }
+
+    [Fact]
+    public async Task InventoryAnalytics_ReportsShortageAgainstProductMinimum()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        _db.Tenant.TenantId = TenantA;
+        await using (var context = _db.NewContext())
+        {
+            var product = await context.Products.SingleAsync(x => x.Id == productId);
+            product.MinimumStock = 12m;
+            await context.SaveChangesAsync();
+        }
+        await CreateAndPostAsync(productId, warehouseId, StockMovementType.Receipt, 10m);
+
+        _db.Tenant.TenantId = TenantA;
+        await using var reportContext = _db.NewContext();
+        var report = new InventoryAnalyticsService(reportContext);
+        var row = Assert.Single(await report.GetBelowMinimumStockAsync(TenantA));
+
+        Assert.Equal(10m, row.CurrentStock);
+        Assert.Equal(12m, row.MinimumStock);
+        Assert.Equal(2m, row.Shortage);
     }
 
 }

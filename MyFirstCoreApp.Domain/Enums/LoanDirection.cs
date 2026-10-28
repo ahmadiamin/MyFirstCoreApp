@@ -1,8 +1,10 @@
-﻿namespace MyFirstCoreApp.Domain.Enums
+﻿namespace MyFirstCoreApp.Domain.Enums;
+
+public enum LoanDirection
 {
-    public enum LoanDirection
-    {
-        Given = 1,
-        Taken = 2
-    }
+    /// <summary>قرض داده‌ایم (طرف حساب به ما بدهکار است).</summary>
+    Given = 1,
+
+    /// <summary>قرض گرفته‌ایم (ما به طرف حساب بدهکاریم).</summary>
+    Taken = 2
 }

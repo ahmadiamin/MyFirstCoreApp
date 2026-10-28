@@ -1,0 +1,109 @@
+﻿@model MyFirstCoreApp.Areas.Accounting.ViewModels.Loan.LoanIndexViewModel
+@{
+    ViewData["Title"] = "قرض‌ها";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="info-box">
+            <span class="info-box-icon bg-success"><i class="fa fa-hand-holding-dollar"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">باقی‌مانده‌ی قرض‌های داده‌شده (از ما طلب دارند)</span>
+                <span class="info-box-number">@Model.TotalGivenRemaining.ToString("N0")</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="info-box">
+            <span class="info-box-icon bg-danger"><i class="fa fa-money-bill-transfer"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">باقی‌مانده‌ی قرض‌های گرفته‌شده (ما بدهکاریم)</span>
+                <span class="info-box-number">@Model.TotalTakenRemaining.ToString("N0")</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa fa-handshake"></i> قرض‌ها</h3>
+        <div class="card-tools">
+            <a asp-action="Create" asp-route-direction="1" class="btn btn-success btn-sm"><i class="fa fa-plus"></i> قرض دادن</a>
+            <a asp-action="Create" asp-route-direction="2" class="btn btn-warning btn-sm"><i class="fa fa-plus"></i> قرض گرفتن</a>
+        </div>
+    </div>
+    <div class="card-body border-bottom">
+        <form method="get" class="form-inline">
+            <select name="direction" class="form-control form-control-sm ml-2">
+                <option value="" selected="@(!Model.Direction.HasValue)">همه</option>
+                <option value="1" selected="@(Model.Direction == 1)">داده‌شده</option>
+                <option value="2" selected="@(Model.Direction == 2)">گرفته‌شده</option>
+            </select>
+            <div class="custom-control custom-checkbox ml-2">
+                <input type="checkbox" class="custom-control-input" id="onlyOpen" name="onlyOpen" value="true" @(Model.OnlyOpen ? "checked" : "") />
+                <label class="custom-control-label" for="onlyOpen">فقط باز</label>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-search"></i> نمایش</button>
+        </form>
+    </div>
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>شماره سند</th>
+                    <th>نوع</th>
+                    <th>تاریخ</th>
+                    <th>طرف حساب</th>
+                    <th class="text-left">مبلغ</th>
+                    <th class="text-left">بازپرداخت‌شده</th>
+                    <th class="text-left">باقی‌مانده</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var loan in Model.Items)
+                {
+                    <tr>
+                        <td>@loan.Number</td>
+                        <td>
+                            @if (loan.IsGiven)
+                            {
+                                <span class="badge badge-success">داده‌شده</span>
+                            }
+                            else
+                            {
+
+                                <span class="badge badge-warning">گرفته‌شده</span>
+                            }
+                        </td>
+                        <td dir="ltr" class="text-right">@loan.Date</td>
+                        <td>@loan.ContactName</td>
+                        <td class="text-left">@loan.Amount.ToString("N0")</td>
+                        <td class="text-left">@loan.Repaid.ToString("N0")</td>
+                        <td class="text-left @(loan.Remaining > 0 ? "font-weight-bold text-danger" : "text-muted")">@loan.Remaining.ToString("N0")</td>
+                        <td><a asp-action="Details" asp-route-id="@loan.Id" class="btn btn-xs btn-outline-primary">جزئیات</a></td>
+                    </tr>
+                }
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="8" class="text-center text-muted p-4">قرضی ثبت نشده است.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

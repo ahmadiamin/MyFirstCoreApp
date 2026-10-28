@@ -1,0 +1,101 @@
+@model MyFirstCoreApp.Areas.Inventory.ViewModels.StockBalances.DormantStockReportViewModel
+@{
+    ViewData["Title"] = "گزارش موجودی راکد";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-box-open"></i> گزارش موجودی راکد</h3>
+    </div>
+    <div class="card-body">
+        <form asp-area="Inventory" asp-controller="DormantStock" asp-action="Index" method="get">
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+            <div class="row">
+                <div class="col-md-6 col-lg-3 form-group">
+                    <label asp-for="WarehouseId">انبار</label>
+                    <select asp-for="WarehouseId" asp-items="Model.Warehouses" class="form-control select2">
+                        <option value="">همهٔ انبارها</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-3 form-group">
+                    <label asp-for="ProductId">کالا</label>
+                    <select asp-for="ProductId" asp-items="Model.Products" class="form-control select2">
+                        <option value="">همهٔ کالاها</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-2 form-group">
+                    <label asp-for="FromDate">بدون گردش از</label>
+                    <input asp-for="FromDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                </div>
+                <div class="col-md-6 col-lg-2 form-group">
+                    <label asp-for="ToDate">تا تاریخ</label>
+                    <input asp-for="ToDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                </div>
+                <div class="col-md-6 col-lg-2 form-group">
+                    <button type="submit" name="search" value="true" class="btn btn-primary">
+                        <i class="fa fa-search"></i> نمایش گزارش
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">پاک‌کردن</a>
+                </div>
+            </div>
+        </form>
+
+        @if (Model.HasSearched)
+        {
+            <hr />
+            <div class="alert alert-info">
+                این گزارش کالاهایی را نشان می‌دهد که در بازهٔ انتخابی گردش قطعی نداشته‌اند و تا پایان بازه هنوز موجودی مثبت دارند.
+            </div>
+            @if (Model.Rows.Count > 0)
+            {
+                <button type="button" class="btn btn-outline-success mb-3" data-csv-table="dormantStockTable" data-csv-filename="موجودی-راکد.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+            }
+            <div class="table-responsive">
+                <table id="dormantStockTable" class="table table-bordered table-striped">
+                    <thead><tr><th>انبار</th><th>کد کالا</th><th>کالا</th><th>موجودی تا پایان بازه</th><th>واحد</th><th>آخرین گردش قطعی</th><th>روز بدون گردش</th><th data-csv-exclude>کاردکس</th></tr></thead>
+                    <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr><td colspan="8" class="text-center text-muted">موردی با شرایط انتخاب‌شده پیدا نشد.</td></tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>@row.WarehouseName</td>
+                            <td>@(row.ProductCode ?? "—")</td>
+                            <td>@row.ProductName</td>
+                            <td class="text-right">@row.Quantity.ToString("N3")</td>
+                            <td>@row.UnitName</td>
+                            <td>@row.LastMovementDate</td>
+                            <td class="text-right">@row.DaysWithoutMovement</td>
+                            <td data-csv-exclude>
+                                <a asp-area="Inventory" asp-controller="Kardex" asp-action="Index"
+                                   asp-route-productId="@row.ProductId" asp-route-warehouseId="@row.WarehouseId"
+                                   class="btn btn-sm btn-outline-info"><i class="fa fa-list"></i> مشاهده</a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_CsvExportScripts" />
+    <script>
+        $(function () {
+            $('.select2').select2({ width: '100%', dir: 'rtl', language: 'fa', allowClear: true });
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,
+                initialValueType: 'persian',
+                autoClose: true,
+                observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,29 @@
+<script>
+    $(function () {
+        $('[data-csv-table]').on('click', function () {
+            const table = document.getElementById(this.dataset.csvTable);
+            if (!table) return;
+
+            const quote = value => {
+                let text = value.trim();
+                const formulaPrefixes = ['=', '+', '-', String.fromCharCode(64), '\t', '\r'];
+                if (formulaPrefixes.some(prefix => text.startsWith(prefix))) text = "'" + text;
+                return '"' + text.replace(/"/g, '""') + '"';
+            };
+            const rows = Array.from(table.querySelectorAll('tr')).map(row =>
+                Array.from(row.querySelectorAll('th,td'))
+                    .filter(cell => !cell.hasAttribute('data-csv-exclude'))
+                    .map(cell => quote(cell.innerText.replace(/\s+/g, ' ')))
+                    .join(','));
+            const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = this.dataset.csvFilename || 'گزارش-انبار.csv';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+    });
+</script>

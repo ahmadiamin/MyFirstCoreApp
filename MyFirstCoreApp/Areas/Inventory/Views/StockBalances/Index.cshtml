@@ -1,0 +1,100 @@
+@model MyFirstCoreApp.Areas.Inventory.ViewModels.StockBalances.StockBalanceReportViewModel
+@{
+    ViewData["Title"] = "موجودی انبارها";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-boxes-stacked"></i> موجودی کالا به تفکیک انبار</h3>
+    </div>
+    <div class="card-body">
+        <form asp-area="Inventory" asp-controller="StockBalances" asp-action="Index" method="get" class="mb-3">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="form-row align-items-end">
+                <div class="col-md-5 form-group">
+                    <label asp-for="WarehouseId">انبار</label>
+                    <select asp-for="WarehouseId" asp-items="Model.Warehouses" class="form-control select2">
+                        <option value="">همهٔ انبارها</option>
+                    </select>
+                </div>
+                <div class="col-md-3 form-group">
+                    <button type="submit" name="search" value="true" class="btn btn-primary">
+                        <i class="fa fa-search"></i> نمایش موجودی
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">پاک‌کردن</a>
+                </div>
+            </div>
+        </form>
+
+        @if (Model.HasSearched)
+        {
+            @if (Model.Rows.Count > 0)
+            {
+                <button type="button" class="btn btn-outline-success mb-3" data-csv-table="stockBalancesTable" data-csv-filename="موجودی-انبارها.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+            }
+            <div class="table-responsive">
+                <table id="stockBalancesTable" class="table table-bordered table-striped">
+                    <thead>
+                        <tr><th>انبار</th><th>کد کالا</th><th>کالا</th><th class="text-right">موجودی</th><th>واحد</th><th data-csv-exclude>کاردکس</th></tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr><td colspan="6" class="text-center text-muted">برای فیلتر انتخاب‌شده موجودی غیرصفر ثبت نشده است.</td></tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>@row.WarehouseName</td>
+                            <td>@(row.ProductCode ?? "—")</td>
+                            <td>@row.ProductName</td>
+                            <td class="text-right">@row.Quantity.ToString("N3")</td>
+                            <td>@row.UnitName</td>
+                            <td data-csv-exclude>
+                                <a asp-area="Inventory" asp-controller="Kardex" asp-action="Index"
+                                   asp-route-productId="@row.ProductId" asp-route-warehouseId="@row.WarehouseId"
+                                   class="btn btn-sm btn-outline-info"><i class="fa fa-list"></i> مشاهده</a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <small class="text-muted">این گزارش موجودی غیرصفر را از گردش‌های قطعی‌شده محاسبه می‌کند.</small>
+        }
+    </div>
+</div>
+@section Scripts {
+    <partial name="_CsvExportScripts" />
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({
+                dir: 'rtl',
+                placeholder: '-- انتخاب کنید --',
+                allowClear: true,
+                width: '100%',
+                language: 'fa'
+            });
+
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,               // 🆕
+                initialValueType: 'persian',      // 🆕
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                },
+                toolbox: {
+                    calendarSwitch: {
+                        enabled: false
+                    }
+                }
+            });
+        });
+    </script>
+}

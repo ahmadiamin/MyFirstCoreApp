@@ -1,0 +1,81 @@
+@model MyFirstCoreApp.Areas.Inventory.Controllers.InventoryValuationViewModel
+@{
+    ViewData["Title"] = "ارزش موجودی";
+    var knownTotal = Model.Rows.Where(x => x.TotalValue.HasValue).Sum(x => x.TotalValue!.Value);
+    var hasUnknown = Model.Rows.Any(x => x.HasUnknownCost);
+}
+<div class="card">
+    <div class="card-header"><h3 class="card-title">ارزش موجودی به روش میانگین موزون</h3></div>
+    <div class="card-body">
+        <form method="get" asp-area="Inventory" asp-controller="InventoryAnalytics" asp-action="Valuation" class="mb-3">
+            <div class="form-row align-items-end">
+                <div class="col-md-3 form-group"><label asp-for="AsOf">تا تاریخ</label>
+                    <input asp-for="AsOf" type="text" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                </div>
+                <div class="col-md-3 form-group"><label asp-for="WarehouseId">انبار</label>
+                    <select asp-for="WarehouseId" asp-items="Model.Warehouses" class="form-control select2"><option value="">همهٔ انبارها</option></select></div>
+                <div class="col-md-3 form-group"><label asp-for="ProductId">کالا</label>
+                    <select asp-for="ProductId" asp-items="Model.Products" class="form-control select2"><option value="">همهٔ کالاها</option></select>
+                </div>
+                <div class="col-md-3 form-group"><button type="submit" name="search" value="true" class="btn btn-primary">محاسبه</button></div>
+            </div>
+        </form>
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @if (Model.HasSearched)
+        {
+            <p><strong>جمع ارزشِ قابل محاسبه:</strong> @knownTotal.ToString("N0")</p>
+            @if (hasUnknown) { <div class="alert alert-warning">برخی موجودی‌ها بهای ثبت‌شده ندارند؛ جمع بالا آن ردیف‌ها را شامل نمی‌شود.</div> }
+            @if (Model.Rows.Count > 0)
+            {
+                <button type="button" class="btn btn-outline-success mb-3" data-csv-table="inventoryValuationTable" data-csv-filename="ارزش-موجودی.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+            }
+            <div class="table-responsive"><table id="inventoryValuationTable" class="table table-bordered table-striped">
+                <thead><tr><th>انبار</th><th>کد</th><th>کالا</th><th>مقدار</th><th>میانگین بهای واحد</th><th>ارزش</th></tr></thead>
+                <tbody>
+                @if (Model.Rows.Count == 0) { <tr><td colspan="6" class="text-center text-muted">موجودی‌ای برای این فیلترها ثبت نشده است.</td></tr> }
+                @foreach (var row in Model.Rows)
+                {
+                    <tr><td>@row.WarehouseName</td><td>@(row.ProductCode ?? "—")</td><td>@row.ProductName</td><td class="text-right">@row.Quantity.ToString("N3") @row.UnitName</td><td class="text-right">@(row.AverageUnitCost?.ToString("N2") ?? "نامشخص")</td><td class="text-right">@(row.TotalValue?.ToString("N0") ?? "نامشخص")</td></tr>
+                }
+                </tbody>
+            </table></div>
+            <small class="text-muted">محاسبه بر اساس گردش‌های قطعی تا تاریخ انتخاب‌شده انجام می‌شود. هزینه‌های فاقد UnitCost از تاریخچهٔ گردش قابل بازیابی نیستند.</small>
+        }
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_CsvExportScripts" />
+    <script>
+        $(function () {
+            $('.select2').select2({
+                width: '100%',
+                dir: 'rtl',
+                language: 'fa',
+                placeholder: 'انتخاب کنید',
+                allowClear: true
+            });
+
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,               // 🆕
+                initialValueType: 'persian',      // 🆕
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                },
+                toolbox: {
+                    calendarSwitch: {
+                        enabled: false
+                    }
+                }
+            });
+        });
+    </script>
+}

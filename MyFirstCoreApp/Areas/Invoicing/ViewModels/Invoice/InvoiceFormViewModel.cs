@@ -55,4 +55,6 @@ public class InvoiceFormViewModel
 
     public List<SelectListItem> ContactOptions { get; set; } = new();
     public List<SelectListItem> InvoiceTypeOptions { get; set; } = new();
+    public List<SelectListItem> WarehouseOptions { get; set; } = new();
+    public int? DefaultWarehouseId { get; set; }
 }

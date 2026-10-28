@@ -10,6 +10,7 @@ using MyFirstCoreApp.Application.Reports;
 using MyFirstCoreApp.Areas.Accounting.ViewModels.Report;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
+using System.Globalization;
 
 namespace MyFirstCoreApp.Areas.Accounting.Controllers;
 
@@ -374,6 +375,90 @@ public class ReportsController : Controller
         }
 
         return View(model);
+    }
+
+    // ============================================
+    // بدهکاران و بستانکاران
+    // ============================================
+
+    [Authorize(Policy = "Report.Debtors")]
+    public Task<IActionResult> Debtors(
+        string? asOf = null, string? minAmount = null, string? search = null, int sort = 1, int page = 1)
+        => BalancesAsync(ContactBalanceMode.Debtors, asOf, minAmount, search, sort, page);
+
+    [Authorize(Policy = "Report.Debtors")]
+    public Task<IActionResult> Creditors(
+        string? asOf = null, string? minAmount = null, string? search = null, int sort = 1, int page = 1)
+        => BalancesAsync(ContactBalanceMode.Creditors, asOf, minAmount, search, sort, page);
+
+    private async Task<IActionResult> BalancesAsync(
+        ContactBalanceMode mode, string? asOf, string? minAmountText, string? search, int sort, int page)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var today = _timeProvider.Today();
+
+        var model = new ContactBalancesViewModel
+        {
+            Mode = mode,
+            AsOf = DefaultOrGiven(asOf, today),
+            MinAmountText = minAmountText,
+            Search = search,
+            Sort = Enum.IsDefined(typeof(ContactBalanceSort), sort) ? sort : (int)ContactBalanceSort.LargestBalance,
+            Page = Math.Max(page, 1)
+        };
+
+        if (!PersianDate.TryParse(model.AsOf, out var asOfDate))
+        {
+            TempData["Error"] = "تاریخ نامعتبر است. نمونه‌ی درست: 1405/01/10";
+            return View("Balances", model);
+        }
+
+        if (!TryParseOptionalAmount(minAmountText, out var minAmount))
+        {
+            TempData["Error"] = "حداقل مبلغ نامعتبر است. فقط عدد صحیح (ریال) وارد کنید.";
+            return View("Balances", model);
+        }
+
+        model.AsOfIsPast = asOfDate < today;
+
+        try
+        {
+            model.Report = await _reportService.GetContactBalancesAsync(new ContactBalancesQuery
+            {
+                Mode = mode,
+                AsOf = asOfDate,
+                MinAmount = minAmount,
+                Search = search,
+                SortBy = (ContactBalanceSort)model.Sort,
+                PageNumber = model.Page,
+                PageSize = model.PageSize
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Contact balances report failed");
+            TempData["Error"] = UnexpectedErrorMessage;
+        }
+
+        return View("Balances", model);
+    }
+
+    /// <summary>خالی = بدون حداقل؛ پر ولی نامعتبر = خطا. ارقام فارسی و جداکننده‌ی هزارگان مجاز است.</summary>
+    private static bool TryParseOptionalAmount(string? text, out decimal amount)
+    {
+        amount = 0;
+        if (string.IsNullOrWhiteSpace(text)) return true;
+
+        var cleaned = PersianDate.NormalizeDigits(text)
+            .Replace(",", "").Replace("٬", "").Replace("،", "").Replace(" ", "");
+
+        return decimal.TryParse(cleaned, NumberStyles.None, CultureInfo.InvariantCulture, out amount);
     }
 
     // ============================================
