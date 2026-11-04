@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Infrastructure.Services;
+using MyFirstCoreApp.Tests.Common;
 using MyFirstCoreApp.Tests.TestSupport;
 using Xunit;
 
@@ -15,18 +16,25 @@ public sealed class SystemSmsServiceTests : IDisposable
     public void Dispose() => _db.Dispose();
 
     [Fact]
-    public async Task RegistrationCode_UsesProtectedSystemKeyAndVar1()
+    public async Task RegistrationCode_UsesConfiguredSystemKeyAndVar1()
     {
         var handler = new RecordingHandler();
         using var client = new HttpClient(handler);
         await using var context = _db.NewContext();
-        var service = new SystemSmsService(context, new EphemeralDataProtectionProvider(), client);
+        var service = new SystemSmsService(context, client, new FakeFarazSmsBalanceService());
 
-        await service.SaveAsync("system-test-key", false, "90008361", true,
-            "pattern-otp-123", "test-user");
+        await service.SaveAsync(
+            "system-test-key",
+            false,
+            "90008361",
+            true,
+            "pattern-otp-123",
+            false,
+            null,
+            "test-user");
 
-        var stored = await context.SystemSmsSettings.AsNoTracking().SingleAsync();
-        Assert.NotEqual("system-test-key", stored.ProtectedApiKey);
+        var stored = await context.SystemSmsSettings.AsNoTracking().SingleAsync();      
+        Assert.Equal("system-test-key", stored.ProtectedApiKey);
         Assert.True((await service.GetSummaryAsync()).ApiKeyConfigured);
 
         var result = await service.SendRegistrationCodeAsync("۰۹۱۲۳۴۵۶۷۸۹", "654321");
@@ -59,5 +67,48 @@ public sealed class SystemSmsServiceTests : IDisposable
                 Content = new StringContent("{\"status\":\"success\",\"message\":\"in-queue\",\"data\":{\"id\":\"req-1\"}}", Encoding.UTF8, "application/json")
             };
         }
+    }
+    [Fact]
+    public async Task PasswordRecoveryLink_UsesSeparatePatternAndVar1()
+    {
+        var handler = new RecordingHandler();
+        using var client = new HttpClient(handler);
+        await using var context = _db.NewContext();
+
+        var service = new SystemSmsService(
+            context,
+            client, new FakeFarazSmsBalanceService());
+
+        await service.SaveAsync(
+            "system-test-key",
+            false,
+            "90008361",
+            true,
+            "pattern-otp-123",
+            true,
+            "pattern-recovery-456",
+            "test-user");
+
+        var recoveryLink = "https://example.com/Identity/Account/ResetPassword?userId=123&code=abc";
+
+        var result = await service.SendPasswordRecoveryCodeAsync(
+            "09123456789",
+            recoveryLink);
+
+        Assert.True(result.IsAccepted);
+        Assert.Equal("req-1", result.RequestId);
+
+        var request = Assert.Single(handler.Requests);
+
+        Assert.Equal("system-test-key", request.ApiKey);
+
+        using var document = JsonDocument.Parse(request.Body);
+        var root = document.RootElement;
+
+        Assert.Equal("pattern-recovery-456", root.GetProperty("code").GetString());
+
+        Assert.Equal(
+            recoveryLink,
+            root.GetProperty("attributes").GetProperty("var1").GetString());
     }
 }

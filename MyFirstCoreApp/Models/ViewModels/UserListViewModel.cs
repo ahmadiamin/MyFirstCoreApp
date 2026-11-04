@@ -16,5 +16,6 @@
 
         public List<string> Roles { get; set; } = new();
         public bool EmailConfirmed { get;   set; }
+        public bool PhoneNumberConfirmed { get; set; }
     }
 }

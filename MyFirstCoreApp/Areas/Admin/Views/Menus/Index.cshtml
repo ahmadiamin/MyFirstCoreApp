@@ -5,154 +5,390 @@
 
 @{
     ViewData["Title"] = "مدیریت منوها";
+
+    var canCreate = await PermissionService.HasPermissionAsync(User, "Menu.Create");
+    var canEdit = await PermissionService.HasPermissionAsync(User, "Menu.Edit");
+    var canDelete = await PermissionService.HasPermissionAsync(User, "Menu.Delete");
+}
+
+<style>
+    #menusGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #menusGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .cell-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+        .cell-actions .btn {
+            padding: 3px 6px;
+            line-height: 1;
+        }
+
+        .cell-actions form {
+            display: inline-block;
+            margin: 0;
+        }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+</style>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check-circle"></i> @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-circle"></i> @TempData["Error"]
+    </div>
 }
 
 <div class="card card-primary">
-
-    <!-- Header -->
     <div class="card-header">
-
         <h3 class="card-title">
-            <i class="fa fa-bars"></i>
-            مدیریت منوها
+            <i class="fa fa-bars"></i> مدیریت منوها
         </h3>
-
         <div class="card-tools">
-
-            @if (await PermissionService.HasPermissionAsync(User, "Menu.Create"))
+            @if (canCreate)
             {
                 <a asp-area="Admin"
                    asp-controller="Menus"
                    asp-action="Create"
                    class="btn btn-success btn-sm">
-
-                    <i class="fa fa-plus"></i>
-                    ایجاد منو
-
+                    <i class="fa fa-plus"></i> ایجاد منو
                 </a>
             }
-
         </div>
-
     </div>
 
-    <!-- Messages -->
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success m-3 mb-0">
-
-            <i class="fa fa-check-circle"></i>
-
-            @TempData["Success"]
-
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger m-3 mb-0">
-
-            <i class="fa fa-exclamation-circle"></i>
-
-            @TempData["Error"]
-
-        </div>
-    }
-
-    <!-- Table -->
     <div class="card-body p-0">
-
-        <div class="table-responsive">
-
-            <table class="table table-hover table-striped mb-0 menu-table">
-
-                <thead>
-                    <tr>
-
-                        <th>
-                            <i class="fa fa-bars"></i>
-                            عنوان
-                        </th>
-
-                        <th>
-                            آدرس
-                        </th>
-
-                        <th>
-                            آیکون
-                        </th>
-
-                        <th>
-                            دسترسی
-                        </th>
-
-                        <th class="text-center">
-                            ترتیب
-                        </th>
-
-                        <th class="text-center">
-                            وضعیت
-                        </th>
-
-                        <th class="text-center"
-                            style="width: 150px;">
-                            عملیات
-                        </th>
-
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @if (Model.Any())
-                    {
-                        foreach (var item in Model)
-                        {
-                            <partial name="_MenuRow"
-                                     model="item" />
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-
-                            <td colspan="7"
-                                class="text-center text-muted py-4">
-
-                                <i class="fa fa-info-circle fa-2x mb-2"></i>
-
-                                <br />
-
-                                هنوز هیچ منویی ثبت نشده است.
-
-                            </td>
-
-                        </tr>
-                    }
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+        <div id="menusGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+        <div id="mobileList" class="d-md-none p-2"></div>
     </div>
 
-    <!-- Footer -->
-    <div class="card-footer">
-
-        <span class="text-muted">
-
-            <i class="fa fa-list"></i>
-
-            تعداد منوهای اصلی:
-
-            <strong>
-                @Model.Count
-            </strong>
-
-        </span>
-
+    <div class="card-footer text-muted">
+        <i class="fa fa-list"></i>
+        تعداد منوهای اصلی: <strong>@Model.Count</strong>
     </div>
-
 </div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        // ============================================================
+        // ابزار
+        // ============================================================
+        function toPersianDigits(n) {
+            return String(n).replace(/\d/g, function (d) {
+                return '۰۱۲۳۴۵۶۷۸۹'[d];
+            });
+        }
+
+        // ============================================================
+        // ۱) آدرس‌ها
+        // ============================================================
+        var urls = {
+            edit:   '@Url.Action("Edit", "Menus", new { area = "Admin", id = "__ID__" })',
+            delete: '@Url.Action("Delete", "Menus", new { area = "Admin", id = "__ID__" })'
+        };
+
+        function buildUrl(template, id) {
+            return template.replace('__ID__', id);
+        }
+
+        // ============================================================
+        // ۲) داده‌ها — flat با Level
+        // ============================================================
+        var rawMenus = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                    Model,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+    function flattenMenus(list, parentId) {
+        var result = [];
+        (list || []).forEach(function (m) {
+            result.push({
+                id: m.Id,
+                parentId: parentId || null,
+                title: m.Title,
+                url: m.Url,
+                icon: m.Icon,
+                permission: m.Permission,      // ← اسم درست
+                sortOrder: m.SortOrder,
+                isActive: m.IsActive,
+                level: m.Level || 0,           // ← Level از مدل
+                hasChildren: m.Children && m.Children.length > 0,
+                canEdit: @Json.Serialize(canEdit),
+                canDelete: @Json.Serialize(canDelete)
+            });
+
+                if (m.Children && m.Children.length) {
+                    result = result.concat(flattenMenus(m.Children, m.Id));
+                }
+            });
+            return result;
+        }
+
+        var menusData = flattenMenus(rawMenus, null);
+
+        // ============================================================
+        // ۳) CSRF
+        // ============================================================
+        var csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        function postAction(url) {
+            var form = document.createElement('form');
+            form.method = 'post';
+            form.action = url;
+            var token = document.createElement('input');
+            token.type = 'hidden';
+            token.name = '__RequestVerificationToken';
+            token.value = csrfToken;
+            form.appendChild(token);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // ============================================================
+        // ۴) اکشن‌ها
+        // ============================================================
+        window.deleteMenu = function (id, title) {
+            if (!confirm('منوی «' + title + '» حذف شود؟')) return;
+            postAction(buildUrl(urls.delete, id));
+        };
+
+        // ============================================================
+        // ۵) دکمه‌های عملیات
+        // ============================================================
+        function buildActionButtons(m) {
+            var html = '';
+
+            if (m.canEdit) {
+                html += '<a href="' + buildUrl(urls.edit, m.id) + '" class="btn btn-warning btn-sm" title="ویرایش">' +
+                        '<i class="fa fa-edit"></i></a>';
+            }
+
+            if (m.canDelete) {
+                html += '<button class="btn btn-danger btn-sm" title="حذف" ' +
+                        'onclick="deleteMenu(\'' + m.id + '\',\'' + (m.title || '').replace(/'/g, "\\'") + '\')">' +
+                        '<i class="fa fa-trash"></i></button>';
+            }
+
+            return html;
+        }
+
+        // ============================================================
+        // ۶) موبایل
+        // ============================================================
+        function renderMobileList(menus) {
+            var container = document.getElementById('mobileList');
+            var html = '';
+            var index = 0;
+
+            menus.forEach(function (m) {
+                var depth = m.level || 0;
+                index++;
+                var indent = depth * 16;
+                var prefix = depth > 0 ? '└─ ' : '';
+
+                var permHtml = (m.permission === null || m.permission === undefined || m.permission === '')
+                    ? '<span class="text-muted">—</span>'
+                    : '<span class="badge badge-info" dir="ltr">' + m.permission + '</span>';
+
+                html += '<div class="card mb-2 shadow-sm" style="margin-right:' + indent + 'px;">' +
+                    '<div class="card-body p-2">' +
+                        '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                            '<strong>' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index) + '</span>' +
+                                prefix +
+                                (m.icon ? '<i class="' + m.icon + ' text-muted ml-1"></i>' : '') +
+                                (m.title || '') +
+                            '</strong>' +
+                            (m.isActive
+                                ? '<span class="badge badge-success">فعال</span>'
+                                : '<span class="badge badge-danger">غیرفعال</span>') +
+                        '</div>' +
+                        (m.url
+                            ? '<div class="small text-muted mb-1" dir="ltr" style="text-align:right;">' + m.url + '</div>'
+                            : '') +
+                        '<div class="small text-muted mb-1">' +
+                            'ترتیب: ' + toPersianDigits(m.sortOrder) +
+                            ' | دسترسی: ' + permHtml +
+                        '</div>' +
+                        '<div class="cell-actions">' + buildActionButtons(m) + '</div>' +
+                    '</div>' +
+                '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // ۷) AG Grid
+        // ============================================================
+        var gridApi = null;
+
+        function buildGrid() {
+            var gridDiv = document.getElementById('menusGrid');
+            if (gridApi) return;
+
+            var columnDefs = [
+                {
+                    headerName: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    headerName: 'عنوان',
+                    field: 'title',
+                    flex: 2,
+                    minWidth: 180,
+                    cellRenderer: function (p) {
+                        var depth = p.data.level || 0;
+                        var indent = depth * 20;
+                        var prefix = depth > 0 ? '<span class="text-muted">└─ </span>' : '';
+                        var icon = p.data.icon ? '<i class="' + p.data.icon + ' text-muted ml-1"></i>' : '';
+                        return '<span style="padding-right:' + indent + 'px;">' + prefix + icon + (p.value || '') + '</span>';
+                    }
+                },
+                {
+                    headerName: 'آدرس',
+                    field: 'url',
+                    flex: 2,
+                    minWidth: 150,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' }
+                },
+                {
+                    headerName: 'آیکن',
+                    field: 'icon',
+                    width: 150,
+                    cellRenderer: function (p) {
+                        if (!p.value) return '<span class="text-muted">—</span>';
+                        return '<i class="' + p.value + '"></i> <small class="text-muted" dir="ltr">' + p.value + '</small>';
+                    }
+                },
+                {
+                    headerName: 'دسترسی',
+                    field: 'permission',
+                    flex: 1,
+                    minWidth: 140,
+                    cellRenderer: function (p) {
+                        if (p.value === null || p.value === undefined || p.value === '')
+                            return '<span class="text-muted">—</span>';
+                        return '<span class="badge badge-info" dir="ltr">' + p.value + '</span>';
+                    }
+                },
+                {
+                    headerName: 'ترتیب',
+                    field: 'sortOrder',
+                    width: 90,
+                    cellStyle: { textAlign: 'center' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(p.value) : '';
+                    }
+                },
+                {
+                    headerName: 'وضعیت',
+                    field: 'isActive',
+                    width: 100,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">فعال</span>'
+                            : '<span class="badge badge-danger">غیرفعال</span>';
+                    }
+                },
+                {
+                    headerName: 'عملیات',
+                    width: 130,
+                    sortable: false,
+                    filter: false,
+                    cellRenderer: function (p) {
+                        return '<div class="cell-actions">' + buildActionButtons(p.data) + '</div>';
+                    }
+                }
+            ];
+
+            var gridOptions = {
+                columnDefs: columnDefs,
+                rowData: menusData,
+                enableRtl: true,
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                    cellStyle: { textAlign: 'right', direction: 'rtl' },
+                    headerClass: 'ag-right-aligned-header'
+                },
+                pagination: true,
+                paginationPageSize: 20,
+                paginationPageSizeSelector: [10, 20, 50, 100],
+                domLayout: 'normal',
+                onPaginationChanged: function () {
+                    if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                },
+                localeText: {
+                    page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                    first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                    noRowsToShow: 'داده‌ای برای نمایش نیست', pageSizeSelectorLabel: 'تعداد در صفحه:'
+                }
+            };
+
+            gridApi = agGrid.createGrid(gridDiv, gridOptions);
+        }
+
+        // ============================================================
+        // ۸) راه‌اندازی
+        // ============================================================
+        function isMobile() {
+            return window.matchMedia('(max-width: 767.98px)').matches;
+        }
+
+        function applyLayout() {
+            var gridDiv = document.getElementById('menusGrid');
+            var mobileDiv = document.getElementById('mobileList');
+
+            if (isMobile()) {
+                gridDiv.style.display = 'none';
+                mobileDiv.classList.remove('d-md-none');
+                renderMobileList(menusData);
+            } else {
+                gridDiv.style.display = '';
+                mobileDiv.classList.add('d-md-none');
+                if (!gridApi) buildGrid();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            applyLayout();
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+        });
+    </script>
+}

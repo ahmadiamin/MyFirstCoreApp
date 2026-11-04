@@ -37,9 +37,9 @@ public class CreateTenantViewModel
     [MaxLength(50)]
     public string SmsLineNumber { get; set; } = "90008361";
 
-    [Display(Name = "الگوی پیامک لینک پرتال")]
-    [MaxLength(1000)]
-    public string? SmsPortalLinkText { get; set; }
+    [Display(Name = "کد پترن پیامک لینک پرتال")]
+    [MaxLength(50)]
+    public string? PortalLinkPatternCode { get; set; }
 
     public bool SmsApiKeyConfigured { get; set; }
     public bool ClearSmsApiKey { get; set; }
@@ -60,7 +60,7 @@ public class CreateTenantViewModel
     [MaxLength(30)]
     public string? SmsChequeReminderMobile { get; set; }
 
-    [Display(Name = "الگوی پیامک یادآوری چک")]
-    [MaxLength(1000)]
-    public string? SmsChequeReminderText { get; set; }
+    [MaxLength(100)]
+    [Display(Name = "کد الگوی پیامک یادآوری چک")]
+    public string? SmsChequeReminderPatternCode { get; set; }
 }

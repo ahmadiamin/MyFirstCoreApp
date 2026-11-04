@@ -86,6 +86,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Menu> Menus { get; set; }
         public DbSet<UserProfileImage> UserProfileImages { get; set; }
+        public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
 
         /// <summary>
         /// دسترسی به رکوردهای حذف‌شده‌ی نرم، فقط برای شرکت فعال.

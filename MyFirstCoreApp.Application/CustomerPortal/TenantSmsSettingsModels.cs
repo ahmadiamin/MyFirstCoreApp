@@ -9,11 +9,11 @@ public sealed record TenantSmsSettingsSummary(
     bool ChequeReminderDueDayEnabled,
     TimeOnly ChequeReminderTime,
     string? ChequeReminderMobile,
-    string? ChequeReminderText);
+    string? ChequeReminderPatternCode);
 
 public sealed record TenantSmsConfiguration(
     string ApiKey,
     string LineNumber,
-    string? PortalLinkText,
+    string? PortalLinkPatternCode,
     string? ChequeReminderMobile,
-    string? ChequeReminderText);
+    string? ChequeReminderPatternCode);

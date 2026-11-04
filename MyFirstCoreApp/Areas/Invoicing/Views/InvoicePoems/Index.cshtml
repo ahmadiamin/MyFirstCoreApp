@@ -4,103 +4,306 @@
     ViewData["Title"] = "مدیریت شعرهای فاکتور";
 }
 
+<style>
+    #poemsGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #poemsGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .action-buttons .btn {
+        padding: 3px 6px;
+        line-height: 1;
+    }
+
+    .action-buttons form {
+        display: inline-block;
+        margin: 0;
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .poem-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .poem-card .text {
+        font-size: 13px;
+        white-space: pre-line;
+        word-break: break-word;
+    }
+
+    .poem-card .actions {
+        margin-top: 8px;
+    }
+</style>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
-        @TempData["Success"]
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
     </div>
 }
 
+@Html.AntiForgeryToken()
+
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">شعرهای فاکتور</h3>
-
+        <h3 class="card-title">
+            <i class="fa fa-quote-left"></i> شعرهای فاکتور
+        </h3>
         <div class="card-tools">
             <a asp-area="Invoicing"
                asp-controller="InvoicePoems"
                asp-action="Create"
                class="btn btn-primary btn-sm">
-                <i class="fa fa-plus"></i>
-                شعر جدید
+                <i class="fa fa-plus"></i> شعر جدید
             </a>
 
             <a asp-area="Invoicing"
                asp-controller="InvoicePrintSettings"
                asp-action="Edit"
                class="btn btn-secondary btn-sm">
-                تنظیمات چاپ
+                <i class="fa fa-print"></i> تنظیمات چاپ
             </a>
         </div>
     </div>
 
-    <div class="card-body table-responsive">
-        <table class="table table-bordered table-striped">
-            <thead>
-                <tr>
-                    <th style="width:70px">ردیف</th>
-                    <th>متن شعر</th>
-                    <th style="width:100px">وضعیت</th>
-                    <th style="width:150px">عملیات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @{
-                    var row = 0;
-                }
+    <div class="card-body">
 
-                @foreach (var poem in Model)
-                {
-                    <tr>
-                        <td>@(++row)</td>
-                        <td style="white-space:pre-line">@poem.Text</td>
-                        <td>
-                            @if (poem.IsActive)
-                            {
-                                <span class="badge badge-success">فعال</span>
-                            }
-                            else
-                            {
-                                <span class="badge badge-secondary">غیرفعال</span>
-                            }
-                        </td>
-                        <td>
-                            <a asp-area="Invoicing"
-                               asp-controller="InvoicePoems"
-                               asp-action="Edit"
-                               asp-route-id="@poem.Id"
-                               class="btn btn-sm btn-outline-primary"
-                               title="ویرایش">
-                                <i class="fa fa-edit"></i>
-                            </a>
+        <!-- دسکتاپ: AG Grid -->
+        <div id="poemsGrid" class="ag-theme-alpine d-none d-md-block"
+             style="height: 500px; width: 100%;">
+        </div>
 
-                            <form asp-area="Invoicing"
-                                  asp-controller="InvoicePoems"
-                                  asp-action="Delete"
-                                  asp-route-id="@poem.Id"
-                                  method="post"
-                                  class="d-inline"
-                                  onsubmit="return confirm('آیا از حذف این شعر مطمئن هستید؟');">
-                                @Html.AntiForgeryToken()
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobilePoems" class="d-md-none"></div>
 
-                                <button type="submit"
-                                        class="btn btn-sm btn-outline-danger"
-                                        title="حذف">
-                                    <i class="fa fa-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="4" class="text-center text-muted">
-                            هنوز شعری ثبت نشده است.
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            var gridApi = null;
+
+            // ============================================
+            // ۱. داده‌ها
+            // ============================================
+            var poemsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Select(p => new {
+                    id = p.Id,
+                    text = p.Text,
+                    isActive = p.IsActive
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            // ============================================
+            // ۲. ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'text',
+                    headerName: 'متن شعر',
+                    flex: 3,
+                    minWidth: 250,
+                    autoHeight: true,
+                    cellStyle: {
+                        whiteSpace: 'pre-line',
+                        wordBreak: 'break-word',
+                        lineHeight: '1.7',
+                        padding: '8px'
+                    }
+                },
+                {
+                    field: 'isActive',
+                    headerName: 'وضعیت',
+                    width: 100,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">فعال</span>'
+                            : '<span class="badge badge-secondary">غیرفعال</span>';
+                    }
+                },
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 130,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        return '<div class="action-buttons">' + buildActionButtons(params.data) + '</div>';
+                    }
+                }
+            ];
+
+            // ============================================
+            // ۳. دکمه‌های عملیات (مشترک)
+            // ============================================
+            function buildActionButtons(p) {
+                var html = '';
+
+                // ویرایش
+                html += '<a href="/Invoicing/InvoicePoems/Edit/' + p.id + '" ' +
+                        'class="btn btn-sm btn-outline-primary action-icon-btn" title="ویرایش">' +
+                        '<i class="fa fa-edit"></i></a>';
+
+                // حذف (با توکن CSRF)
+                var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                html += '<form action="/Invoicing/InvoicePoems/Delete/' + p.id + '" method="post" ' +
+                        'onsubmit="return confirm(\'آیا از حذف این شعر مطمئن هستید؟\');" ' +
+                        'style="display:inline-block;margin:0;">' +
+                        '<input type="hidden" name="__RequestVerificationToken" value="' + token + '">' +
+                        '<button type="submit" class="btn btn-sm btn-outline-danger action-icon-btn" title="حذف">' +
+                        '<i class="fa fa-trash"></i></button></form>';
+
+                return html;
+            }
+
+            // ============================================
+            // ۴. ساخت Grid (دسکتاپ)
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: poemsData,
+                    enableRtl: true,
+                    rowHeight: 70, // 🆕 ارتفاع بیشتر برای متن چنده‌خطی
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'هنوز شعری ثبت نشده است.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('poemsGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // ۵. موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobilePoems');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>' +
+                        'هنوز شعری ثبت نشده است.</div>';
+                    return;
+                }
+
+                rows.forEach(function (p, index) {
+                    html += '<div class="poem-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<strong>' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-quote-left text-muted ml-1"></i>' +
+                            '</strong>' +
+                            (p.isActive
+                                ? '<span class="badge badge-success">فعال</span>'
+                                : '<span class="badge badge-secondary">غیرفعال</span>') +
+                        '</div>' +
+                        '<div class="text mt-2">' + (p.text || '') + '</div>' +
+                        '<div class="actions">' + buildActionButtons(p) + '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // ۶. ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ۷. سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('poemsGrid');
+                var mobileDiv = document.getElementById('mobilePoems');
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(poemsData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // ۸. شروع
+            // ============================================
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+
+        });
+    </script>
+}

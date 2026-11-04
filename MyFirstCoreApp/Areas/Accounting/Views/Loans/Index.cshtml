@@ -3,6 +3,64 @@
     ViewData["Title"] = "قرض‌ها";
 }
 
+<style>
+    #loansGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #loansGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .loan-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .loan-card .title {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .loan-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .loan-card .amount-line {
+        font-weight: 600;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .loan-card .amount-line.remaining {
+        color: #dc3545;
+    }
+
+    .loan-card .actions {
+        margin-top: 8px;
+    }
+</style>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
@@ -19,21 +77,21 @@
 }
 
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-6 col-12 mb-2">
         <div class="info-box">
             <span class="info-box-icon bg-success"><i class="fa fa-hand-holding-dollar"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">باقی‌مانده‌ی قرض‌های داده‌شده (از ما طلب دارند)</span>
-                <span class="info-box-number">@Model.TotalGivenRemaining.ToString("N0")</span>
+                <span class="info-box-number persian-number-comma">@Model.TotalGivenRemaining.ToString("N0")</span>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-6 col-12 mb-2">
         <div class="info-box">
             <span class="info-box-icon bg-danger"><i class="fa fa-money-bill-transfer"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">باقی‌مانده‌ی قرض‌های گرفته‌شده (ما بدهکاریم)</span>
-                <span class="info-box-number">@Model.TotalTakenRemaining.ToString("N0")</span>
+                <span class="info-box-number persian-number-comma">@Model.TotalTakenRemaining.ToString("N0")</span>
             </div>
         </div>
     </div>
@@ -43,67 +101,278 @@
     <div class="card-header">
         <h3 class="card-title"><i class="fa fa-handshake"></i> قرض‌ها</h3>
         <div class="card-tools">
-            <a asp-action="Create" asp-route-direction="1" class="btn btn-success btn-sm"><i class="fa fa-plus"></i> قرض دادن</a>
-            <a asp-action="Create" asp-route-direction="2" class="btn btn-warning btn-sm"><i class="fa fa-plus"></i> قرض گرفتن</a>
+            <a asp-action="Create" asp-route-direction="1" class="btn btn-success btn-sm">
+                <i class="fa fa-plus"></i> قرض دادن
+            </a>
+            <a asp-action="Create" asp-route-direction="2" class="btn btn-warning btn-sm">
+                <i class="fa fa-plus"></i> قرض گرفتن
+            </a>
         </div>
     </div>
+
     <div class="card-body border-bottom">
-        <form method="get" class="form-inline">
-            <select name="direction" class="form-control form-control-sm ml-2">
+        <form method="get" class="form-inline flex-wrap">
+            <select name="direction" class="form-control form-control-sm ml-2 mb-1">
                 <option value="" selected="@(!Model.Direction.HasValue)">همه</option>
                 <option value="1" selected="@(Model.Direction == 1)">داده‌شده</option>
                 <option value="2" selected="@(Model.Direction == 2)">گرفته‌شده</option>
             </select>
-            <div class="custom-control custom-checkbox ml-2">
-                <input type="checkbox" class="custom-control-input" id="onlyOpen" name="onlyOpen" value="true" @(Model.OnlyOpen ? "checked" : "") />
+            <div class="custom-control custom-checkbox ml-2 mb-1">
+                <input type="checkbox" class="custom-control-input" id="onlyOpen" name="onlyOpen"
+                       value="true" @(Model.OnlyOpen ? "checked" : "") />
                 <label class="custom-control-label" for="onlyOpen">فقط باز</label>
             </div>
-            <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-search"></i> نمایش</button>
+            <button type="submit" class="btn btn-sm btn-primary mb-1">
+                <i class="fa fa-search"></i> نمایش
+            </button>
         </form>
     </div>
-    <div class="card-body p-0 table-responsive">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>شماره سند</th>
-                    <th>نوع</th>
-                    <th>تاریخ</th>
-                    <th>طرف حساب</th>
-                    <th class="text-left">مبلغ</th>
-                    <th class="text-left">بازپرداخت‌شده</th>
-                    <th class="text-left">باقی‌مانده</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var loan in Model.Items)
-                {
-                    <tr>
-                        <td>@loan.Number</td>
-                        <td>
-                            @if (loan.IsGiven)
-                            {
-                                <span class="badge badge-success">داده‌شده</span>
-                            }
-                            else
-                            {
 
-                                <span class="badge badge-warning">گرفته‌شده</span>
-                            }
-                        </td>
-                        <td dir="ltr" class="text-right">@loan.Date</td>
-                        <td>@loan.ContactName</td>
-                        <td class="text-left">@loan.Amount.ToString("N0")</td>
-                        <td class="text-left">@loan.Repaid.ToString("N0")</td>
-                        <td class="text-left @(loan.Remaining > 0 ? "font-weight-bold text-danger" : "text-muted")">@loan.Remaining.ToString("N0")</td>
-                        <td><a asp-action="Details" asp-route-id="@loan.Id" class="btn btn-xs btn-outline-primary">جزئیات</a></td>
-                    </tr>
-                }
-                @if (!Model.Items.Any())
-                {
-                    <tr><td colspan="8" class="text-center text-muted p-4">قرضی ثبت نشده است.</td></tr>
-                }
-            </tbody>
-        </table>
+    <div class="card-body p-0">
+        <!-- دسکتاپ: AG Grid -->
+        <div id="loansGrid" class="ag-theme-alpine d-none d-md-block"
+             style="height: 550px; width: 100%;">
+        </div>
+
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobileLoans" class="d-md-none p-2"></div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            var gridApi = null;
+
+            // ============================================
+            // ۱. داده‌ها از سرور
+            // ============================================
+            var loansData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Items.Select(l => new {
+                    id = l.Id,
+                    number = l.Number,
+                    isGiven = l.IsGiven,
+                    date = l.Date,
+                    contactName = l.ContactName,
+                    amount = l.Amount,
+                    repaid = l.Repaid,
+                    remaining = l.Remaining
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            // ============================================
+            // ۲. ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'number',
+                    headerName: 'شماره سند',
+                    width: 110,
+                    cellStyle: { textAlign: 'center' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(p.value) : '';
+                    }
+                },
+                {
+                    headerName: 'نوع',
+                    field: 'isGiven',
+                    width: 110,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">داده‌شده</span>'
+                            : '<span class="badge badge-warning">گرفته‌شده</span>';
+                    }
+                },
+                { field: 'date', headerName: 'تاریخ', width: 120,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                { field: 'contactName', headerName: 'طرف حساب', flex: 1, minWidth: 150 },
+                {
+                    field: 'amount',
+                    headerName: 'مبلغ',
+                    width: 140,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(Number(p.value).toLocaleString('en-US')) : '';
+                    }
+                },
+                {
+                    field: 'repaid',
+                    headerName: 'بازپرداخت‌شده',
+                    width: 140,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(Number(p.value).toLocaleString('en-US')) : '';
+                    }
+                },
+                {
+                    field: 'remaining',
+                    headerName: 'باقی‌مانده',
+                    width: 140,
+                    cellStyle: function (params) {
+                        return {
+                            textAlign: 'left',
+                            direction: 'ltr',
+                            fontWeight: params.value > 0 ? 'bold' : 'normal',
+                            color: params.value > 0 ? '#dc3545' : '#999'
+                        };
+                    },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(Number(p.value).toLocaleString('en-US')) : '';
+                    }
+                },
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 100,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        return '<div class="action-buttons">' +
+                               '<a href="/Accounting/Loans/Details/' + params.data.id + '" ' +
+                               'class="btn btn-sm btn-outline-primary" title="جزئیات">' +
+                               '<i class="fa fa-eye"></i></a>' +
+                               '</div>';
+                    }
+                }
+            ];
+
+            // ============================================
+            // ۳. ساخت Grid (دسکتاپ)
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: loansData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'قرضی ثبت نشده است.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('loansGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // ۴. موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileLoans');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>قرضی ثبت نشده است.</div>';
+                    return;
+                }
+
+                rows.forEach(function (l, index) {
+                    var amountStr = toPersianDigits(Number(l.amount || 0).toLocaleString('en-US'));
+                    var repaidStr = toPersianDigits(Number(l.repaid || 0).toLocaleString('en-US'));
+                    var remainingStr = toPersianDigits(Number(l.remaining || 0).toLocaleString('en-US'));
+                    var remainingClass = (l.remaining > 0) ? 'amount-line remaining' : 'amount-line text-muted';
+
+                    html += '<div class="loan-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="title">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-handshake text-muted ml-1"></i>' +
+                                'سند ' + toPersianDigits(l.number || '') +
+                            '</div>' +
+                            (l.isGiven
+                                ? '<span class="badge badge-success">داده‌شده</span>'
+                                : '<span class="badge badge-warning">گرفته‌شده</span>') +
+                        '</div>' +
+                        (l.date ? '<div class="row-line">تاریخ: <span dir="ltr">' + l.date + '</span></div>' : '') +
+                        (l.contactName ? '<div class="row-line">طرف حساب: ' + l.contactName + '</div>' : '') +
+                        '<div class="row-line">مبلغ: <span dir="ltr">' + amountStr + '</span></div>' +
+                        '<div class="row-line">بازپرداخت‌شده: <span dir="ltr">' + repaidStr + '</span></div>' +
+                        '<div class="' + remainingClass + '">باقی‌مانده: <span dir="ltr">' + remainingStr + '</span></div>' +
+                        '<div class="actions">' +
+                            '<a href="/Accounting/Loans/Details/' + l.id + '" ' +
+                            'class="btn btn-sm btn-outline-primary">' +
+                            '<i class="fa fa-eye"></i> جزئیات</a>' +
+                        '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // ۵. ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ۶. سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('loansGrid');
+                var mobileDiv = document.getElementById('mobileLoans');
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(loansData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // ۷. شروع
+            // ============================================
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+
+        });
+    </script>
+}

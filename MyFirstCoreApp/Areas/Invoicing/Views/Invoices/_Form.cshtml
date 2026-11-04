@@ -16,6 +16,14 @@
             <span asp-validation-for="Date" class="text-danger"></span>
         </div>
     </div>
+    <div class="col-md-3" id="dueDateGroup">
+        <div class="form-group">
+            <label asp-for="DueDate"></label>
+            <input asp-for="DueDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
+            <small class="form-text text-muted">اختیاری؛ خالی = بدون سررسید (هیچ‌وقت معوق نمی‌شود).</small>
+            <span asp-validation-for="DueDate" class="text-danger"></span>
+        </div>
+    </div>
 
     <div class="col-md-3">
         <div class="form-group">

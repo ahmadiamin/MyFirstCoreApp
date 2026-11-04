@@ -3,6 +3,66 @@
     ViewData["Title"] = "گزارش فاکتورها";
 }
 
+<style>
+    #invoiceReportGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #invoiceReportGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .summary-box-row .info-box {
+        height: 100%;
+    }
+
+    .invoice-report-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .invoice-report-card .title {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .invoice-report-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .invoice-report-card .amount {
+        font-weight: 600;
+        color: #0d6efd;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .invoice-report-card .remaining {
+        color: #dc3545;
+        font-weight: 600;
+        font-size: 13px;
+        margin-top: 3px;
+    }
+
+    .invoice-report-card .overdue {
+        color: #dc3545;
+        font-weight: 600;
+    }
+</style>
+
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger alert-dismissible">
@@ -18,147 +78,122 @@
     <form method="get" asp-area="Accounting" asp-controller="Reports" asp-action="Invoices">
         <div class="card-body">
             <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>نوع</label>
-                        <select name="invoiceType" class="form-control select2"
-                                asp-for="InvoiceType" asp-items="Model.InvoiceTypeOptions">
-                            <option value="">همه</option>
-                        </select>
-                    </div>
+                <div class="col-md-3 col-12 mb-2">
+                    <label>نوع</label>
+                    <select name="invoiceType" class="form-control select2"
+                            asp-for="InvoiceType" asp-items="Model.InvoiceTypeOptions">
+                        <option value="">همه</option>
+                    </select>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>وضعیت</label>
-                        <select name="status" class="form-control select2"
-                                asp-for="Status" asp-items="Model.StatusOptions">
-                            <option value="">همه</option>
-                        </select>
-                    </div>
+                <div class="col-md-3 col-12 mb-2">
+                    <label>وضعیت</label>
+                    <select name="status" class="form-control select2"
+                            asp-for="Status" asp-items="Model.StatusOptions">
+                        <option value="">همه</option>
+                    </select>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>طرف حساب</label>
-                        <select name="contactId" class="form-control select2"
-                                asp-for="ContactId" asp-items="Model.ContactOptions">
-                            <option value="">همه</option>
-                        </select>
-                    </div>
+                <div class="col-md-3 col-12 mb-2">
+                    <label>طرف حساب</label>
+                    <select name="contactId" class="form-control select2"
+                            asp-for="ContactId" asp-items="Model.ContactOptions">
+                        <option value="">همه</option>
+                    </select>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>&nbsp;</label>
+                <div class="col-md-3 col-12 mb-2 d-flex align-items-center">
+                    <div class="w-100">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="onlyOpen" name="onlyOpen" value="true"
-                                   @(Model.OnlyOpen ? "checked" : "") />
+                            <input type="checkbox" class="custom-control-input" id="onlyOpen" name="onlyOpen"
+                                   value="true" @(Model.OnlyOpen ? "checked" : "") />
                             <label class="custom-control-label" for="onlyOpen">فقط دارای باقی‌مانده</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="onlyOverdue" name="onlyOverdue"
+                                   value="true" @(Model.OnlyOverdue ? "checked" : "") />
+                            <label class="custom-control-label" for="onlyOverdue">فقط معوق (سررسید گذشته)</label>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>از تاریخ</label>
-                        <input type="text" name="fromDate" value="@Model.FromDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
-                    </div>
+                <div class="col-md-3 col-6 mb-2">
+                    <label>از تاریخ</label>
+                    <input type="text" name="fromDate" value="@Model.FromDate"
+                           class="form-control datepicker" autocomplete="off" dir="ltr" />
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>تا تاریخ</label>
-                        <input type="text" name="toDate" value="@Model.ToDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
-                    </div>
+                <div class="col-md-3 col-6 mb-2">
+                    <label>تا تاریخ</label>
+                    <input type="text" name="toDate" value="@Model.ToDate"
+                           class="form-control datepicker" autocomplete="off" dir="ltr" />
                 </div>
             </div>
         </div>
         <div class="card-footer">
-            <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> نمایش گزارش</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-search"></i> نمایش گزارش
+            </button>
         </div>
     </form>
 </div>
 
-<div class="row">
-    <div class="col-md-3">
+<!-- خلاصه آمار -->
+<div class="row summary-box-row">
+    <div class="col-md-3 col-6 mb-2">
         <div class="info-box">
             <span class="info-box-icon bg-info"><i class="fa fa-file-invoice"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">تعداد فاکتور</span>
-                <span class="info-box-number">@Model.Count.ToString("N0")</span>
+                <span class="info-box-number">@toPersianDigits(Model.Count.ToString("N0"))</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-3 col-6 mb-2">
         <div class="info-box">
             <span class="info-box-icon bg-primary"><i class="fa fa-coins"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">جمع مبلغ</span>
-                <span class="info-box-number">@Model.TotalAmount.ToString("N0")</span>
+                <span class="info-box-number">@toPersianDigits(Model.TotalAmount.ToString("N0"))</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-3 col-6 mb-2">
         <div class="info-box">
             <span class="info-box-icon bg-success"><i class="fa fa-check"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">پرداخت‌شده + تخفیف تسویه</span>
-                <span class="info-box-number">@((Model.TotalPaid + Model.TotalSettlementDiscount).ToString("N0"))</span>
+                <span class="info-box-number">@toPersianDigits((Model.TotalPaid + Model.TotalSettlementDiscount).ToString("N0"))</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-3 col-6 mb-2">
         <div class="info-box">
             <span class="info-box-icon bg-warning"><i class="fa fa-hourglass-half"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">باقی‌مانده</span>
-                <span class="info-box-number">@Model.TotalRemaining.ToString("N0")</span>
+                <span class="info-box-number">@toPersianDigits(Model.TotalRemaining.ToString("N0"))</span>
+                @if (Model.OverdueCount > 0)
+                {
+                    <span class="progress-description text-danger">
+                        معوق: @toPersianDigits(Model.OverdueCount.ToString()) فاکتور |
+                        @toPersianDigits(Model.TotalOverdueRemaining.ToString("N0"))
+                    </span>
+                }
             </div>
         </div>
     </div>
 </div>
 
 <div class="card">
-    <div class="card-body p-0 table-responsive">
-        <table class="table table-hover table-striped mb-0">
-            <thead>
-                <tr>
-                    <th>شماره</th>
-                    <th>نوع</th>
-                    <th>تاریخ</th>
-                    <th>طرف حساب</th>
-                    <th>وضعیت</th>
-                    <th class="text-left">مبلغ</th>
-                    <th class="text-left">پرداخت‌شده</th>
-                    <th class="text-left">تخفیف تسویه</th>
-                    <th class="text-left">باقی‌مانده</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in Model.Rows)
-                {
-                    <tr>
-                        <td>
-                            <a asp-area="Invoicing" asp-controller="Invoices" asp-action="Details" asp-route-id="@row.Id">@row.Number</a>
-                        </td>
-                        <td>@row.InvoiceTypeName</td>
-                        <td dir="ltr" class="text-right">@row.DateShamsi</td>
-                        <td>@row.ContactName</td>
-                        <td>@row.StatusName</td>
-                        <td class="text-left">@row.TotalAmount.ToString("N0")</td>
-                        <td class="text-left">@row.PaidAmount.ToString("N0")</td>
-                        <td class="text-left">@row.SettlementDiscount.ToString("N0")</td>
-                        <td class="text-left @(row.RemainingAmount > 0 ? "text-danger font-weight-bold" : "")">@row.RemainingAmount.ToString("N0")</td>
-                    </tr>
-                }
-                @if (!Model.Rows.Any())
-                {
-                    <tr>
-                        <td colspan="9" class="text-center text-muted p-4">فاکتوری با این فیلتر پیدا نشد.</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div class="card-body p-0">
+
+        <!-- دسکتاپ: AG Grid -->
+        <div id="invoiceReportGrid" class="ag-theme-alpine d-none d-md-block"
+             style="height: 550px; width: 100%;">
+        </div>
+
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobileInvoices" class="d-md-none p-2"></div>
+
     </div>
 
+    <!-- صفحه‌بندی -->
     @if (Model.TotalPages > 1)
     {
         <div class="card-footer clearfix">
@@ -176,6 +211,7 @@
                                asp-route-fromDate="@Model.FromDate"
                                asp-route-toDate="@Model.ToDate"
                                asp-route-onlyOpen="@Model.OnlyOpen"
+                               asp-route-onlyOverdue="@Model.OnlyOverdue"
                                asp-route-page="@p">@p</a>
                         </li>
                     }
@@ -185,15 +221,30 @@
                     }
                 }
             </ul>
-            <span class="text-muted">صفحه @Model.Page از @Model.TotalPages</span>
+            <span class="text-muted">
+                صفحه @toPersianDigits(Model.Page.ToString()) از @toPersianDigits(Model.TotalPages.ToString())
+            </span>
         </div>
     }
 </div>
 
+@functions {
+    string toPersianDigits(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        return s.Replace('0', '۰').Replace('1', '۱').Replace('2', '۲').Replace('3', '۳')
+                .Replace('4', '۴').Replace('5', '۵').Replace('6', '۶').Replace('7', '۷')
+                .Replace('8', '۸').Replace('9', '۹');
+    }
+}
+
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Select2
+
+            // ============================================
+            // select2 + datepicker
+            // ============================================
             $('.select2').select2({
                 dir: 'rtl',
                 placeholder: '-- انتخاب --',
@@ -202,7 +253,6 @@
                 language: 'fa'
             });
 
-            // DatePicker
             $('.datepicker').each(function () {
                 var $input = $(this);
                 var val = $input.val();
@@ -213,12 +263,265 @@
                     initialValueType: 'persian',
                     autoClose: true,
                     observer: true,
-                    calendar: {
-                        persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' }
-                    },
+                    calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
                     toolbox: { calendarSwitch: { enabled: false } }
                 });
             });
+
+            // ============================================
+            // داده‌ها
+            // ============================================
+            var invoiceReportData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Rows.Select(r => new {
+                    id = r.Id,
+                    number = r.Number,
+                    invoiceTypeName = r.InvoiceTypeName,
+                    dateShamsi = r.DateShamsi,
+                    dueDateShamsi = r.DueDateShamsi,
+                    contactName = r.ContactName,
+                    statusName = r.StatusName,
+                    totalAmount = r.TotalAmount,
+                    paidAmount = r.PaidAmount,
+                    settlementDiscount = r.SettlementDiscount,
+                    remainingAmount = r.RemainingAmount,
+                    isOverdue = r.IsOverdue
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            var hasData = @(Model.Rows.Any() ? "true" : "false");
+
+            var gridApi = null;
+
+            // ============================================
+            // ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function formatMoney(n) {
+                if (n == null) return '';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }));
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'number',
+                    headerName: 'شماره',
+                    width: 100,
+                    cellStyle: { textAlign: 'center', direction: 'ltr' },
+                    cellRenderer: function (p) {
+                        if (!p.value) return '';
+                        return '<a href="/Invoicing/Invoices/Details/' + p.data.id + '">' +
+                               toPersianDigits(p.value) + '</a>';
+                    }
+                },
+                { field: 'invoiceTypeName', headerName: 'نوع', width: 100 },
+                {
+                    field: 'dateShamsi',
+                    headerName: 'تاریخ',
+                    width: 110,
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'dueDateShamsi',
+                    headerName: 'سررسید',
+                    width: 130,
+                    cellStyle: { textAlign: 'center', direction: 'ltr' },
+                    cellRenderer: function (p) {
+                        if (!p.value) return '<span class="text-muted">—</span>';
+                        var badge = p.data.isOverdue
+                            ? ' <span class="badge badge-danger">معوق</span>'
+                            : '';
+                        return p.value + badge;
+                    }
+                },
+                { field: 'contactName', headerName: 'طرف حساب', minWidth: 160, flex: 1 },
+                { field: 'statusName', headerName: 'وضعیت', width: 110 },
+                {
+                    field: 'totalAmount',
+                    headerName: 'مبلغ',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) { return formatMoney(p.value); }
+                },
+                {
+                    field: 'paidAmount',
+                    headerName: 'پرداخت‌شده',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) { return formatMoney(p.value); }
+                },
+                {
+                    field: 'settlementDiscount',
+                    headerName: 'تخفیف تسویه',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) { return formatMoney(p.value); }
+                },
+                {
+                    field: 'remainingAmount',
+                    headerName: 'باقی‌مانده',
+                    width: 130,
+                    cellStyle: function (params) {
+                        return {
+                            textAlign: 'left',
+                            direction: 'ltr',
+                            fontWeight: params.value > 0 ? 'bold' : 'normal',
+                            color: params.value > 0 ? '#dc3545' : ''
+                        };
+                    },
+                    valueFormatter: function (p) { return formatMoney(p.value); }
+                }
+            ];
+
+            // ============================================
+            // ساخت Grid
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: invoiceReportData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'فاکتوری با این فیلتر پیدا نشد.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('invoiceReportGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileInvoices');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>' +
+                        'فاکتوری با این فیلتر پیدا نشد.</div>';
+                    return;
+                }
+
+                rows.forEach(function (r, index) {
+                    var dueHtml = r.dueDateShamsi
+                        ? '<div class="row-line">سررسید: <span dir="ltr">' + r.dueDateShamsi + '</span>' +
+                          (r.isOverdue ? ' <span class="badge badge-danger">معوق</span>' : '') +
+                          '</div>'
+                        : '';
+
+                    html += '<div class="invoice-report-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="title">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-file-invoice text-muted ml-1"></i>' +
+                                '<a href="/Invoicing/Invoices/Details/' + r.id + '">' +
+                                'فاکتور ' + toPersianDigits(r.number || '') + '</a>' +
+                            '</div>' +
+                            (r.statusName
+                                ? '<span class="badge badge-info">' + r.statusName + '</span>'
+                                : '') +
+                        '</div>' +
+                        (r.invoiceTypeName
+                            ? '<div class="row-line">نوع: ' + r.invoiceTypeName + '</div>'
+                            : '') +
+                        (r.dateShamsi
+                            ? '<div class="row-line">تاریخ: <span dir="ltr">' + r.dateShamsi + '</span></div>'
+                            : '') +
+                        dueHtml +
+                        (r.contactName
+                            ? '<div class="row-line">طرف حساب: ' + r.contactName + '</div>'
+                            : '') +
+                        '<div class="amount">مبلغ: ' + formatMoney(r.totalAmount) + ' ریال</div>' +
+                        '<div class="row-line">پرداخت‌شده: ' + formatMoney(r.paidAmount) + ' ریال</div>' +
+                        (r.settlementDiscount && r.settlementDiscount > 0
+                            ? '<div class="row-line">تخفیف تسویه: ' + formatMoney(r.settlementDiscount) + ' ریال</div>'
+                            : '') +
+                        '<div class="remaining">باقی‌مانده: ' + formatMoney(r.remainingAmount) + ' ریال</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('invoiceReportGrid');
+                var mobileDiv = document.getElementById('mobileInvoices');
+
+                if (!gridDiv || !mobileDiv) return;
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(invoiceReportData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // شروع
+            // ============================================
+            if (hasData) {
+                applyLayout();
+                var mql = window.matchMedia('(max-width: 767.98px)');
+                mql.addEventListener('change', applyLayout);
+            }
+
         });
     </script>
 }

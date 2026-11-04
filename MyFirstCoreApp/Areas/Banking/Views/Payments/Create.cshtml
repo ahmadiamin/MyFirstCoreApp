@@ -1,11 +1,41 @@
 ﻿@model MyFirstCoreApp.Areas.Banking.ViewModels.Payment.PaymentFormViewModel
 @{
-    ViewData["Title"] = Model.PaymentType == MyFirstCoreApp.Domain.Enums.PaymentType.Received
-        ? "ثبت دریافت"
-        : "ثبت پرداخت";
+    var isReceived = Model.PaymentType == MyFirstCoreApp.Domain.Enums.PaymentType.Received;
+    ViewData["Title"] = isReceived ? "ثبت دریافت" : "ثبت پرداخت";
 }
 
-<div class="card card-primary">
+<style>
+    .payment-form .allocations-table {
+        font-size: 13px;
+        min-width: 700px; /* اسکرول افقی در موبایل */
+    }
+
+        .payment-form .allocations-table th,
+        .payment-form .allocations-table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+            .payment-form .allocations-table td.invoice-cell {
+                white-space: normal;
+                min-width: 150px;
+            }
+
+    .payment-form .allocation-amount {
+        direction: ltr;
+        text-align: right;
+        min-width: 100px;
+    }
+
+    @@media (max-width: 767.98px) {
+        .payment-form .card-footer .btn {
+            width: 100%;
+            margin-bottom: 6px;
+        }
+    }
+</style>
+
+<div class="card card-primary payment-form">
     <div class="card-header">
         <h3 class="card-title">
             <i class="fa-solid fa-money-bill-transfer"></i>
@@ -23,7 +53,7 @@
             <partial name="_Form" model="Model" />
         </div>
 
-        <div class="card-footer">
+        <div class="card-footer d-flex flex-wrap" style="gap:8px">
             <button type="submit" class="btn btn-primary">
                 <i class="fa-solid fa-floppy-disk"></i> ذخیره
             </button>
@@ -38,8 +68,9 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function () {
-        // 🆕 متغیر global
-        let currentInvoices = [];
+
+            let currentInvoices = [];
+
             // ============================================
             // ۱. DatePicker
             // ============================================
@@ -71,46 +102,66 @@
             // ============================================
             // ۳. توابع کمکی
             // ============================================
+                    function updateTotals() {
+            let amount = parseFloat($('#Amount_Hidden').val()) || 0;
+            if (isNaN(amount)) amount = 0;
 
-            // 🆕 محاسبه مجموع
-            function updateTotals() {
-                let amount = parseFloat($('#Amount_Hidden').val()) || 0;
-                if (isNaN(amount)) amount = 0;
+            let total = 0;
 
-                let total = 0;
-                $('.allocation-amount').each(function () {
-                    const v = $(this).val();
-                    const num = parseFloat(toEnglishNumber(v).replace(/,/g, '')) || 0;
-                    total += num;
+            // دسکتاپ
+            $('#allocationsBody .allocation-amount').each(function () {
+                const v = $(this).val();
+                const num = parseFloat(toEnglishNumber(v).replace(/,/g, '')) || 0;
+                total += num;
 
-                    const $input = $(this);
-                    const invoiceRemaining = parseFloat($input.data('remaining')) || 0;
-                    const remainingAfterAllocation = invoiceRemaining - num;
-                    const $remaining = $input.closest('tr').find('.invoice-remaining-after');
+                const $input = $(this);
+                const invoiceRemaining = parseFloat($input.data('remaining')) || 0;
+                const remainingAfterAllocation = invoiceRemaining - num;
+                const $remaining = $input.closest('tr').find('.invoice-remaining-after');
+                if ($remaining.length) {
                     $remaining.text(formatNumberWithComma(remainingAfterAllocation.toString()));
                     $remaining.toggleClass('text-danger', remainingAfterAllocation < 0);
-                });
-
-                const remaining = amount - total;
-
-                $('#totalAmount').text(formatNumberWithComma(amount.toString()));
-                $('#totalAllocated').text(formatNumberWithComma(total.toString()));
-                $('#remainingAmount').text(formatNumberWithComma(remaining.toString()));
-
-                if (remaining < 0) {
-                    $('#remainingAmount').addClass('text-danger');
-                } else {
-                    $('#remainingAmount').removeClass('text-danger');
                 }
-            }
+            });
 
-            // 🆕 sync Amount
+            // موبایل
+            $('#allocationsMobile .mobile-allocation-amount').each(function () {
+                const v = $(this).val();
+                const num = parseFloat(toEnglishNumber(v).replace(/,/g, '')) || 0;
+                total += num;
+
+                const $input = $(this);
+                const invoiceRemaining = parseFloat($input.data('remaining')) || 0;
+                const remainingAfterAllocation = invoiceRemaining - num;
+                const $remaining = $input.closest('.alloc-card').find('.invoice-remaining-after-mobile');
+                if ($remaining.length) {
+                    $remaining.text(formatNumberWithComma(remainingAfterAllocation.toString()));
+                    $remaining.toggleClass('text-danger', remainingAfterAllocation < 0);
+                }
+            });
+
+            const remaining = amount - total;
+
+            $('#totalAmount').text(formatNumberWithComma(amount.toString()));
+            $('#totalAllocated').text(formatNumberWithComma(total.toString()));
+            $('#remainingAmount').text(formatNumberWithComma(remaining.toString()));
+
+            $('#totalAmountMobile').text(formatNumberWithComma(amount.toString()));
+            $('#totalAllocatedMobile').text(formatNumberWithComma(total.toString()));
+            $('#remainingAmountMobile').text(formatNumberWithComma(remaining.toString()));
+
+            if (remaining < 0) {
+                $('#remainingAmount, #remainingAmountMobile').addClass('text-danger');
+            } else {
+                $('#remainingAmount, #remainingAmountMobile').removeClass('text-danger');
+            }
+        }
+
             function syncAmount() {
                 var displayVal = $('#Amount_Display').val();
                 var hiddenVal = toEnglishNumber(displayVal).replace(/,/g, '').split('.')[0];
                 $('#Amount_Hidden').val(hiddenVal);
 
-                // 🆕 اگه فاکتورها لود شدن، دوباره تخصیص بده
                 if (currentInvoices.length > 0) {
                     renderAllocations(currentInvoices);
                 } else {
@@ -118,55 +169,79 @@
                 }
             }
 
-            // 🆕 رندر جدول تخصیص‌ها
-            function renderAllocations(invoices) {
-                currentInvoices = invoices;
-                const tbody = $('#allocationsBody');
-                tbody.empty();
+            // ============================================
+            // ۴. رندر تخصیص‌ها (فقط دسکتاپ — همان ساختار _Form)
+            // ============================================
+                    function renderAllocations(invoices) {
+            currentInvoices = invoices;
+            const desktopBody = $('#allocationsBody');
+            const mobileBody = $('#allocationsMobile');
+            desktopBody.empty();
+            mobileBody.empty();
 
-                if (invoices.length === 0) {
-                    tbody.append('<tr><td colspan="7" class="text-center text-muted">فاکتور بازی وجود ندارد.</td></tr>');
-                    updateTotals();
-                    return;
+            if (invoices.length === 0) {
+                desktopBody.append('<tr><td colspan="7" class="text-center text-muted">فاکتور بازی وجود ندارد.</td></tr>');
+                mobileBody.append('<div class="text-center text-muted py-3">فاکتور بازی وجود ندارد.</div>');
+                updateTotals();
+                return;
+            }
+
+            let amountToAllocate = parseFloat($('#Amount_Hidden').val()) || 0;
+            if (isNaN(amountToAllocate)) amountToAllocate = 0;
+
+            let remainingToAllocate = amountToAllocate;
+            let desktopHtml = '';
+            let mobileHtml = '';
+
+            invoices.forEach(function (inv, idx) {
+                let allocate = 0;
+                if (remainingToAllocate > 0) {
+                    allocate = Math.min(remainingToAllocate, inv.remaining);
+                    remainingToAllocate -= allocate;
                 }
 
-                let amountToAllocate = parseFloat($('#Amount_Hidden').val()) || 0;
-                if (isNaN(amountToAllocate)) amountToAllocate = 0;
+                const displayDate = inv.dateShamsi || '—';
+                const allocateStr = allocate > 0 ? formatNumberWithComma(allocate.toString()) : '0';
+                const remainingAfter = Number(inv.remaining - allocate).toLocaleString('en-US');
 
-                let remainingToAllocate = amountToAllocate;
-                let html = '';
+                // ---- دسکتاپ ----
+                desktopHtml += '<tr class="allocation-row" data-invoice-id="' + inv.id + '">';
+                desktopHtml += '  <td class="text-center">' + (idx + 1) + '</td>';
+                desktopHtml += '  <td class="invoice-cell">فاکتور شماره ' + inv.number;
+                desktopHtml += '    <input type="hidden" name="Allocations[' + idx + '].InvoiceId" value="' + inv.id + '" />';
+                desktopHtml += '  </td>';
+                desktopHtml += '  <td dir="ltr" class="text-right">' + displayDate + '</td>';
+                desktopHtml += '  <td class="persian-number-comma text-left">' + Number(inv.total).toLocaleString('en-US') + '</td>';
+                desktopHtml += '  <td class="persian-number-comma text-warning text-left">' + Number(inv.remaining).toLocaleString('en-US') + '</td>';
+                desktopHtml += '  <td><input type="text" name="Allocations[' + idx + '].Amount" class="form-control form-control-sm allocation-amount persian-number persian-number-comma" data-remaining="' + inv.remaining + '" value="' + allocateStr + '" /></td>';
+                desktopHtml += '  <td class="invoice-remaining-after persian-number-comma text-success text-left">' + remainingAfter + '</td>';
+                desktopHtml += '</tr>';
 
-                invoices.forEach(function (inv, idx) {
-                    let allocate = 0;
-                    if (remainingToAllocate > 0) {
-                        allocate = Math.min(remainingToAllocate, inv.remaining);
-                        remainingToAllocate -= allocate;
-                    }
+                // ---- موبایل ----
+                mobileHtml += '<div class="alloc-card allocation-row-mobile" data-invoice-id="' + inv.id + '">';
+                mobileHtml += '  <div class="d-flex justify-content-between align-items-start">';
+                mobileHtml += '    <strong><span class="badge badge-secondary ml-1">' + (idx + 1) + '</span>فاکتور شماره ' + inv.number + '</strong>';
+                mobileHtml += '  </div>';
+                mobileHtml += '  <input type="hidden" name="Allocations[' + idx + '].InvoiceId" value="' + inv.id + '" />';
+                mobileHtml += '  <div class="row-line">تاریخ: <span dir="ltr">' + displayDate + '</span></div>';
+                mobileHtml += '  <div class="row-line">مبلغ کل: <span class="persian-number-comma" dir="ltr">' + Number(inv.total).toLocaleString('en-US') + '</span></div>';
+                mobileHtml += '  <div class="row-line">باقی‌مانده: <span class="persian-number-comma text-warning" dir="ltr">' + Number(inv.remaining).toLocaleString('en-US') + '</span></div>';
+                mobileHtml += '  <div class="amount-input">';
+                mobileHtml += '    <label class="small text-muted">مبلغ تخصیص</label>';
+                mobileHtml += '    <input type="text" name="Allocations[' + idx + '].Amount" class="form-control form-control-sm mobile-allocation-amount allocation-amount persian-number persian-number-comma" data-remaining="' + inv.remaining + '" value="' + allocateStr + '" />';
+                mobileHtml += '  </div>';
+                mobileHtml += '  <div class="remaining-after">باقی‌مانده پس از تخصیص: <span class="invoice-remaining-after-mobile persian-number-comma text-success" dir="ltr">' + remainingAfter + '</span></div>';
+                mobileHtml += '</div>';
+            });
 
-                    // 🆕 تاریخ امن
-                    const displayDate = inv.dateShamsi || '—';
+            desktopBody.html(desktopHtml);
+            mobileBody.html(mobileHtml);
+            updateTotals();
+        }
 
-                    html += '<tr class="allocation-row" data-invoice-id="' + inv.id + '">';
-                    html += '  <td class="text-center">' + (idx + 1) + '</td>';
-                    html += '  <td>فاکتور شماره ' + inv.number;
-                    html += '    <input type="hidden" name="Allocations[' + idx + '].InvoiceId" value="' + inv.id + '" />';
-                    html += '  </td>';
-                    html += '  <td>' + displayDate + '</td>';
-                    html += '  <td class="persian-number-comma">' + Number(inv.total).toLocaleString('en-US') + '</td>';
-                    html += '  <td class="persian-number-comma text-warning">' + Number(inv.remaining).toLocaleString('en-US') + '</td>';
-                    html += '  <td><input type="text" name="Allocations[' + idx + '].Amount" class="form-control form-control-sm allocation-amount persian-number persian-number-comma" data-remaining="' + inv.remaining + '" value="' + (allocate > 0 ? formatNumberWithComma(allocate.toString()) : '0') + '" /></td>';
-                    html += '  <td class="invoice-remaining-after persian-number-comma text-success">' + Number(inv.remaining - allocate).toLocaleString('en-US') + '</td>';
-                    html += '</tr>';
-                });
-
-                tbody.html(html);
-                updateTotals();
-            }
             // ============================================
-            // ۴. رویدادها
+            // ۵. رویدادها
             // ============================================
-
-            // 🆕 تایپ مبلغ کل
             $(document).on('input', '#Amount_Display', function () {
                 var val = $(this).val();
                 if (val) {
@@ -176,7 +251,6 @@
                 syncAmount();
             });
 
-            // 🆕 تایپ مبلغ تخصیص
             $(document).on('input', '.allocation-amount', function () {
                 var val = $(this).val();
                 if (val) {
@@ -185,7 +259,6 @@
                 updateTotals();
             });
 
-            // 🆕 تغییر طرف حساب
             $('#ContactId').on('change', function () {
                 const contactId = $(this).val();
                 const paymentType = $('#PaymentType_Hidden').val();
@@ -201,33 +274,36 @@
                     type: 'GET',
                     data: { contactId: contactId, paymentType: paymentType },
                     success: function (r) {
-                        console.log('Invoices from server:', r.data);   // 🆕 چک کن
                         if (r.success) renderAllocations(r.data);
                     }
                 });
             });
 
-            // 🆕 Submit
-            $('#paymentForm').on('submit', function () {
-                syncAmount();
-
-                $('.persian-number').each(function () {
-                    const $input = $(this);
-                    let val = $input.val();
-                    if (val) {
-                        val = toEnglishNumber(val).replace(/,/g, '').split('.')[0];
-                        $input.val(val);
-                    }
-                });
-
-                console.log('=== SUBMIT ===');
-                console.log('Amount:', $('#Amount_Hidden').val());
-                $('input[name^="Allocations"]').each(function () {
-                    console.log($(this).attr('name'), '=', $(this).val());
-                });
-            });
             // ============================================
-            // پرداخت با چک
+            // ۶. Submit
+            // ============================================
+        $('#paymentForm').on('submit', function () {
+            syncAmount();
+
+            $('.persian-number').each(function () {
+                const $input = $(this);
+                let val = $input.val();
+                if (val) {
+                    val = toEnglishNumber(val).replace(/,/g, '').split('.')[0];
+                    $input.val(val);
+                }
+            });
+
+            // جلوگیری از ارسال تکراری (موبایل یا دسکتاپ مخفی)
+            if (window.matchMedia('(min-width: 768px)').matches) {
+                $('#allocationsMobile').find('input').prop('disabled', true);
+            } else {
+                $('#allocationsBody').find('input').prop('disabled', true);
+            }
+        });
+
+            // ============================================
+            // ۷. پرداخت با چک
             // ============================================
             const currentPaymentId = @Model.Id;
 
@@ -276,8 +352,9 @@
 
             toggleChequeUi();
             loadCheques();
+
             // ============================================
-            // ۵. بارگذاری اولیه
+            // ۸. بارگذاری اولیه
             // ============================================
             syncAmount();
 

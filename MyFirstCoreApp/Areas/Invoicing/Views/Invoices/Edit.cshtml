@@ -95,7 +95,7 @@
         // ============================================
         // 🆕 راه‌اندازی MagicSuggest کالا برای یه ردیف
         // ============================================
-                function initProductMagicSuggestForRow(index, initialId, initialName, initialTrackInventory) {
+        function initProductMagicSuggestForRow(index, initialId, initialName, initialTrackInventory) {
             var containerId = 'product_ms_' + index;
             var $container = $('.product-magicsuggest[data-index="' + index + '"]');
 
@@ -106,6 +106,23 @@
 
             $container.empty();
             $container.append($('<div id="' + containerId + '" class="magicsuggest-container"></div>'));
+            
+            // گزینه خدماتی بودن فقط برای کالای جدید
+            $container.append(`
+                <div class="new-product-service-option mt-2" style="display:none;">
+                    <label class="mb-0">
+                        <input type="checkbox"
+                                class="is-service-checkbox"
+                                name="Items[${index}].IsService"
+                                value="true" />
+                        <span class="text-info">
+                            این قلم خدماتی است (بدون کنترل موجودی انبار)
+                        </span>
+                    </label>
+                </div>
+            `);
+            $container.find('.is-service-checkbox')
+                .prop('checked', $container.data('is-service') === true);
 
             $.ajax({
                 url: '/Invoicing/Invoices/SearchProducts',
@@ -144,20 +161,53 @@
 
                     // 🆕 مقدار اولیه
                     if (initialId && initialId > 0 && initialName) {
-                        ms.addToSelection([{ id: initialId, name: initialName, trackInventory: initialTrackInventory !== 'false' }]);
+                        var tracksInventory =
+                            initialTrackInventory === true ||
+                            initialTrackInventory === 'true' ||
+                            initialTrackInventory === 'True' ||
+                            initialTrackInventory === '1';
+
+                        ms.addToSelection([{
+                            id: initialId,
+                            name: initialName,
+                            trackInventory: tracksInventory
+                        }]);
                     }
 
                     // 🆕 **فقط این `ms`** رو هندل کن
                     $(ms).on('selectionchange', function () {
                         var selection = ms.getSelection();
+                        var $row = $container.closest('tr');
+                        var $serviceOption = $container.find('.new-product-service-option');
+                        var $serviceCheckbox = $container.find('.is-service-checkbox');
+
                         if (selection && selection.length > 0) {
                             var item = selection[0];
-                            var $row = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr');
-                            var tracksInventory = item.trackInventory !== false;
+                            var isNewProduct = item.isNewProduct === true || item.trackInventory === undefined;
+
+                            // فقط برای کالای جدید امکان تعیین خدماتی بودن وجود دارد
+                            $serviceOption.toggle(isNewProduct);
+
+                            if (!isNewProduct) {
+                                $serviceCheckbox.prop('checked', false);
+                            }
+
+                            var isService = isNewProduct && $serviceCheckbox.is(':checked');
+
+                            // برای کالای جدید، وضعیت انبار از چک‌باکس تعیین می‌شود
+                            // برای کالای موجود، وضعیت انبار از خود محصول می‌آید
+                            var tracksInventory = isNewProduct
+                                ? !isService
+                                : item.trackInventory !== false;
+
                             $row.find('.warehouse-picker').toggle(tracksInventory);
                             $row.find('.warehouse-not-applicable').toggle(!tracksInventory);
-                            if (!tracksInventory) $row.find('.warehouse-select').val('');
-                            if (item.id && item.id > 0) {
+
+                            if (!tracksInventory) {
+                                $row.find('.warehouse-select').val('');
+                            }
+
+                            if (!isNewProduct) {
                                 if (isProductDuplicate(item.id, index)) {
                                     alert('این کالا قبلاً در فاکتور ثبت شده است.');
                                     ms.clear();
@@ -165,18 +215,21 @@
                                     $('#ProductName_Hidden_' + index).val('');
                                     return;
                                 }
+
                                 $('#ProductId_Hidden_' + index).val(item.id);
                                 $('#ProductName_Hidden_' + index).val(item.name);
 
-                                if ($row.length > 0) {
-                                    if (item.salePrice !== undefined && item.salePrice !== null) {
-                                        $row.find('.price-input').val(formatNumberWithComma(item.salePrice.toString()));
-                                    }
-                                    if (item.taxRate !== undefined && item.taxRate !== null) {
-                                        $row.find('.tax-input').val(item.taxRate);
-                                    }
-                                    updateTotals();
+                                if (item.salePrice !== undefined && item.salePrice !== null) {
+                                    $row.find('.price-input').val(
+                                        formatNumberWithComma(item.salePrice.toString())
+                                    );
                                 }
+
+                                if (item.taxRate !== undefined && item.taxRate !== null) {
+                                    $row.find('.tax-input').val(item.taxRate);
+                                }
+
+                                updateTotals();
                             } else {
                                 $('#ProductId_Hidden_' + index).val('0');
                                 $('#ProductName_Hidden_' + index).val(item.name);
@@ -184,9 +237,28 @@
                         } else {
                             $('#ProductId_Hidden_' + index).val('');
                             $('#ProductName_Hidden_' + index).val('');
-                            var $cell = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr').find('.warehouse-cell');
-                            $cell.find('.warehouse-picker').show();
-                            $cell.find('.warehouse-not-applicable').hide();
+
+                            $serviceOption.hide();
+                            $serviceCheckbox.prop('checked', false);
+
+                            $row.find('.warehouse-picker').show();
+                            $row.find('.warehouse-not-applicable').hide();
+                        }
+                    });
+
+                    $container.off('change', '.is-service-checkbox');
+
+                    $container.on('change', '.is-service-checkbox', function () {
+                        var isService = $(this).is(':checked');
+                        $container.data('is-service', isService);
+
+                        var $row = $container.closest('tr');
+
+                        $row.find('.warehouse-picker').toggle(!isService);
+                        $row.find('.warehouse-not-applicable').toggle(isService);
+
+                        if (isService) {
+                            $row.find('.warehouse-select').val('');
                         }
                     });
 
@@ -341,7 +413,7 @@
                                     e.preventDefault();
                                     e.stopPropagation();
                                     inputEl.value = '';
-                                    msContact.addToSelection([{ id: 0, name: text }]);
+                                    msContact.addToSelection([{ id: 0, name: text, isNewProduct: true }]);
                                     return false;
                                 }
                             }
@@ -497,6 +569,7 @@
                             // ذخیره مقدار فعلی (اگر انتخاب شده)
                             var currentProductId = $row.find('input[id^="ProductId_Hidden_"]').val() || 0;
                             var currentProductName = $row.find('input[id^="ProductName_Hidden_"]').val() || '';
+                            var currentIsService = $row.find('.is-service-checkbox').is(':checked');
 
                             $ms.attr('data-index', i);
                             $ms.data('index', i);
@@ -505,6 +578,7 @@
 
                             // دوباره راه‌اندازی
                             var currentTrackInventory = $ms.data('initial-track-inventory');
+                            $ms.data('is-service', currentIsService);
                             initProductMagicSuggestForRow(i, currentProductId, currentProductName, currentTrackInventory);
                         } else {
                             $ms.attr('data-index', i);
@@ -543,5 +617,10 @@
             });
 
         });
+        function toggleDueDate() {
+            $('#dueDateGroup').toggle($('#InvoiceType').val() !== '1');   // 1 = پیش‌فاکتور
+        }
+        $('#InvoiceType').on('change', toggleDueDate);
+        toggleDueDate();
     </script>
 }

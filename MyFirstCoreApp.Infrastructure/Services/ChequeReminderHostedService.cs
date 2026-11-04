@@ -40,7 +40,7 @@ public sealed class ChequeReminderHostedService : BackgroundService
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Cheque reminder processing failed.");
+                _logger.LogError(exception, "پردازش یادآوری چک با شکست مواجه شد.");
             }
         } while (await timer.WaitForNextTickAsync(stoppingToken));
     }

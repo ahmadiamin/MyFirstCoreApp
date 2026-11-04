@@ -4,51 +4,198 @@
     var knownTotal = Model.Rows.Where(x => x.TotalValue.HasValue).Sum(x => x.TotalValue!.Value);
     var hasUnknown = Model.Rows.Any(x => x.HasUnknownCost);
 }
+
+<style>
+    #valuationGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #valuationGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .valuation-summary {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #fafafa;
+        margin-bottom: 12px;
+    }
+
+    .valuation-summary .label {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .valuation-summary .value {
+        font-weight: 700;
+        font-size: 16px;
+        color: #0d6efd;
+    }
+
+    .valuation-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .valuation-card .name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .valuation-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .valuation-card .value-line {
+        font-weight: 600;
+        color: #0d6efd;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .valuation-card .unknown {
+        color: #ffc107;
+        font-weight: 600;
+    }
+</style>
+
 <div class="card">
-    <div class="card-header"><h3 class="card-title">ارزش موجودی به روش میانگین موزون</h3></div>
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-coins"></i> ارزش موجودی به روش میانگین موزون
+        </h3>
+    </div>
     <div class="card-body">
-        <form method="get" asp-area="Inventory" asp-controller="InventoryAnalytics" asp-action="Valuation" class="mb-3">
-            <div class="form-row align-items-end">
-                <div class="col-md-3 form-group"><label asp-for="AsOf">تا تاریخ</label>
-                    <input asp-for="AsOf" type="text" class="form-control datepicker" autocomplete="off" dir="ltr" />
+
+        <!-- ==========================================
+             فرم فیلتر
+             ========================================== -->
+        <form method="get" asp-area="Inventory" asp-controller="InventoryAnalytics"
+              asp-action="Valuation" class="mb-3">
+            <div class="row">
+                <div class="col-md-3 col-12 mb-2">
+                    <label asp-for="AsOf">تا تاریخ</label>
+                    <input asp-for="AsOf" type="text" class="form-control datepicker"
+                           autocomplete="off" dir="ltr" />
                 </div>
-                <div class="col-md-3 form-group"><label asp-for="WarehouseId">انبار</label>
-                    <select asp-for="WarehouseId" asp-items="Model.Warehouses" class="form-control select2"><option value="">همهٔ انبارها</option></select></div>
-                <div class="col-md-3 form-group"><label asp-for="ProductId">کالا</label>
-                    <select asp-for="ProductId" asp-items="Model.Products" class="form-control select2"><option value="">همهٔ کالاها</option></select>
+                <div class="col-md-3 col-12 mb-2">
+                    <label asp-for="WarehouseId">انبار</label>
+                    <select asp-for="WarehouseId" asp-items="Model.Warehouses"
+                            class="form-control select2">
+                        <option value="">همهٔ انبارها</option>
+                    </select>
                 </div>
-                <div class="col-md-3 form-group"><button type="submit" name="search" value="true" class="btn btn-primary">محاسبه</button></div>
+                <div class="col-md-3 col-12 mb-2">
+                    <label asp-for="ProductId">کالا</label>
+                    <select asp-for="ProductId" asp-items="Model.Products"
+                            class="form-control select2">
+                        <option value="">همهٔ کالاها</option>
+                    </select>
+                </div>
+                <div class="col-md-3 col-12 mb-2 d-flex align-items-end">
+                    <button type="submit" name="search" value="true" class="btn btn-primary btn-block">
+                        <i class="fa fa-calculator"></i> محاسبه
+                    </button>
+                </div>
             </div>
         </form>
+
         <div asp-validation-summary="All" class="text-danger"></div>
+
         @if (Model.HasSearched)
         {
-            <p><strong>جمع ارزشِ قابل محاسبه:</strong> @knownTotal.ToString("N0")</p>
-            @if (hasUnknown) { <div class="alert alert-warning">برخی موجودی‌ها بهای ثبت‌شده ندارند؛ جمع بالا آن ردیف‌ها را شامل نمی‌شود.</div> }
+            <!-- خلاصه جمع ارزش -->
+            <div class="valuation-summary">
+                <div class="label">جمع ارزشِ قابل محاسبه</div>
+                <div class="value persian-number-comma">
+                    @knownTotal.ToString("N0") <small class="text-muted">ریال</small>
+                </div>
+            </div>
+
+            @if (hasUnknown)
+            {
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    برخی موجودی‌ها بهای ثبت‌شده ندارند؛ جمع بالا آن ردیف‌ها را شامل نمی‌شود.
+                </div>
+            }
+
             @if (Model.Rows.Count > 0)
             {
-                <button type="button" class="btn btn-outline-success mb-3" data-csv-table="inventoryValuationTable" data-csv-filename="ارزش-موجودی.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+                <button type="button" class="btn btn-outline-success btn-sm mb-3"
+                        data-csv-table="inventoryValuationTable" data-csv-filename="ارزش-موجودی.csv">
+                    <i class="fa fa-file-csv"></i> خروجی Excel (CSV)
+                </button>
             }
-            <div class="table-responsive"><table id="inventoryValuationTable" class="table table-bordered table-striped">
-                <thead><tr><th>انبار</th><th>کد</th><th>کالا</th><th>مقدار</th><th>میانگین بهای واحد</th><th>ارزش</th></tr></thead>
-                <tbody>
-                @if (Model.Rows.Count == 0) { <tr><td colspan="6" class="text-center text-muted">موجودی‌ای برای این فیلترها ثبت نشده است.</td></tr> }
-                @foreach (var row in Model.Rows)
-                {
-                    <tr><td>@row.WarehouseName</td><td>@(row.ProductCode ?? "—")</td><td>@row.ProductName</td><td class="text-right">@row.Quantity.ToString("N3") @row.UnitName</td><td class="text-right">@(row.AverageUnitCost?.ToString("N2") ?? "نامشخص")</td><td class="text-right">@(row.TotalValue?.ToString("N0") ?? "نامشخص")</td></tr>
-                }
-                </tbody>
-            </table></div>
-            <small class="text-muted">محاسبه بر اساس گردش‌های قطعی تا تاریخ انتخاب‌شده انجام می‌شود. هزینه‌های فاقد UnitCost از تاریخچهٔ گردش قابل بازیابی نیستند.</small>
+
+            <!-- دسکتاپ: AG Grid -->
+            <div id="valuationGrid" class="ag-theme-alpine d-none d-md-block"
+                 style="height: 550px; width: 100%;">
+            </div>
+
+            <!-- جدول مخفی برای CSV -->
+            <div class="d-none">
+                <table id="inventoryValuationTable">
+                    <thead>
+                        <tr>
+                            <th>انبار</th>
+                            <th>کد</th>
+                            <th>کالا</th>
+                            <th>مقدار</th>
+                            <th>میانگین بهای واحد</th>
+                            <th>ارزش</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.Rows)
+                        {
+                            <tr>
+                                <td>@row.WarehouseName</td>
+                                <td>@(row.ProductCode ?? "—")</td>
+                                <td>@row.ProductName</td>
+                                <td>@row.Quantity.ToString("N3") @row.UnitName</td>
+                                <td>@(row.AverageUnitCost?.ToString("N2") ?? "نامشخص")</td>
+                                <td>@(row.TotalValue?.ToString("N0") ?? "نامشخص")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- موبایل: کارت‌ها -->
+            <div id="mobileValuation" class="d-md-none"></div>
+
+            <small class="text-muted d-block mt-2">
+                <i class="fa fa-info-circle"></i>
+                محاسبه بر اساس گردش‌های قطعی تا تاریخ انتخاب‌شده انجام می‌شود. هزینه‌های فاقد UnitCost از تاریخچهٔ گردش قابل بازیابی نیستند.
+            </small>
         }
     </div>
 </div>
 
-
 @section Scripts {
     <partial name="_CsvExportScripts" />
+
     <script>
         $(function () {
+
+            // ============================================
+            // select2 + datepicker
+            // ============================================
             $('.select2').select2({
                 width: '100%',
                 dir: 'rtl',
@@ -59,23 +206,251 @@
 
             $('.datepicker').persianDatepicker({
                 format: 'YYYY/MM/DD',
-                initialValue: true,               // 🆕
-                initialValueType: 'persian',      // 🆕
+                initialValue: true,
+                initialValueType: 'persian',
                 autoClose: true,
                 observer: true,
-                calendar: {
-                    persian: {
-                        locale: 'fa',
-                        showHint: true,
-                        leapYearMode: 'algorithmic'
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+
+            // ============================================
+            // داده‌ها
+            // ============================================
+            var valuationData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Rows.Select(r => new {
+                    warehouseName = r.WarehouseName,
+                    productCode = r.ProductCode,
+                    productName = r.ProductName,
+                    quantity = r.Quantity,
+                    unitName = r.UnitName,
+                    averageUnitCost = r.AverageUnitCost,
+                    totalValue = r.TotalValue,
+                    hasUnknownCost = r.HasUnknownCost
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            var showGrid = @(Model.HasSearched && Model.Rows.Count > 0 ? "true" : "false");
+
+            var gridApi = null;
+
+            // ============================================
+            // ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function formatQty(n) {
+                if (n == null) return '';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US', {
+                    minimumFractionDigits: 3,
+                    maximumFractionDigits: 3
+                }));
+            }
+
+            function formatCost(n) {
+                if (n == null) return 'نامشخص';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }));
+            }
+
+            function formatMoney(n) {
+                if (n == null) return 'نامشخص';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }));
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                { field: 'warehouseName', headerName: 'انبار', minWidth: 150, flex: 1 },
+                {
+                    field: 'productCode',
+                    headerName: 'کد',
+                    width: 120,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' },
+                    valueFormatter: function (p) {
+                        return p.value ? p.value : '—';
                     }
                 },
-                toolbox: {
-                    calendarSwitch: {
-                        enabled: false
+                { field: 'productName', headerName: 'کالا', minWidth: 180, flex: 2 },
+                {
+                    field: 'quantity',
+                    headerName: 'مقدار',
+                    width: 140,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        if (p.value == null) return '';
+                        return formatQty(p.value) + (p.data.unitName ? ' ' + p.data.unitName : '');
+                    }
+                },
+                {
+                    field: 'averageUnitCost',
+                    headerName: 'میانگین بهای واحد',
+                    width: 160,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        return formatCost(p.value);
+                    }
+                },
+                {
+                    field: 'totalValue',
+                    headerName: 'ارزش',
+                    width: 150,
+                    cellStyle: function (params) {
+                        return {
+                            textAlign: 'left',
+                            direction: 'ltr',
+                            fontWeight: 'bold',
+                            color: params.data.hasUnknownCost ? '#ffc107' : '#0d6efd'
+                        };
+                    },
+                    valueFormatter: function (p) {
+                        return formatMoney(p.value);
                     }
                 }
-            });
+            ];
+
+            // ============================================
+            // ساخت Grid
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: valuationData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'موجودی‌ای برای این فیلترها ثبت نشده است.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('valuationGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileValuation');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>' +
+                        'موجودی‌ای برای این فیلترها ثبت نشده است.</div>';
+                    return;
+                }
+
+                rows.forEach(function (r, index) {
+                    var qtyStr = formatQty(r.quantity) + (r.unitName ? ' ' + r.unitName : '');
+                    var costStr = formatCost(r.averageUnitCost);
+                    var valueStr = formatMoney(r.totalValue);
+                    var valueClass = r.hasUnknownCost ? 'value-line unknown' : 'value-line';
+
+                    html += '<div class="valuation-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="name">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa-solid fa-cube text-muted ml-1"></i>' +
+                                (r.productName || '') +
+                            '</div>' +
+                            (r.unitName
+                                ? '<span class="badge badge-info">' + r.unitName + '</span>'
+                                : '') +
+                        '</div>' +
+                        '<div class="row-line">انبار: ' + (r.warehouseName || '—') + '</div>' +
+                        (r.productCode
+                            ? '<div class="row-line">کد: <span dir="ltr">' + r.productCode + '</span></div>'
+                            : '') +
+                        '<div class="row-line">مقدار: <span dir="ltr">' + qtyStr + '</span></div>' +
+                        '<div class="row-line">میانگین بهای واحد: <span dir="ltr">' + costStr + '</span></div>' +
+                        '<div class="' + valueClass + '">ارزش: <span dir="ltr">' + valueStr + '</span></div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('valuationGrid');
+                var mobileDiv = document.getElementById('mobileValuation');
+
+                if (!gridDiv || !mobileDiv) return;
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(valuationData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // شروع
+            // ============================================
+            if (showGrid) {
+                applyLayout();
+                var mql = window.matchMedia('(max-width: 767.98px)');
+                mql.addEventListener('change', applyLayout);
+            }
+
         });
     </script>
 }

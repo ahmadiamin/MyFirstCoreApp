@@ -5,213 +5,411 @@
 
 @{
     ViewData["Title"] = "مدیریت کاربران";
+
+    var canCreate = await PermissionService.HasPermissionAsync(User, "User.Create");
+    var canEdit = await PermissionService.HasPermissionAsync(User, "User.Edit");
 }
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show">
-            <button type="button"
-                    class="close"
-                    data-dismiss="alert">
-                &times;
-            </button>
-
-            <i class="fa fa-check-circle"></i>
-            @TempData["SuccessMessage"]
-        </div>
+<style>
+    #usersGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
     }
 
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show">
-            <button type="button"
-                    class="close"
-                    data-dismiss="alert">
-                &times;
-            </button>
-
-            <i class="fa fa-exclamation-circle"></i>
-            @TempData["ErrorMessage"]
-        </div>
+    @@media (max-width: 767.98px) {
+        #usersGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
     }
+
+    .cell-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .cell-actions .btn {
+        padding: 3px 6px;
+        line-height: 1;
+    }
+
+    .cell-actions form {
+        display: inline-block;
+        margin: 0;
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+</style>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check-circle"></i> @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+    </div>
+}
 
 <div class="card card-primary">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fa fa-users"></i>
-            مدیریت کاربران
+            <i class="fa fa-users"></i> مدیریت کاربران
         </h3>
-        
         <div class="card-tools">
-            @if (await PermissionService.HasPermissionAsync(User, "User.Create"))
+            @if (canCreate)
             {
                 <a asp-action="Create" class="btn btn-success btn-sm">
-                    <i class="fa fa-plus"></i>
-                    کاربر جدید
+                    <i class="fa fa-plus"></i> کاربر جدید
                 </a>
             }
         </div>
     </div>
 
     <div class="card-body p-0">
-
-        <div class="table-responsive">
-            <table class="table table-hover table-striped mb-0">
-                <thead>
-                    <tr>
-                        <th>نام و نام خانوادگی</th>
-                        <th>نام کاربری</th>
-                        <th>ایمیل</th>
-                        <th>
-                            تأیید ایمیل
-                        </th>
-                        <th>نقش‌ها</th>
-                        <th>وضعیت</th>
-                        <th style="width: 150px;">عملیات</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach (var user in Model)
-                    {
-                        <tr>
-                            <td>
-                                <i class="fa fa-user text-muted"></i>
-                                @user.FullName
-                            </td>
-
-                            <td>
-                                @user.UserName
-                            </td>
-
-                            <td>
-                                @user.Email
-                            </td>
-                            <td>
-                                @if (user.EmailConfirmed)
-                                {
-                                    <span class="badge badge-success">
-                                        تأیید شده
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge badge-warning">
-                                        تأیید نشده
-                                    </span>
-                                    @if (!user.EmailConfirmed)
-                                    {
-                                        <form asp-action="ResendConfirmationEmail"
-                                              asp-route-id="@user.Id"
-                                              method="post"
-                                              class="d-inline">
-
-                                            @Html.AntiForgeryToken()
-
-                                            <button type="submit"
-                                                    class="btn btn-warning btn-sm"
-                                                    title="ارسال مجدد لینک تأیید">
-
-                                                <i class="fa fa-paper-plane"></i>
-                                                ارسال تأیید
-
-                                            </button>
-
-                                        </form>
-                                    }
-                                }
-                            </td>
-                            <td>
-                                @if (user.Roles.Any())
-                                {
-                                    foreach (var role in user.Roles)
-                                    {
-                                        <span class="badge badge-info">
-                                            @role
-                                        </span>
-                                    }
-                                }
-                                else
-                                {
-                                    <span class="text-muted">
-                                        بدون نقش
-                                    </span>
-                                }
-                            </td>
-
-                            <td>
-                                @if (user.IsActive)
-                                {
-                                    <span class="badge badge-success">
-                                        فعال
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge badge-danger">
-                                        غیرفعال
-                                    </span>
-                                }
-
-                                <form asp-action="ToggleActive"
-                                      method="post"
-                                      class="d-inline">
-
-                                    @Html.AntiForgeryToken()
-
-                                    <input type="hidden"
-                                           name="id"
-                                           value="@user.Id" />
-
-                                    @if (user.IsActive)
-                                    {
-                                        <button type="submit"
-                                                class="btn btn-warning btn-sm"
-                                                title="غیرفعال کردن"
-                                                onclick="return confirm('آیا از غیرفعال کردن این کاربر مطمئن هستید؟');">
-                                            <i class="fa fa-close"></i>
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <button type="submit"
-                                                class="btn btn-success btn-sm"
-                                                title="فعال کردن"
-                                                onclick="return confirm('آیا می‌خواهید این کاربر فعال شود؟');">
-                                            <i class="fa fa-check"></i>
-                                        </button>
-                                    }
-
-                                </form>
-                            </td>
-
-                            <td>
-                                @if (await PermissionService.HasPermissionAsync(User, "User.Edit"))
-                                {
-                                    <a asp-action="Edit"
-                                       asp-route-id="@user.Id"
-                                       class="btn btn-warning btn-sm"
-                                       title="ویرایش">
-                                        <i class="fa fa-edit"></i>
-                                    </a>
-
-                                    <a asp-action="ProfileImages"
-                                       asp-route-userId="@user.Id"
-                                       class="btn btn-info btn-sm"
-                                       title="مدیریت تصاویر">
-                                        <i class="fa fa-image"></i>
-                                    </a>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        <div id="usersGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+        <div id="mobileList" class="d-md-none p-2"></div>
     </div>
 
     <div class="card-footer text-muted">
-        تعداد کاربران:
-        <strong>@Model.Count()</strong>
+        تعداد کاربران: <strong>@Model.Count()</strong>
     </div>
 </div>
+
+@* توکن CSRF برای درخواست‌های POST از داخل Grid *@
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        // ============================================================
+        // ابزار: تبدیل عدد به فارسی
+        // ============================================================
+        function toPersianDigits(n) {
+            return String(n).replace(/\d/g, function (d) {
+                return '۰۱۲۳۴۵۶۷۸۹'[d];
+            });
+        }
+
+        // ============================================================
+        // ۱) آدرس‌ها — ساخته‌شده توسط سرور (Area-aware)
+        // ============================================================
+        var urls = {
+            edit:          '@Url.Action("Edit", "Users", new { area = "Admin", id = "__ID__" })',
+            profileImages: '@Url.Action("ProfileImages", "Users", new { area = "Admin", userId = "__ID__" })',
+            toggleActive:  '@Url.Action("ToggleActive", "Users", new { area = "Admin" })',
+            sendRecovery:  '@Url.Action("SendPasswordRecoveryCode", "Users", new { area = "Admin" })'
+        };
+
+        function buildUrl(template, id) {
+            return template.replace('__ID__', id);
+        }
+
+        // ============================================================
+        // ۲) داده‌ها
+        // ============================================================
+        var usersData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Select(u => new {
+                id = u.Id,
+                fullName = u.FullName,
+                userName = u.UserName,
+                email = u.Email,
+                emailConfirmed = u.EmailConfirmed,
+                phoneNumberConfirmed = u.PhoneNumberConfirmed,
+                phoneNumber = u.PhoneNumber,
+                roles = u.Roles,
+                isActive = u.IsActive,
+                canEdit = canEdit
+            }),
+            new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+        // ============================================================
+        // ۳) توکن CSRF
+        // ============================================================
+        var csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        function postAction(url, id) {
+            var form = document.createElement('form');
+            form.method = 'post';
+            form.action = url;
+
+            var token = document.createElement('input');
+            token.type = 'hidden';
+            token.name = '__RequestVerificationToken';
+            token.value = csrfToken;
+            form.appendChild(token);
+
+            if (id) {
+                var idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = id;
+                form.appendChild(idInput);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // ============================================================
+        // ۴) اکشن‌ها (سراسری برای onclick)
+        // ============================================================
+        window.toggleActive = function (id, isActive) {
+            if (!confirm(isActive ? 'غیرفعال شود؟' : 'فعال شود؟')) return;
+            postAction(urls.toggleActive, id);
+        };
+
+        window.sendRecovery = function (id) {
+            if (!confirm('کد بازیابی رمز عبور ارسال شود؟')) return;
+            postAction(urls.sendRecovery, id);
+        };
+
+        // ============================================================
+        // ۵) ساخت دکمه‌های عملیات (مشترک بین Grid و موبایل)
+        // ============================================================
+        function buildActionButtons(u) {
+            var html = '';
+
+            // فعال/غیرفعال (همیشه)
+            html += '<button class="btn btn-sm ' + (u.isActive ? 'btn-warning' : 'btn-success') + '" ' +
+                    'title="' + (u.isActive ? 'غیرفعال کردن' : 'فعال کردن') + '" ' +
+                    'onclick="toggleActive(\'' + u.id + '\',' + u.isActive + ')">' +
+                    (u.isActive ? '<i class="fa fa-close"></i>' : '<i class="fa fa-check"></i>') +
+                    '</button>';
+
+            if (u.canEdit) {
+                // ویرایش
+                html += '<a href="' + buildUrl(urls.edit, u.id) + '" class="btn btn-warning btn-sm" title="ویرایش">' +
+                        '<i class="fa fa-edit"></i></a>';
+
+                // تصاویر
+                html += '<a href="' + buildUrl(urls.profileImages, u.id) + '" class="btn btn-info btn-sm" title="مدیریت تصاویر">' +
+                        '<i class="fa fa-image"></i></a>';
+
+                // ارسال کد بازیابی
+                if (u.isActive && u.phoneNumberConfirmed && u.phoneNumber) {
+                    html += '<button class="btn btn-primary btn-sm" title="ارسال کد بازیابی رمز" ' +
+                            'onclick="sendRecovery(\'' + u.id + '\')">' +
+                            '<i class="fa fa-mobile"></i></button>';
+                }
+            }
+
+            return html;
+        }
+
+        // ============================================================
+        // ۶) رندر موبایل (کارت‌های عمودی با شماره)
+        // ============================================================
+        function renderMobileList(users) {
+            var container = document.getElementById('mobileList');
+            var html = '';
+
+            users.forEach(function (u, index) {
+                html += '<div class="card mb-2 shadow-sm">' +
+                    '<div class="card-body p-2">' +
+                        '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                            '<strong>' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-user text-muted"></i> ' + (u.fullName || '') +
+                            '</strong>' +
+                            (u.isActive
+                                ? '<span class="badge badge-success">فعال</span>'
+                                : '<span class="badge badge-danger">غیرفعال</span>') +
+                        '</div>' +
+                        '<div class="small text-muted mb-1">' + (u.userName || '') + '</div>' +
+                        '<div class="small text-muted mb-1">' + (u.email || '') + '</div>' +
+                        '<div class="mb-1">' +
+                            (u.emailConfirmed
+                                ? '<span class="badge badge-success">ایمیل تأیید شده</span> '
+                                : '<span class="badge badge-warning">ایمیل تأیید نشده</span> ') +
+                            (u.phoneNumberConfirmed
+                                ? '<span class="badge badge-success">موبایل تأیید شده</span>'
+                                : '<span class="badge badge-warning">موبایل تأیید نشده</span>') +
+                        '</div>' +
+                        '<div class="mb-2">' +
+                            (u.roles && u.roles.length
+                                ? u.roles.map(function (r) { return '<span class="badge badge-info">' + r + '</span>'; }).join(' ')
+                                : '<span class="text-muted small">بدون نقش</span>') +
+                        '</div>' +
+                        '<div class="cell-actions">' + buildActionButtons(u) + '</div>' +
+                    '</div>' +
+                '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // ۷) AG Grid (دسکتاپ)
+        // ============================================================
+        var gridApi = null;
+
+        function buildGrid() {
+            var gridDiv = document.getElementById('usersGrid');
+
+            if (gridApi) return; // قبلاً ساخته شده
+
+            var columnDefs = [
+                // ستون شماره سطر — اولین ستون (سمت راست در RTL)
+                {
+                    headerName: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    headerName: 'نام و نام خانوادگی',
+                    field: 'fullName',
+                    flex: 2,
+                    minWidth: 150
+                },
+                {
+                    headerName: 'نام کاربری',
+                    field: 'userName',
+                    flex: 1,
+                    minWidth: 120
+                },
+                {
+                    headerName: 'ایمیل',
+                    field: 'email',
+                    flex: 2,
+                    minWidth: 180
+                },
+                {
+                    headerName: 'تأیید ایمیل',
+                    field: 'emailConfirmed',
+                    width: 130,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">تأیید شده</span>'
+                            : '<span class="badge badge-warning">تأیید نشده</span>';
+                    }
+                },
+                {
+                    headerName: 'تأیید موبایل',
+                    field: 'phoneNumberConfirmed',
+                    width: 130,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">تأیید شده</span>'
+                            : '<span class="badge badge-warning">تأیید نشده</span>';
+                    }
+                },
+                {
+                    headerName: 'نقش‌ها',
+                    field: 'roles',
+                    flex: 1,
+                    minWidth: 120,
+                    cellRenderer: function (p) {
+                        if (!p.value || !p.value.length)
+                            return '<span class="text-muted">بدون نقش</span>';
+                        return p.value.map(function (r) {
+                            return '<span class="badge badge-info">' + r + '</span>';
+                        }).join(' ');
+                    }
+                },
+                {
+                    headerName: 'وضعیت',
+                    field: 'isActive',
+                    width: 110,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">فعال</span>'
+                            : '<span class="badge badge-danger">غیرفعال</span>';
+                    }
+                },
+                {
+                    headerName: 'عملیات',
+                    width: 200,
+                    sortable: false,
+                    filter: false,
+                    cellRenderer: function (p) {
+                        return '<div class="cell-actions">' + buildActionButtons(p.data) + '</div>';
+                    }
+                }
+            ];
+
+            var gridOptions = {
+                columnDefs: columnDefs,
+                rowData: usersData,
+                enableRtl: true,
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                    cellStyle: { textAlign: 'right', direction: 'rtl' },
+                    headerClass: 'ag-right-aligned-header'
+                },
+                pagination: true,
+                paginationPageSize: 20,
+                paginationPageSizeSelector: [10, 20, 50, 100],
+                domLayout: 'normal',
+                onPaginationChanged: function () {
+                    // رفرش ستون شماره بعد از تغییر صفحه
+                    if (gridApi) {
+                        gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                },
+                localeText: {
+                    page: 'صفحه',
+                    to: 'تا',
+                    of: 'از',
+                    next: 'بعدی',
+                    last: 'آخر',
+                    first: 'اول',
+                    previous: 'قبلی',
+                    loadingOoo: 'در حال بارگذاری...',
+                    noRowsToShow: 'داده‌ای برای نمایش نیست',
+                    pageSizeSelectorLabel: 'تعداد در صفحه:'
+                }
+            };
+
+            gridApi = agGrid.createGrid(gridDiv, gridOptions);
+        }
+
+        // ============================================================
+        // ۸) راه‌اندازی و سوئیچ موبایل/دسکتاپ
+        // ============================================================
+        function isMobile() {
+            return window.matchMedia('(max-width: 767.98px)').matches;
+        }
+
+        function applyLayout() {
+            var gridDiv = document.getElementById('usersGrid');
+            var mobileDiv = document.getElementById('mobileList');
+
+            if (isMobile()) {
+                gridDiv.style.display = 'none';
+                mobileDiv.classList.remove('d-md-none');
+                renderMobileList(usersData);
+            } else {
+                gridDiv.style.display = '';
+                mobileDiv.classList.add('d-md-none');
+                if (!gridApi) buildGrid();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+        });
+    </script>
+}

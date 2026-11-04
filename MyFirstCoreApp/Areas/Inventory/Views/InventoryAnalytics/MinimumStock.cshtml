@@ -2,26 +2,315 @@
 @{
     ViewData["Title"] = "هشدار حداقل موجودی";
 }
+
+<style>
+    #minimumStockGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #minimumStockGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .alert-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .alert-card .name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .alert-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .alert-card .shortage {
+        font-weight: 600;
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+</style>
+
 <div class="card">
-    <div class="card-header"><h3 class="card-title">هشدار حداقل موجودی</h3></div>
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-triangle-exclamation"></i> هشدار حداقل موجودی
+        </h3>
+    </div>
     <div class="card-body">
-        <p class="text-muted">موجودی هر کالا در همهٔ انبارها با حداقل تعیین‌شده در فرم کالا مقایسه می‌شود.</p>
+
+        <p class="text-muted">
+            <i class="fa fa-info-circle"></i>
+            موجودی هر کالا در همهٔ انبارها با حداقل تعیین‌شده در فرم کالا مقایسه می‌شود.
+        </p>
+
         @if (Model.Count > 0)
         {
-            <button type="button" class="btn btn-outline-success mb-3" data-csv-table="minimumStockTable" data-csv-filename="هشدار-حداقل-موجودی.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+            <button type="button" class="btn btn-outline-success btn-sm mb-3"
+                    data-csv-table="minimumStockTable" data-csv-filename="هشدار-حداقل-موجودی.csv">
+                <i class="fa fa-file-csv"></i> خروجی Excel (CSV)
+            </button>
         }
-        <div class="table-responsive"><table id="minimumStockTable" class="table table-bordered table-striped">
-            <thead><tr><th>کد</th><th>کالا</th><th>موجودی کل</th><th>حداقل</th><th>کسری</th><th>واحد</th></tr></thead>
-            <tbody>
-            @if (Model.Count == 0) { <tr><td colspan="6" class="text-center text-muted">کالایی زیر حداقل موجودی نیست.</td></tr> }
-            @foreach (var row in Model)
-            {
-                <tr><td>@(row.ProductCode ?? "—")</td><td>@row.ProductName</td><td class="text-right">@row.CurrentStock.ToString("N3")</td><td class="text-right">@row.MinimumStock.ToString("N3")</td><td class="text-right text-danger">@row.Shortage.ToString("N3")</td><td>@row.UnitName</td></tr>
-            }
-            </tbody>
-        </table></div>
+
+        <!-- دسکتاپ: AG Grid -->
+        <div id="minimumStockGrid" class="ag-theme-alpine d-none d-md-block"
+             style="height: 550px; width: 100%;">
+        </div>
+
+        <!-- جدول مخفی برای CSV -->
+        <div class="d-none">
+            <table id="minimumStockTable">
+                <thead>
+                    <tr>
+                        <th>کد</th>
+                        <th>کالا</th>
+                        <th>موجودی کل</th>
+                        <th>حداقل</th>
+                        <th>کسری</th>
+                        <th>واحد</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model)
+                    {
+                        <tr>
+                            <td>@(row.ProductCode ?? "—")</td>
+                            <td>@row.ProductName</td>
+                            <td>@row.CurrentStock.ToString("N3")</td>
+                            <td>@row.MinimumStock.ToString("N3")</td>
+                            <td>@row.Shortage.ToString("N3")</td>
+                            <td>@row.UnitName</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobileAlerts" class="d-md-none"></div>
+
     </div>
 </div>
+
 @section Scripts {
     <partial name="_CsvExportScripts" />
+
+    <script>
+        $(function () {
+
+            // ============================================
+            // داده‌ها
+            // ============================================
+            var alertsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Select(r => new {
+                    productCode = r.ProductCode,
+                    productName = r.ProductName,
+                    currentStock = r.CurrentStock,
+                    minimumStock = r.MinimumStock,
+                    shortage = r.Shortage,
+                    unitName = r.UnitName
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            var hasData = @(Model.Count > 0 ? "true" : "false");
+
+            var gridApi = null;
+
+            // ============================================
+            // ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function formatQty(n) {
+                if (n == null) return '';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US', {
+                    minimumFractionDigits: 3,
+                    maximumFractionDigits: 3
+                }));
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'productCode',
+                    headerName: 'کد',
+                    width: 120,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' },
+                    valueFormatter: function (p) {
+                        return p.value ? p.value : '—';
+                    }
+                },
+                { field: 'productName', headerName: 'کالا', minWidth: 200, flex: 2 },
+                {
+                    field: 'currentStock',
+                    headerName: 'موجودی کل',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) { return formatQty(p.value); }
+                },
+                {
+                    field: 'minimumStock',
+                    headerName: 'حداقل',
+                    width: 120,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) { return formatQty(p.value); }
+                },
+                {
+                    field: 'shortage',
+                    headerName: 'کسری',
+                    width: 120,
+                    cellStyle: { textAlign: 'left', direction: 'ltr', color: '#dc3545', fontWeight: 'bold' },
+                    valueFormatter: function (p) { return formatQty(p.value); }
+                },
+                { field: 'unitName', headerName: 'واحد', width: 90,
+                    cellStyle: { textAlign: 'center' } }
+            ];
+
+            // ============================================
+            // ساخت Grid
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: alertsData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'کالایی زیر حداقل موجودی نیست.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('minimumStockGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileAlerts');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-check-circle fa-2x mb-2 text-success"></i><br/>' +
+                        'کالایی زیر حداقل موجودی نیست.</div>';
+                    return;
+                }
+
+                rows.forEach(function (r, index) {
+                    html += '<div class="alert-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="name">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa-solid fa-cube text-muted ml-1"></i>' +
+                                (r.productName || '') +
+                            '</div>' +
+                            (r.unitName
+                                ? '<span class="badge badge-info">' + r.unitName + '</span>'
+                                : '') +
+                        '</div>' +
+                        (r.productCode
+                            ? '<div class="row-line">کد: <span dir="ltr">' + r.productCode + '</span></div>'
+                            : '') +
+                        '<div class="row-line">موجودی کل: <span dir="ltr">' + formatQty(r.currentStock) + '</span></div>' +
+                        '<div class="row-line">حداقل: <span dir="ltr">' + formatQty(r.minimumStock) + '</span></div>' +
+                        '<div class="shortage">کسری: <span dir="ltr">' + formatQty(r.shortage) + ' ' + (r.unitName || '') + '</span></div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('minimumStockGrid');
+                var mobileDiv = document.getElementById('mobileAlerts');
+
+                if (!gridDiv || !mobileDiv) return;
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(alertsData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // شروع
+            // ============================================
+            // در هر حالت (با داده یا بدون داده) layout را اعمال می‌کنیم
+            // تا پیام «کالایی زیر حداقل موجودی نیست» درست نمایش داده شود.
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+
+        });
+    </script>
 }

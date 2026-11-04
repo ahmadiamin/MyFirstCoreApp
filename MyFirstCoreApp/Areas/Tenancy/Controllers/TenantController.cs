@@ -290,7 +290,7 @@ public class TenantController : Controller
             EconomicCode = entity.EconomicCode,
             Phone = entity.Phone,
             Address = entity.Address,
-            SmsLineNumber = string.Empty
+            SmsLineNumber = string.Empty,
         };
 
         await PopulateSmsSettingsSummaryAsync(id, model);
@@ -319,21 +319,15 @@ public class TenantController : Controller
         var validReminderTime = TimeOnly.TryParse(model.SmsChequeReminderTime, out var chequeReminderTime);
         if (!validReminderTime)
             ModelState.AddModelError(nameof(model.SmsChequeReminderTime), "ساعت ارسال معتبر نیست.");
-        if (model.SmsChequeReminderEnabled &&
-            (string.IsNullOrWhiteSpace(model.SmsChequeReminderText) ||
-             new[] { "%var1%", "%var2%", "%var3%", "%var4%" }
-                 .Any(token => !model.SmsChequeReminderText.Contains(token, StringComparison.Ordinal))))
-            ModelState.AddModelError(nameof(model.SmsChequeReminderText),
-                "الگوی فعال باید شامل متغیرهای %var1% تا %var4% باشد.");
+
         if (model.SmsChequeReminderEnabled &&
             !model.SmsChequeReminderDayBeforeEnabled && !model.SmsChequeReminderDueDayEnabled)
             ModelState.AddModelError(nameof(model.SmsChequeReminderEnabled),
                 "حداقل یکی از زمان‌های یادآوری را انتخاب کنید.");
+
         if (model.SmsChequeReminderEnabled &&
-            !System.Text.RegularExpressions.Regex.IsMatch(NormalizeMobileDigits(model.SmsChequeReminderMobile),
-                "^09[0-9]{9}$"))
-            ModelState.AddModelError(nameof(model.SmsChequeReminderMobile),
-                "شماره موبایل شرکت باید ۱۱ رقم و با 09 شروع شود.");
+            !System.Text.RegularExpressions.Regex.IsMatch(NormalizeMobileDigits(model.SmsChequeReminderMobile),"^09[0-9]{9}$"))
+            ModelState.AddModelError(nameof(model.SmsChequeReminderMobile), "شماره موبایل شرکت باید ۱۱ رقم و با 09 شروع شود.");
 
         if (!ModelState.IsValid)
         {
@@ -349,15 +343,6 @@ public class TenantController : Controller
             await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
             return View(model);
         }
-        if (!string.IsNullOrWhiteSpace(model.SmsPortalLinkText) &&
-            !model.SmsPortalLinkText.Contains("%var1%", StringComparison.Ordinal))
-        {
-            ModelState.AddModelError(nameof(model.SmsPortalLinkText), "الگوی پیامک باید شامل متغیر %var1% باشد.");
-            ViewBag.TenantId = id;
-            await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
-            return View(model);
-        }
-
         var entity = await _tenantService.GetByIdAsync(id);
         if (entity == null) return NotFound();
 
@@ -374,21 +359,20 @@ public class TenantController : Controller
         var smsSettingsChanged = model.ClearSmsApiKey ||
             !string.IsNullOrWhiteSpace(model.SmsApiKeyInput) ||
             !string.Equals(smsLineNumber.Trim(), currentSmsSettings.LineNumber, StringComparison.Ordinal) ||
-            !string.Equals(model.SmsPortalLinkText?.Trim(), currentSmsSettings.PortalLinkText, StringComparison.Ordinal) ||
+            !string.Equals(model.PortalLinkPatternCode?.Trim(), currentSmsSettings.PortalLinkText, StringComparison.Ordinal) ||
             model.SmsChequeReminderEnabled != currentSmsSettings.ChequeReminderEnabled ||
             model.SmsChequeReminderDayBeforeEnabled != currentSmsSettings.ChequeReminderDayBeforeEnabled ||
             model.SmsChequeReminderDueDayEnabled != currentSmsSettings.ChequeReminderDueDayEnabled ||
             chequeReminderTime != currentSmsSettings.ChequeReminderTime ||
-            !string.Equals(NormalizeMobileDigits(model.SmsChequeReminderMobile),
-                currentSmsSettings.ChequeReminderMobile, StringComparison.Ordinal) ||
-            !string.Equals(model.SmsChequeReminderText?.Trim(), currentSmsSettings.ChequeReminderText, StringComparison.Ordinal);
+            !string.Equals(NormalizeMobileDigits(model.SmsChequeReminderMobile), currentSmsSettings.ChequeReminderMobile, StringComparison.Ordinal) ||
+            !string.Equals(model.SmsChequeReminderPatternCode?.Trim(), currentSmsSettings.ChequeReminderPatternCode, StringComparison.Ordinal);
         if (smsSettingsChanged)
         {
             await _smsSettings.SaveAsync(id, model.SmsApiKeyInput, model.ClearSmsApiKey,
-                smsLineNumber, model.SmsPortalLinkText, userId,
+                smsLineNumber, model.PortalLinkPatternCode, userId,
                 model.SmsChequeReminderEnabled, model.SmsChequeReminderDayBeforeEnabled,
                 model.SmsChequeReminderDueDayEnabled, chequeReminderTime,
-                model.SmsChequeReminderMobile, model.SmsChequeReminderText);
+                model.SmsChequeReminderMobile, model.SmsChequeReminderPatternCode);
         }
 
         await _tenantService.UpdateAsync(entity);
@@ -404,8 +388,8 @@ public class TenantController : Controller
         model.SmsApiKeyConfigured = settings.ApiKeyConfigured;
         if (string.IsNullOrWhiteSpace(model.SmsLineNumber))
             model.SmsLineNumber = settings.LineNumber;
-        if (model.SmsPortalLinkText is null)
-            model.SmsPortalLinkText = settings.PortalLinkText;
+        if (model.PortalLinkPatternCode is null)
+            model.PortalLinkPatternCode = settings.PortalLinkText;
         if (!preserveReminderInput)
         {
             model.SmsChequeReminderEnabled = settings.ChequeReminderEnabled;
@@ -413,7 +397,7 @@ public class TenantController : Controller
             model.SmsChequeReminderDueDayEnabled = settings.ChequeReminderDueDayEnabled;
             model.SmsChequeReminderTime = settings.ChequeReminderTime.ToString("HH:mm");
             model.SmsChequeReminderMobile = settings.ChequeReminderMobile;
-            model.SmsChequeReminderText = settings.ChequeReminderText;
+            model.SmsChequeReminderPatternCode = settings.ChequeReminderPatternCode;
         }
     }
 

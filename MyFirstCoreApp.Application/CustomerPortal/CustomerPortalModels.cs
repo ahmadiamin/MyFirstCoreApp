@@ -74,5 +74,9 @@ public sealed class CustomerPortalSmsStatusViewModel
     public int ContactId { get; init; }
     public int ShareId { get; init; }
     public string ContactName { get; init; } = string.Empty;
-    public FarazSmsDeliveryReport Report { get; init; } = new(string.Empty, false, "{}", string.Empty);
+
+    public FarazSmsDeliveryReport Report { get; init; }
+        = new(string.Empty, false, "{}", string.Empty);
+
+    public IReadOnlyList<FarazSmsDeliveryItem> DeliveryItems { get; init; } = [];
 }

@@ -3,161 +3,383 @@
     ViewData["Title"] = "ثبت انتقال بین انبارها";
 }
 
-<div class="card card-primary">
-    <div class="card-header"><h3 class="card-title"><i class="fa-solid fa-right-left"></i> ثبت انتقال بین انبارها</h3></div>
+<style>
+    .transfer-form .item-row {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #fafafa;
+    }
+
+        .transfer-form .item-row .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+
+        .transfer-form .item-row .product-select {
+            width: 100%;
+        }
+
+        .transfer-form .item-row .qty-input {
+            direction: ltr;
+            text-align: right;
+        }
+
+    @@media (max-width: 767.98px) {
+        .transfer-form .card-body {
+            padding: 10px;
+        }
+    }
+</style>
+
+<div class="card card-primary transfer-form">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-right-left"></i> ثبت انتقال بین انبارها
+        </h3>
+    </div>
+
     <form asp-action="Create" method="post" id="transferForm">
         @Html.AntiForgeryToken()
+
         <div class="card-body">
+
             <div asp-validation-summary="All" class="alert alert-danger"></div>
+
             @if (Model.Warehouses.Count < 2)
             {
-                <div class="alert alert-warning">برای انتقال، حداقل دو انبار فعال لازم است.</div>
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    برای انتقال، حداقل دو انبار فعال لازم است.
+                </div>
             }
             @if (Model.Products.Count == 0)
             {
-                <div class="alert alert-warning">کالای فعالِ دارای کنترل موجودی برای انتقال وجود ندارد.</div>
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    کالای فعالِ دارای کنترل موجودی برای انتقال وجود ندارد.
+                </div>
             }
+
+            <!-- اطلاعات اصلی -->
             <div class="row">
-                <div class="col-md-3 form-group">
+                <div class="col-md-3 col-6 form-group">
                     <label asp-for="Date">تاریخ</label>
-                    <input asp-for="Date" class="form-control datepicker" autocomplete="off" dir="ltr" placeholder="1405/01/01" />
+                    <input asp-for="Date" class="form-control datepicker" autocomplete="off"
+                           dir="ltr" placeholder="1405/01/01" />
                     <span asp-validation-for="Date" class="text-danger"></span>
                 </div>
-                <div class="col-md-4 form-group">
+                <div class="col-md-4 col-6 form-group">
                     <label asp-for="SourceWarehouseId">انبار مبدأ</label>
-                    <select asp-for="SourceWarehouseId" asp-items="Model.Warehouses" class="form-control select2">
+                    <select asp-for="SourceWarehouseId" asp-items="Model.Warehouses"
+                            class="form-control select2">
                         <option value="">-- انتخاب انبار مبدأ --</option>
                     </select>
                 </div>
-                <div class="col-md-4 form-group">
+                <div class="col-md-5 col-12 form-group">
                     <label asp-for="DestinationWarehouseId">انبار مقصد</label>
-                    <select asp-for="DestinationWarehouseId" asp-items="Model.Warehouses" class="form-control select2">
+                    <select asp-for="DestinationWarehouseId" asp-items="Model.Warehouses"
+                            class="form-control select2">
                         <option value="">-- انتخاب انبار مقصد --</option>
                     </select>
                 </div>
                 <div class="col-md-12 form-group">
                     <label asp-for="Description">شرح</label>
-                    <input asp-for="Description" class="form-control" maxlength="500" placeholder="مثلاً انتقال کالا به شعبهٔ دوم" />
+                    <input asp-for="Description" class="form-control" maxlength="500"
+                           placeholder="مثلاً انتقال کالا به شعبهٔ دوم" />
                 </div>
             </div>
 
+            <!-- اقلام انتقال -->
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="mb-0">اقلام انتقال</h5>
-                <button type="button" id="addTransferItem" class="btn btn-sm btn-outline-primary"><i class="fa fa-plus"></i> افزودن کالا</button>
+                <h5 class="mb-0"><i class="fa fa-list"></i> اقلام انتقال</h5>
+                <button type="button" id="addTransferItem"
+                        class="btn btn-sm btn-outline-primary">
+                    <i class="fa fa-plus"></i> افزودن کالا
+                </button>
             </div>
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead><tr><th style="width:70%">کالا</th><th>مقدار</th><th style="width:60px"></th></tr></thead>
-                    <tbody id="transferItems">
-                    @for (var i = 0; i < Model.Items.Count; i++)
-                    {
-                        <tr class="transfer-item">
-                            <td>
-                                    <select name="Items[@i].ProductId" class="form-control product-select select2" required>
-                                    <option value="">-- انتخاب کالا --</option>
-                                    @foreach (var product in Model.Products)
-                                    {
-                                        if (Model.Items[i].ProductId.ToString() == product.Value)
-                                        {
-                                            <option value="@product.Value" selected>@product.Text</option>
-                                        }
-                                        else
-                                        {
-                                            <option value="@product.Value">@product.Text</option>
-                                        }
-                                    }
-                                </select>
-                            </td>
-                            <td><input name="Items[@i].Quantity" value="@Model.Items[i].Quantity" class="form-control" type="number" min="0.000001" step="any" required /></td>
-                            <td><button type="button" class="btn btn-sm btn-outline-danger remove-item" title="حذف ردیف"><i class="fa fa-trash"></i></button></td>
+
+            <!-- دسکتاپ: جدول -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:70%">کالا</th>
+                            <th style="width:120px;">مقدار</th>
+                            <th style="width:60px;"></th>
                         </tr>
-                    }
+                    </thead>
+                    <tbody id="transferItems">
+                        @for (var i = 0; i < Model.Items.Count; i++)
+                        {
+                            <tr class="transfer-item">
+                                <td>
+                                    <select name="Items[@i].ProductId"
+                                            class="form-control product-select select2" required>
+                                        <option value="">-- انتخاب کالا --</option>
+                                        @foreach (var product in Model.Products)
+                                        {
+                                            if (Model.Items[i].ProductId.ToString() == product.Value)
+                                            {
+                                                <option value="@product.Value" selected>@product.Text</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@product.Value">@product.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input name="Items[@i].Quantity"
+                                           value="@Model.Items[i].Quantity"
+                                           class="form-control qty-input"
+                                           type="number" min="0.000001" step="any" required />
+                                </td>
+                                <td class="text-center">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger remove-item"
+                                            title="حذف ردیف">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
 
+            <!-- موبایل: کارت‌های ردیف -->
+            <div id="transferItemsMobile" class="d-md-none">
+                @for (var i = 0; i < Model.Items.Count; i++)
+                {
+                    <div class="item-row transfer-item">
+                        <div class="row-line">کالا</div>
+                        <select name="Items[@i].ProductId"
+                                class="form-control product-select select2" required>
+                            <option value="">-- انتخاب کالا --</option>
+                            @foreach (var product in Model.Products)
+                            {
+                                if (Model.Items[i].ProductId.ToString() == product.Value)
+                                {
+                                    <option value="@product.Value" selected>@product.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@product.Value">@product.Text</option>
+                                }
+                            }
+                        </select>
+                        <div class="row-line mt-2">مقدار</div>
+                        <input name="Items[@i].Quantity"
+                               value="@Model.Items[i].Quantity"
+                               class="form-control qty-input"
+                               type="number" min="0.000001" step="any" required />
+                        <div class="text-right mt-2">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger remove-item"
+                                    title="حذف ردیف">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- قالب ردیف جدید (مشترک) -->
             <template id="transferItemTemplate">
-                <tr class="transfer-item">
-                    <td><select class="form-control product-select select2" required><option value="">-- انتخاب کالا --</option>@foreach (var product in Model.Products){<option value="@product.Value">@product.Text</option>}</select></td>
-                    <td><input class="form-control" type="number" min="0.000001" step="any" value="1" required /></td>
-                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-item" title="حذف ردیف"><i class="fa fa-trash"></i></button></td>
-                </tr>
+                <div class="item-row transfer-item">
+                    <div class="row-line">کالا</div>
+                    <select class="form-control product-select select2" required>
+                        <option value="">-- انتخاب کالا --</option>
+                        @foreach (var product in Model.Products)
+                        {
+                            <option value="@product.Value">@product.Text</option>
+                        }
+                    </select>
+                    <div class="row-line mt-2">مقدار</div>
+                    <input class="form-control qty-input" type="number"
+                           min="0.000001" step="any" value="1" required />
+                    <div class="text-right mt-2">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger remove-item"
+                                title="حذف ردیف">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
             </template>
+
         </div>
-        <div class="card-footer d-flex" style="gap:8px">
-            <button type="submit" class="btn btn-primary" @(Model.Warehouses.Count < 2 || Model.Products.Count == 0 ? "disabled" : null)><i class="fa fa-save"></i> ذخیره پیش‌نویس</button>
-            <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+
+        <div class="card-footer d-flex flex-wrap" style="gap:8px">
+            <button type="submit" class="btn btn-primary"
+                    @(Model.Warehouses.Count < 2 || Model.Products.Count == 0 ? "disabled" : null)>
+                <i class="fa fa-save"></i> ذخیره پیش‌نویس
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="fa fa-arrow-right"></i> بازگشت
+            </a>
         </div>
     </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
     <script>
         $(document).ready(function () {
-            $('.select2').select2({
-                dir: 'rtl',
-                placeholder: '-- انتخاب کنید --',
-                allowClear: true,
-                width: '100%',
-                language: 'fa'
-            });
 
-            $('.datepicker').persianDatepicker({
-                format: 'YYYY/MM/DD',
-                initialValue: true,               // 🆕
-                initialValueType: 'persian',      // 🆕
-                autoClose: true,
-                observer: true,
-                calendar: {
-                    persian: {
-                        locale: 'fa',
-                        showHint: true,
-                        leapYearMode: 'algorithmic'
-                    }
-                },
-                toolbox: {
-                    calendarSwitch: {
-                        enabled: false
-                    }
-                }
-            });
-        });
-    </script>
-    <script>
-        (function () {
-            
-            const body = document.getElementById('transferItems');
-            const template = document.getElementById('transferItemTemplate');
-            function reindex() {
-                body.querySelectorAll('.transfer-item').forEach((row, index) => {
-                    row.querySelector('.product-select').name = `Items[${index}].ProductId`;
-                    row.querySelector('input[type="number"]').name = `Items[${index}].Quantity`;
+            // ============================================
+            // select2
+            // ============================================
+            function initSelect2($scope) {
+                ($scope || $(document)).find('.select2').each(function () {
+                    var $el = $(this);
+                    if ($el.data('select2')) return; // قبلاً init شده
+                    $el.select2({
+                        dir: 'rtl',
+                        placeholder: '-- انتخاب کنید --',
+                        allowClear: true,
+                        width: '100%',
+                        language: 'fa'
+                    });
                 });
             }
-            document.getElementById('addTransferItem').addEventListener('click', () => {
-                body.appendChild(template.content.cloneNode(true));
-                $(body.lastElementChild).find('.select2').select2({
-                    dir: 'rtl',
-                    placeholder: '-- انتخاب کنید --',
-                    allowClear: true,
-                    width: '100%',
-                    language: 'fa'
-                });
+
+            // ============================================
+            // Persian DatePicker
+            // ============================================
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: true,
+                initialValueType: 'persian',
+                autoClose: true,
+                observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+
+            initSelect2();
+
+            // ============================================
+            // منطق add/remove ردیف‌ها
+            // ============================================
+            var desktopBody = document.getElementById('transferItems');
+            var mobileBody  = document.getElementById('transferItemsMobile');
+            var template    = document.getElementById('transferItemTemplate');
+
+            // آیا در حالت دسکتاپ هستیم؟
+            function isDesktop() {
+                return window.matchMedia('(min-width: 768px)').matches;
+            }
+
+            // reindex کردن نام‌ها در هر دو ظرف
+            function reindex() {
+                // دسکتاپ
+                if (desktopBody) {
+                    desktopBody.querySelectorAll('.transfer-item').forEach(function (row, index) {
+                        var sel = row.querySelector('.product-select');
+                        var qty = row.querySelector('input[type="number"]');
+                        if (sel) sel.name = 'Items[' + index + '].ProductId';
+                        if (qty) qty.name = 'Items[' + index + '].Quantity';
+                    });
+                }
+                // موبایل
+                if (mobileBody) {
+                    mobileBody.querySelectorAll('.transfer-item').forEach(function (row, index) {
+                        var sel = row.querySelector('.product-select');
+                        var qty = row.querySelector('input[type="number"]');
+                        if (sel) sel.name = 'Items[' + index + '].ProductId';
+                        if (qty) qty.name = 'Items[' + index + '].Quantity';
+                    });
+                }
+            }
+
+            // افزودن ردیف جدید به ظرف فعال
+            function getActiveBody() {
+                return isDesktop() ? desktopBody : mobileBody;
+            }
+
+            document.getElementById('addTransferItem').addEventListener('click', function () {
+                var body = getActiveBody();
+                if (!body) return;
+
+                var clone = template.content.cloneNode(true);
+
+                // قالب ما یک <div class="item-row"> است (نه <tr>)
+                // برای دسکتاپ باید به <tr> تبدیل شود
+                if (isDesktop()) {
+                    var tpl = document.createElement('template');
+                    tpl.innerHTML = '<tr class="transfer-item">' +
+                        '<td><select class="form-control product-select select2" required>' +
+                        document.querySelector('#transferItemTemplate .product-select').innerHTML +
+                        '</select></td>' +
+                        '<td><input class="form-control qty-input" type="number" min="0.000001" step="any" value="1" required /></td>' +
+                        '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-item" title="حذف ردیف"><i class="fa fa-trash"></i></button></td>' +
+                        '</tr>';
+                    body.appendChild(tpl.content.firstElementChild);
+                } else {
+                    body.appendChild(clone);
+                }
+
+                // select2 برای ردیف جدید
+                initSelect2($(body.lastElementChild));
+
                 reindex();
             });
-            body.addEventListener('click', event => {
-                const button = event.target.closest('.remove-item');
+
+            // حذف ردیف (رویداد delegat روی هر دو ظرف)
+            function onRemove(event) {
+                var button = event.target.closest('.remove-item');
                 if (!button) return;
-                if (body.querySelectorAll('.transfer-item').length <= 1) {
-                    button.closest('tr').querySelector('.product-select').value = '';
-                    button.closest('tr').querySelector('input[type="number"]').value = '1';
+
+                var body = button.closest('#transferItems, #transferItemsMobile');
+                if (!body) return;
+
+                var rows = body.querySelectorAll('.transfer-item');
+                if (rows.length <= 1) {
+                    // حداقل یک ردیف: فقط خالی کن
+                    var row = button.closest('.transfer-item');
+                    row.querySelector('.product-select').value = '';
+                    row.querySelector('input[type="number"]').value = '1';
+                    if ($(row.querySelector('.product-select')).data('select2')) {
+                        $(row.querySelector('.product-select')).val('').trigger('change');
+                    }
                     return;
                 }
-                button.closest('tr').remove();
+                button.closest('.transfer-item').remove();
                 reindex();
+            }
+
+            if (desktopBody) desktopBody.addEventListener('click', onRemove);
+            if (mobileBody)  mobileBody.addEventListener('click', onRemove);
+
+            // ============================================
+            // همگام‌سازی دسکتاپ/موبایل
+            // ============================================
+            // ⚠️ در این صفحه فقط یکی از دو ظرف قابل ویرایش است.
+            // برای جلوگیری از ارسال داده‌های تکراری، ظرف مخفی را در سابمیت غیرفعال می‌کنیم.
+            $('#transferForm').on('submit', function () {
+                if (isDesktop()) {
+                    // موبایل مخفی → غیرفعال تا ارسال نشود
+                    if (mobileBody) {
+                        mobileBody.querySelectorAll('input, select').forEach(function (el) {
+                            el.disabled = true;
+                        });
+                    }
+                } else {
+                    if (desktopBody) {
+                        desktopBody.querySelectorAll('input, select').forEach(function (el) {
+                            el.disabled = true;
+                        });
+                    }
+                }
             });
+
             reindex();
-        })();
+        });
     </script>
 }

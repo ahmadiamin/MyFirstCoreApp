@@ -14,6 +14,8 @@
     تا عدد جادویی در SQL نباشد.
 
     سن بدهی: DATEDIFF(روز، تاریخ فاکتور، @AsOfDate) ← 0–30، 31–60، 61–90، بیش از 90.
+    معوق (OverdueAmount): باقی‌مانده‌ی فاکتورهای باز که سررسیدشان (DueDate) قبل از @AsOfDate است؛
+    فاکتور بدون سررسید معوق نیست.
     باقی‌مانده‌ی فاکتور = مبلغ کل − پرداخت‌شده − تخفیف تسویه.
 
     @SortBy: 1 = بیشترین مانده، 2 = نام، 3 = قدیمی‌ترین آخرین فعالیت
@@ -78,13 +80,15 @@ BEGIN
         SUM(CASE WHEN x.AgeDays <= 30                  THEN x.Remaining ELSE 0 END) AS Age0To30,
         SUM(CASE WHEN x.AgeDays BETWEEN 31 AND 60      THEN x.Remaining ELSE 0 END) AS Age31To60,
         SUM(CASE WHEN x.AgeDays BETWEEN 61 AND 90      THEN x.Remaining ELSE 0 END) AS Age61To90,
-        SUM(CASE WHEN x.AgeDays > 90                   THEN x.Remaining ELSE 0 END) AS Age90Plus
+        SUM(CASE WHEN x.AgeDays > 90                   THEN x.Remaining ELSE 0 END) AS Age90Plus,
+        SUM(CASE WHEN x.DueDate IS NOT NULL AND x.DueDate < @AsOfDate THEN x.Remaining ELSE 0 END) AS OverdueRemaining
     INTO #Inv
     FROM (
         SELECT
             i.ContactId AS ContactId,
             i.TotalAmount - i.PaidAmount - i.SettlementDiscount AS Remaining,
-            DATEDIFF(DAY, i.[Date], @AsOfDate) AS AgeDays
+            DATEDIFF(DAY, i.[Date], @AsOfDate) AS AgeDays,
+            i.DueDate AS DueDate
         FROM dbo.Invoices AS i
         WHERE i.TenantId = @TenantId
           AND i.IsDeleted = 0
@@ -125,6 +129,7 @@ BEGIN
         ISNULL(v.Age31To60, 0)                                        AS Age31To60,
         ISNULL(v.Age61To90, 0)                                        AS Age61To90,
         ISNULL(v.Age90Plus, 0)                                        AS Age90Plus,
+        ISNULL(v.OverdueRemaining, 0)                                 AS OverdueAmount,
         ISNULL(q.PendingCheques, 0)                                   AS PendingChequeAmount
     INTO #Result
     FROM #Bal AS b
@@ -146,13 +151,14 @@ BEGIN
         ISNULL(SUM(Age31To60), 0)             AS TotalAge31To60,
         ISNULL(SUM(Age61To90), 0)             AS TotalAge61To90,
         ISNULL(SUM(Age90Plus), 0)             AS TotalAge90Plus,
+        ISNULL(SUM(OverdueAmount), 0)         AS TotalOverdue,
         ISNULL(SUM(PendingChequeAmount), 0)   AS TotalPendingCheque
     FROM #Result;
 
     -- ۲) صفحه‌ی خواسته‌شده ------------------------------------------------------------
     SELECT
         ContactId, ContactName, ContactCode, Mobile, TotalDebit, TotalCredit, Amount, LastTransactionDate,
-        OpenInvoiceCount, OpenInvoiceRemaining, Age0To30, Age31To60, Age61To90, Age90Plus, PendingChequeAmount
+        OpenInvoiceCount, OpenInvoiceRemaining, Age0To30, Age31To60, Age61To90, Age90Plus, OverdueAmount, PendingChequeAmount
     FROM #Result
     ORDER BY
         CASE WHEN @SortBy = 1 THEN Amount END DESC,

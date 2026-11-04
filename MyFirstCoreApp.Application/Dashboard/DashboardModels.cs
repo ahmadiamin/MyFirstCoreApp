@@ -16,6 +16,17 @@ public sealed class DueChequeDto
     public bool IsOverdue => DaysLeft < 0;
 }
 
+public sealed class DueInvoiceDto
+{
+    public int Id { get; set; }
+    public int Number { get; set; }
+    public DateOnly DueDate { get; set; }
+    public string? ContactName { get; set; }
+    public decimal Remaining { get; set; }
+
+    public int DaysLeft { get; set; }
+    public bool IsOverdue => DaysLeft < 0;
+}
 public sealed class ContactBalanceDto
 {
     public int ContactId { get; set; }
@@ -62,6 +73,16 @@ public sealed class DashboardSummary
     public decimal PendingReceivedChequeAmount { get; set; }
     public int PendingIssuedChequeCount { get; set; }
     public decimal PendingIssuedChequeAmount { get; set; }
+    
+    // فاکتورهای معوق (قطعی، دارای باقی‌مانده، سررسید قبل از امروز)
+    public int OverdueSaleCount { get; set; }
+    public decimal OverdueSaleRemaining { get; set; }
+    public int OverduePurchaseCount { get; set; }
+    public decimal OverduePurchaseRemaining { get; set; }
+
+    /// <summary>فاکتورهای فروش/خرید با سررسیدِ گذشته یا نزدیک (تا DueUntil)؛ کم‌ترین سررسید اول.</summary>
+    public List<DueInvoiceDto> DueSaleInvoices { get; set; } = new();
+    public List<DueInvoiceDto> DuePurchaseInvoices { get; set; } = new();
 
     public List<DueChequeDto> DueReceivedCheques { get; set; } = new();
     public List<DueChequeDto> DueIssuedCheques { get; set; } = new();
@@ -73,7 +94,7 @@ public sealed class DashboardSummary
     /// <summary>بزرگ‌ترین مقدارِ ماهانه؛ برای مقیاس نمودار.</summary>
     public decimal MaxMonthlyValue => Months.Count == 0
         ? 0
-        : Months.Max(m => Math.Max(Math.Max(m.Sales, m.Purchases), Math.Max(m.Received, m.Paid)));
+        : Months.Max(m => Math.Max(Math.Max(m.Sales, m.Purchases), Math.Max(m.Received, m.Paid)));        
 }
 
 /// <summary>یک ردیف جریان روزانه (خروجی پروسیجر).</summary>

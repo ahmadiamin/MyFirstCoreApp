@@ -8,4 +8,6 @@ public sealed class SystemSmsSetting : BaseEntity
     public string LineNumber { get; set; } = "90008361";
     public bool RegistrationSmsEnabled { get; set; }
     public string? RegistrationSmsPatternCode { get; set; }
+    public bool PasswordRecoverySmsEnabled { get; set; }
+    public string? PasswordRecoverySmsPatternCode { get; set; }
 }

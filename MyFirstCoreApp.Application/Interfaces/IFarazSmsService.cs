@@ -5,7 +5,7 @@ namespace MyFirstCoreApp.Application.Interfaces;
 public interface IFarazSmsService
 {
     Task<FarazSmsSendResult> SendPortalLinkAsync(
-        int tenantId, int contactId, int shareId, string mobile, string portalUrl, string? sentBy,
+        int tenantId, int contactId, int shareId, string mobile, string token, string? sentBy,
         CancellationToken cancellationToken = default);
 
     Task<FarazSmsSendResult> SendChequeReminderAsync(
@@ -15,4 +15,6 @@ public interface IFarazSmsService
 
     Task<FarazSmsDeliveryReport?> GetLatestDeliveryReportAsync(
         int tenantId, int contactId, int shareId, CancellationToken cancellationToken = default);
+
+    Task<SmsBalanceResult> GetBalanceAsync(int tenantId, CancellationToken cancellationToken = default);
 }

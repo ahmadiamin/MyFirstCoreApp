@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Utilities;
+using MyFirstCoreApp.Application.CustomerPortal;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Areas.Contacts.ViewModels.CustomerPortal;
 using MyFirstCoreApp.Infrastructure.Persistence;
+using System.Text.Json;
 
 namespace MyFirstCoreApp.Areas.Contacts.Controllers;
 
@@ -82,15 +84,8 @@ public sealed class CustomerPortalLinksController : Controller
             return RedirectToAction(nameof(Index), new { contactId });
         }
         mobile = mobile.Replace("-", "");
-
-        var url = Url.Action("Index", "CustomerPortal", new { area = "", token = link.Token }, Request.Scheme);
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            TempData["Error"] = "ساخت لینک پرتال انجام نشد.";
-            return RedirectToAction(nameof(Index), new { contactId });
-        }
-
-        var result = await _sms.SendPortalLinkAsync(tenantId, contactId, id, mobile, url,
+                
+        var result = await _sms.SendPortalLinkAsync(tenantId, contactId, id, mobile, link.Token,
             User.Identity?.Name, cancellationToken);
         TempData[result.IsAccepted ? "SmsNotice" : "Error"] = result.RequestId is null
             ? result.Message
@@ -99,21 +94,47 @@ public sealed class CustomerPortalLinksController : Controller
     }
 
     [Authorize(Policy = "CustomerPortalLink.View")]
-    public async Task<IActionResult> SmsStatus(int contactId, int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> SmsStatus(
+        int contactId,
+        int id,
+        CancellationToken cancellationToken)
     {
-        if (!_tenant.TenantId.HasValue) return Forbid();
-        var link = (await _portal.GetSharesAsync(_tenant.TenantId.Value, contactId))
+        if (!_tenant.TenantId.HasValue)
+            return Forbid();
+
+        var tenantId = _tenant.TenantId.Value;
+
+        var link = (await _portal.GetSharesAsync(tenantId, contactId))
             .FirstOrDefault(x => x.Id == id);
-        if (link is null) return NotFound();
+
+        if (link is null)
+            return NotFound();
+
         var report = await _sms.GetLatestDeliveryReportAsync(
-            _tenant.TenantId.Value, contactId, id, cancellationToken);
-        if (report is null) return NotFound();
-        return View("SmsStatus", new MyFirstCoreApp.Application.CustomerPortal.CustomerPortalSmsStatusViewModel
+            tenantId, contactId, id, cancellationToken);
+
+        if (report is null)
+            return NotFound();
+
+        FarazSmsDeliveryResponse? response = null;
+
+        try
+        {
+            response = JsonSerializer.Deserialize<FarazSmsDeliveryResponse>(
+                report.ResponseJson);
+        }
+        catch (JsonException)
+        {
+            // در صورت نامعتبر بودن JSON، گزارش خام همچنان نمایش داده می‌شود.
+        }
+
+        return View("SmsStatus", new CustomerPortalSmsStatusViewModel
         {
             ContactId = contactId,
             ShareId = id,
             ContactName = link.ContactName,
-            Report = report
+            Report = report,
+            DeliveryItems = response?.Data?.Items ?? []
         });
     }
 

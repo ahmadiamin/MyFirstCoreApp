@@ -56,7 +56,7 @@
         }
         function updateTotals() {
             let subTotal = 0, discountTotal = 0, taxTotal = 0;
-    
+
             $('#itemsBody tr.item-row').each(function () {
                 const $row = $(this);
                 const qty = parseFloat(toEnglishNumber($row.find('.quantity-input').val()).replace(/,/g, '')) || 0;
@@ -95,6 +95,21 @@
 
             $container.empty();
             $container.append($('<div id="' + containerId + '" class="magicsuggest-container"></div>'));
+
+            $container.append(`
+                <div class="new-product-service-option mt-2" style="display:none;">
+                    <label class="mb-0">
+                        <input type="checkbox"
+                               class="is-service-checkbox"
+                               name="Items[${index}].IsService"
+                               value="true" />
+                        <span class="text-info">
+                            این قلم خدماتی است (بدون کنترل موجودی انبار)
+                        </span>
+                    </label>
+                </div>
+            `);
+
             var InvoiceType = @((int)(Model.InvoiceType));
 
             $.ajax({
@@ -139,42 +154,63 @@
 
                     $(ms).on('selectionchange', function () {
                         var selection = ms.getSelection();
+                        var $row = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr');
+                        var $serviceOption = $row.find('.new-product-service-option');
+                        var $serviceCheckbox = $row.find('.is-service-checkbox');
+                        
                         if (selection && selection.length > 0) {
                             var item = selection[0];
-                            var $row = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr');
-                            var tracksInventory = item.trackInventory !== false;
+
+                            var isNewProduct = item.isNewProduct === true || item.trackInventory === undefined;
+
+                            console.log('item:', item);
+                            console.log('item.id:', item.id);
+                            console.log('isNewProduct:', isNewProduct);
+
+                            $serviceOption.toggle(isNewProduct);
+
+                            console.log('display after toggle:', $serviceOption.css('display'));                          
+
+                            
+                            if (!isNewProduct) {
+                                $serviceCheckbox.prop('checked', false);
+                            }
+
+                            var isService = isNewProduct && $serviceCheckbox.is(':checked');
+                            var tracksInventory = isNewProduct
+                                ? !isService
+                                : item.trackInventory !== false;
+
                             $row.find('.warehouse-picker').toggle(tracksInventory);
                             $row.find('.warehouse-not-applicable').toggle(!tracksInventory);
-                            if (!tracksInventory) $row.find('.warehouse-select').val('');
-                            if (item.id && item.id > 0) {
+
+                            if (!tracksInventory) {
+                                $row.find('.warehouse-select').val('');
+                            }
+
+                            if (!isNewProduct) {
                                 if (isProductDuplicate(item.id, index)) {
                                     alert('این کالا قبلاً در فاکتور ثبت شده است.');
                                     ms.clear();
+
                                     $('#ProductId_Hidden_' + index).val('0');
                                     $('#ProductName_Hidden_' + index).val('');
                                     return;
                                 }
+
                                 $('#ProductId_Hidden_' + index).val(item.id);
                                 $('#ProductName_Hidden_' + index).val(item.name);
 
-                                if ($row.length > 0) {
-                                    if (item.salePrice !== undefined && item.salePrice !== null) {
-                                        $row.find('.price-input').val(formatNumberWithComma(item.salePrice.toString()));
-                                    }
-                                    if (item.taxRate !== undefined && item.taxRate !== null) {
-                                        $row.find('.tax-input').val(item.taxRate);
-                                    }
-                                    // 🆕 قیمت
-                                    if (item.salePrice !== undefined && item.salePrice !== null) {
-                                        $row.find('.price-input').val(formatNumberWithComma(item.salePrice.toString()));
-                                    }
-                                    // 🆕 مالیات
-                                    if (item.taxRate !== undefined && item.taxRate !== null) {
-                                        $row.find('.tax-input').val(item.taxRate);
-                                    }
-                                    // 🆕 محاسبه مستقیم
-                                    updateTotals();
+                                if (item.salePrice !== undefined && item.salePrice !== null) {
+                                    $row.find('.price-input')
+                                        .val(formatNumberWithComma(item.salePrice.toString()));
                                 }
+
+                                if (item.taxRate !== undefined && item.taxRate !== null) {
+                                    $row.find('.tax-input').val(item.taxRate);
+                                }
+
+                                updateTotals();
                             } else {
                                 $('#ProductId_Hidden_' + index).val('0');
                                 $('#ProductName_Hidden_' + index).val(item.name);
@@ -182,9 +218,25 @@
                         } else {
                             $('#ProductId_Hidden_' + index).val('');
                             $('#ProductName_Hidden_' + index).val('');
-                            var $cell = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr').find('.warehouse-cell');
-                            $cell.find('.warehouse-picker').show();
-                            $cell.find('.warehouse-not-applicable').hide();
+
+                            $serviceOption.hide();
+                            $serviceCheckbox.prop('checked', false);
+
+                            $row.find('.warehouse-picker').show();
+                            $row.find('.warehouse-not-applicable').hide();
+                        }
+                    });
+
+                    $container.on('change', '.is-service-checkbox', function () {
+                        var isService = $(this).is(':checked');
+
+                        var $row = $(this).closest('tr');
+
+                        $row.find('.warehouse-picker').toggle(!isService);
+                        $row.find('.warehouse-not-applicable').toggle(isService);
+
+                        if (isService) {
+                            $row.find('.warehouse-select').val('');
                         }
                     });
                 }
@@ -300,7 +352,7 @@
                                     e.preventDefault();
                                     e.stopPropagation();
                                     inputEl.value = '';
-                                    msContact.addToSelection([{ id: 0, name: text }]);
+                                    msContact.addToSelection([{ id: 0, name: text, isNewProduct: true }]);
                                     return false;
                                 }
                             }
@@ -500,5 +552,11 @@
             });
 
         });
+
+        function toggleDueDate() {
+            $('#dueDateGroup').toggle($('#InvoiceType').val() !== '1');   // 1 = پیش‌فاکتور
+        }
+        $('#InvoiceType').on('change', toggleDueDate);
+        toggleDueDate();
     </script>
 }

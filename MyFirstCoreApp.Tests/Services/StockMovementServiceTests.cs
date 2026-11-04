@@ -33,8 +33,7 @@ public sealed class StockMovementServiceTests : IDisposable
             new WarehouseService(context));
     }
 
-    private async Task<(int ProductId, int WarehouseId)>
-        CreateInventoryDataAsync()
+    private async Task<(int ProductId, int WarehouseId)> CreateInventoryDataAsync()
     {
         _db.Tenant.TenantId = TenantA;
         var previousTenant = _db.Tenant.TenantId;

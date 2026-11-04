@@ -39,6 +39,7 @@ namespace MyFirstCoreApp.Services
                     PhoneNumber = user.PhoneNumber,
                     IsActive = user.IsActive,
                     EmailConfirmed = user.EmailConfirmed,
+                    PhoneNumberConfirmed = user.PhoneNumberConfirmed,
 
                     Roles = _context.UserRoles
                         .Where(userRole => userRole.UserId == user.Id)

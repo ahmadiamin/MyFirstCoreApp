@@ -4,6 +4,82 @@
     ViewData["Title"] = "قرض شماره " + Model.Loan.Number;
 }
 
+<style>
+    .loan-details .info-box {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #fafafa;
+        height: 100%;
+    }
+
+        .loan-details .info-box .label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+
+        .loan-details .info-box .value {
+            font-weight: 600;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+            .loan-details .info-box .value.money {
+                direction: ltr;
+                text-align: right;
+                font-family: inherit;
+            }
+
+    .loan-details table.repayments-table {
+        font-size: 13px;
+    }
+
+        .loan-details table.repayments-table th,
+        .loan-details table.repayments-table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+            .loan-details table.repayments-table td.desc {
+                white-space: normal;
+                min-width: 120px;
+            }
+
+    .loan-details .mobile-repayments .repay-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #fff;
+    }
+
+        .loan-details .mobile-repayments .repay-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+
+        .loan-details .mobile-repayments .repay-card .amount {
+            font-weight: 600;
+            color: #0d6efd;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+    .loan-details .mobile-repayments .attachments-box {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed #e3e3e3;
+    }
+
+    @@media (max-width: 767.98px) {
+        .loan-details .card-body {
+            padding: 10px;
+        }
+    }
+</style>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
@@ -19,8 +95,12 @@
     </div>
 }
 
-<div class="row">
-    <div class="col-lg-8">
+<div class="row loan-details">
+
+    <!-- ستون اصلی -->
+    <div class="col-lg-8 col-12 mb-3">
+
+        <!-- کارت اطلاعات قرض -->
         <div class="card card-outline @(Model.Loan.IsGiven ? "card-success" : "card-warning")">
             <div class="card-header">
                 <h3 class="card-title">
@@ -28,79 +108,209 @@
                     @(Model.Loan.IsGiven ? "قرض داده‌شده به" : "قرض گرفته‌شده از") @Model.Loan.ContactName
                 </h3>
                 <div class="card-tools">
-                    <a asp-action="Index" class="btn btn-sm btn-secondary"><i class="fa fa-arrow-right"></i> لیست</a>
+                    <a asp-action="Index" class="btn btn-sm btn-secondary">
+                        <i class="fa fa-arrow-right"></i> لیست
+                    </a>
                 </div>
             </div>
+
             <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">شماره سند</dt>
-                    <dd class="col-sm-9">@Model.Loan.Number</dd>
-                    <dt class="col-sm-3">تاریخ</dt>
-                    <dd class="col-sm-9" dir="ltr">@Model.Loan.Date</dd>
-                    <dt class="col-sm-3">مبلغ</dt>
-                    <dd class="col-sm-9">@Model.Loan.Amount.ToString("N0") ریال</dd>
-                    <dt class="col-sm-3">بازپرداخت‌شده</dt>
-                    <dd class="col-sm-9">@Model.Loan.Repaid.ToString("N0") ریال</dd>
-                    <dt class="col-sm-3">باقی‌مانده</dt>
-                    <dd class="col-sm-9 font-weight-bold @(Model.Loan.Remaining > 0 ? "text-danger" : "text-success")">@Model.Loan.Remaining.ToString("N0") ریال</dd>
-                    <dt class="col-sm-3">توضیحات</dt>
-                    <dd class="col-sm-9">@Model.Loan.Description</dd>
-                </dl>
+                <div class="row">
+                    <div class="col-md-4 col-6 mb-2">
+                        <div class="info-box">
+                            <div class="label">شماره سند</div>
+                            <div class="value persian-number">@Model.Loan.Number</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6 mb-2">
+                        <div class="info-box">
+                            <div class="label">تاریخ</div>
+                            <div class="value" dir="ltr" style="text-align:right;">@Model.Loan.Date</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-12 mb-2">
+                        <div class="info-box">
+                            <div class="label">وضعیت</div>
+                            <div class="value">
+                                @if (Model.Loan.IsGiven)
+                                {
+                                    <span class="badge badge-success">داده‌شده</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">گرفته‌شده</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6 mb-2">
+                        <div class="info-box">
+                            <div class="label">مبلغ</div>
+                            <div class="value money persian-number-comma">
+                                @Model.Loan.Amount.ToString("N0") <small class="text-muted">ریال</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6 mb-2">
+                        <div class="info-box">
+                            <div class="label">بازپرداخت‌شده</div>
+                            <div class="value money persian-number-comma">
+                                @Model.Loan.Repaid.ToString("N0") <small class="text-muted">ریال</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-12 mb-2">
+                        <div class="info-box">
+                            <div class="label">باقی‌مانده</div>
+                            <div class="value money persian-number-comma @(Model.Loan.Remaining > 0 ? "text-danger" : "text-success")">
+                                @Model.Loan.Remaining.ToString("N0") <small class="text-muted">ریال</small>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Loan.Description))
+                    {
+                        <div class="col-12 mb-1">
+                            <div class="info-box">
+                                <div class="label">توضیحات</div>
+                                <div class="value">@Model.Loan.Description</div>
+                            </div>
+                        </div>
+                    }
+                </div>
             </div>
+
             @if (!Model.Repayments.Any())
             {
                 <div class="card-footer">
                     <form asp-action="Delete" asp-route-id="@Model.Loan.Id" method="post"
                           onsubmit="return confirm('این قرض حذف شود؟');">
-                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i> حذف قرض</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="fa fa-trash"></i> حذف قرض
+                        </button>
                     </form>
                 </div>
             }
         </div>
 
+        <!-- کارت بازپرداخت‌ها -->
         <div class="card">
-            <div class="card-header"><h3 class="card-title"><i class="fa fa-rotate-left"></i> بازپرداخت‌ها</h3></div>
-            <div class="card-body p-0 table-responsive">
-                <table class="table table-sm mb-0">
-                    <thead>
-                        <tr><th>شماره سند</th><th>تاریخ</th><th class="text-left">مبلغ</th><th>توضیحات</th><th></th></tr>
-                    </thead>
-                    <tbody>
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fa fa-rotate-left"></i> بازپرداخت‌ها
+                    <span class="badge badge-secondary mr-1">@Model.Repayments.Count()</span>
+                </h3>
+            </div>
+
+            <div class="card-body p-0">
+
+                <!-- دسکتاپ: جدول -->
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-sm mb-0 repayments-table">
+                        <thead>
+                            <tr>
+                                <th>شماره سند</th>
+                                <th>تاریخ</th>
+                                <th class="text-left">مبلغ</th>
+                                <th>توضیحات</th>
+                                <th style="width:60px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var repayment in Model.Repayments)
+                            {
+                                <tr>
+                                    <td>@repayment.Number</td>
+                                    <td dir="ltr" class="text-right">@repayment.Date</td>
+                                    <td class="text-left persian-number-comma">@repayment.Amount.ToString("N0")</td>
+                                    <td class="desc">@repayment.Description</td>
+                                    <td class="text-left">
+                                        <form asp-action="DeleteRepayment" asp-route-id="@repayment.Id"
+                                              asp-route-loanId="@Model.Loan.Id" method="post"
+                                              class="d-inline"
+                                              onsubmit="return confirm('این بازپرداخت حذف شود؟');">
+                                            <button type="submit" class="btn btn-xs btn-outline-danger" title="حذف">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="p-0 border-top-0">
+                                        @await Component.InvokeAsync("Attachments", new { entityType = AttachmentEntityType.Transaction, entityId = repayment.Id })
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.Repayments.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted p-3">
+                                        هنوز بازپرداختی ثبت نشده است.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- موبایل: کارت‌ها -->
+                <div class="mobile-repayments d-md-none p-2">
+                    @if (!Model.Repayments.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fa fa-info-circle fa-2x mb-2"></i><br />
+                            هنوز بازپرداختی ثبت نشده است.
+                        </div>
+                    }
+                    else
+                    {
+                        var j = 1;
                         @foreach (var repayment in Model.Repayments)
                         {
-                            <tr>
-                                <td>@repayment.Number</td>
-                                <td dir="ltr" class="text-right">@repayment.Date</td>
-                                <td class="text-left">@repayment.Amount.ToString("N0")</td>
-                                <td>@repayment.Description</td>
-                                <td class="text-left">
-                                    <form asp-action="DeleteRepayment" asp-route-id="@repayment.Id" asp-route-loanId="@Model.Loan.Id" method="post"
-                                          class="d-inline" onsubmit="return confirm('این بازپرداخت حذف شود؟');">
-                                        <button type="submit" class="btn btn-xs btn-outline-danger" title="حذف"><i class="fa fa-trash"></i></button>
+                            <div class="repay-card">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <strong>
+                                        <span class="badge badge-secondary ml-1">@j</span>
+                                        سند @repayment.Number
+                                    </strong>
+                                    <form asp-action="DeleteRepayment" asp-route-id="@repayment.Id"
+                                          asp-route-loanId="@Model.Loan.Id" method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('این بازپرداخت حذف شود؟');">
+                                        <button type="submit" class="btn btn-xs btn-outline-danger" title="حذف">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
                                     </form>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="5" class="p-0 border-top-0">
+                                </div>
+                                <div class="row-line">تاریخ: <span dir="ltr">@repayment.Date</span></div>
+                                <div class="amount persian-number-comma">
+                                    مبلغ: @repayment.Amount.ToString("N0")
+                                </div>
+                                @if (!string.IsNullOrEmpty(repayment.Description))
+                                {
+                                    <div class="row-line">@repayment.Description</div>
+                                }
+                                <div class="attachments-box">
                                     @await Component.InvokeAsync("Attachments", new { entityType = AttachmentEntityType.Transaction, entityId = repayment.Id })
-                                </td>
-                            </tr>
+                                </div>
+                            </div>
+                            j++;
                         }
-                        @if (!Model.Repayments.Any())
-                        {
-                            <tr><td colspan="5" class="text-center text-muted p-3">هنوز بازپرداختی ثبت نشده است.</td></tr>
-                        }
-                    </tbody>
-                </table>
+                    }
+                </div>
+
             </div>
         </div>
     </div>
 
-    <div class="col-lg-4">
+    <!-- ستون کناری -->
+    <div class="col-lg-4 col-12">
+
         @if (Model.Loan.Remaining > 0)
         {
             <div class="card card-primary card-outline">
-                <div class="card-header"><h3 class="card-title"><i class="fa fa-plus"></i> ثبت بازپرداخت</h3></div>
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fa fa-plus"></i> ثبت بازپرداخت</h3>
+                </div>
                 <form asp-action="Repay" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="LoanId" value="@Model.Loan.Id" />
@@ -113,11 +323,14 @@
                         </div>
                         <div class="form-group">
                             <label>مبلغ (ریال)</label>
-                            <input name="AmountText" value="@Model.RepayForm.AmountText" class="form-control ltr persian-number persian-number-comma" dir="ltr" autocomplete="off" required />
+                            <input name="AmountText" value="@Model.RepayForm.AmountText"
+                                   class="form-control ltr persian-number persian-number-comma"
+                                   dir="ltr" autocomplete="off" required />
                         </div>
                         <div class="form-group">
                             <label>تاریخ</label>
-                            <input name="Date" value="@Model.RepayForm.Date" class="form-control datepicker" dir="ltr" autocomplete="off" required />
+                            <input name="Date" value="@Model.RepayForm.Date"
+                                   class="form-control datepicker" dir="ltr" autocomplete="off" required />
                         </div>
                         <div class="form-group">
                             <label>توضیحات</label>
@@ -125,11 +338,14 @@
                         </div>
                         <div class="form-group">
                             <label>رسید (اختیاری)</label>
-                            <input type="file" name="Receipt" class="form-control-file" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                            <input type="file" name="Receipt" class="form-control-file"
+                                   accept=".jpg,.jpeg,.png,.webp,.pdf" />
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-save"></i> ثبت بازپرداخت</button>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fa fa-save"></i> ثبت بازپرداخت
+                        </button>
                     </div>
                 </form>
             </div>
@@ -145,6 +361,7 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+            // Persian Date Picker
             $('.datepicker').each(function () {
                 var $input = $(this);
                 var val = $input.val();

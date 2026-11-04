@@ -7,6 +7,11 @@
         @ContactId   : طرف حساب
         @FromDate/@ToDate : بازه‌ی تاریخ فاکتور (دو سر شامل)
         @OnlyOpen    : 1 = فقط فاکتورهای دارای باقی‌مانده‌ی مثبت
+        @OnlyOverdue : 1 = فقط فاکتورهای «معوق»
+        @Today / @InvoiceStatusPosted : برای تعیین «معوق» (اگر NULL باشند هیچ فاکتوری معوق شمرده نمی‌شود)
+
+    معوق = فاکتور قطعی + باقی‌مانده‌ی مثبت + سررسید (DueDate) قبل از @Today.
+    فاکتور بدون سررسید هیچ‌وقت معوق نیست.
 
     باقی‌مانده = مبلغ کل − پرداخت‌شده − تخفیف تسویه
     (همان فرمول InvoiceBalance در C#؛ اگر یکی عوض شد، دیگری هم باید عوض شود.)
@@ -24,7 +29,10 @@ CREATE OR ALTER PROCEDURE dbo.usp_Report_Invoices
     @ToDate      DATE = NULL,
     @OnlyOpen    BIT  = 0,
     @PageNumber  INT  = 1,
-    @PageSize    INT  = 50
+    @PageSize    INT  = 50,
+    @OnlyOverdue BIT  = 0,
+    @Today       DATE = NULL,
+    @InvoiceStatusPosted INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -45,7 +53,15 @@ BEGIN
         i.TotalAmount         AS TotalAmount,
         i.PaidAmount          AS PaidAmount,
         i.SettlementDiscount  AS SettlementDiscount,
-        i.TotalAmount - i.PaidAmount - i.SettlementDiscount AS RemainingAmount
+        i.TotalAmount - i.PaidAmount - i.SettlementDiscount AS RemainingAmount,
+        i.DueDate             AS DueDate,
+        CAST(CASE WHEN i.DueDate IS NOT NULL
+                   AND @Today IS NOT NULL
+                   AND @InvoiceStatusPosted IS NOT NULL
+                   AND i.DueDate < @Today
+                   AND i.[Status] = @InvoiceStatusPosted
+                   AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
+                  THEN 1 ELSE 0 END AS BIT) AS IsOverdue
     INTO #Filtered
     FROM dbo.Invoices AS i
     LEFT JOIN dbo.Contacts AS c ON c.Id = i.ContactId
@@ -58,9 +74,14 @@ BEGIN
       AND (@ToDate IS NULL OR i.[Date] <= @ToDate)
       AND (@OnlyOpen = 0 OR i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0);
 
+    IF @OnlyOverdue = 1
+        DELETE FROM #Filtered WHERE IsOverdue = 0;
+
     -- ۱) جمع کل
     SELECT
         COUNT(*)                          AS [Count],
+        ISNULL(SUM(CASE WHEN IsOverdue = 1 THEN 1 ELSE 0 END), 0)                   AS OverdueCount,
+        ISNULL(SUM(CASE WHEN IsOverdue = 1 THEN RemainingAmount ELSE 0 END), 0)     AS TotalOverdueRemaining,
         ISNULL(SUM(TotalAmount), 0)       AS TotalAmount,
         ISNULL(SUM(PaidAmount), 0)        AS TotalPaid,
         ISNULL(SUM(SettlementDiscount), 0) AS TotalSettlementDiscount,
@@ -69,7 +90,7 @@ BEGIN
 
     -- ۲) صفحه‌ی جاری
     SELECT Id, Number, [Date], InvoiceType, [Status], ContactId, ContactName, [Description],
-           TotalAmount, PaidAmount, SettlementDiscount, RemainingAmount
+           TotalAmount, PaidAmount, SettlementDiscount, RemainingAmount, DueDate, IsOverdue
     FROM #Filtered
     ORDER BY [Date] DESC, Number DESC, Id DESC
     OFFSET (@PageNumber - 1) * @PageSize ROWS

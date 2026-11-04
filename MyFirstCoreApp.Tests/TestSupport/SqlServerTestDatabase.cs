@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Infrastructure.Persistence.Interceptors;
@@ -188,3 +189,23 @@ public sealed class SqlServerFactAttribute : FactAttribute
 }
 
 
+/// <summary>
+/// تست SQL Server مربوط به بازیابی رمز عبور.
+/// </summary>
+public sealed class PasswordResetSqlServerFactAttribute : FactAttribute
+{
+    public PasswordResetSqlServerFactAttribute()
+    {
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+        if (string.IsNullOrWhiteSpace(
+            configuration.GetConnectionString("TestConnection")))
+        {
+            Skip = "ConnectionStrings:TestConnection is not configured.";
+        }
+    }
+}

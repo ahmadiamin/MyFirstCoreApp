@@ -133,6 +133,7 @@
                         <th rowspan="2" class="text-left">جمع بستانکار</th>
                         <th rowspan="2" class="text-left">مانده</th>
                         <th colspan="4" class="text-center border-right border-left">سن بدهی (فاکتورهای باز)</th>
+                        <th rowspan="2" class="text-left" title="باقی‌مانده‌ی فاکتورهایی که سررسیدشان گذشته">معوق</th>
                         <th rowspan="2" class="text-left">سایر</th>
                         <th rowspan="2" class="text-left">چک در انتظار</th>
                         <th rowspan="2" class="text-left">مانده با برگشت چک</th>
@@ -166,6 +167,7 @@
                             <td class="text-left">@(row.Age31To60 == 0 ? "—" : row.Age31To60.ToString("N0"))</td>
                             <td class="text-left @(row.Age61To90 > 0 ? "text-warning" : "")">@(row.Age61To90 == 0 ? "—" : row.Age61To90.ToString("N0"))</td>
                             <td class="text-left border-right @(row.Age90Plus > 0 ? "text-danger font-weight-bold" : "")">@(row.Age90Plus == 0 ? "—" : row.Age90Plus.ToString("N0"))</td>
+                            <td class="text-left @(row.OverdueAmount > 0 ? "text-danger font-weight-bold" : "")">@(row.OverdueAmount == 0 ? "—" : row.OverdueAmount.ToString("N0"))</td>
                             <td class="text-left @(row.OtherAmount < 0 ? "text-info" : "")" title="مانده منهای فاکتورهای باز (قرض، پیش‌پرداخت، سند دستی)">
                                 @(row.OtherAmount == 0 ? "—" : row.OtherAmount.ToString("N0"))
                             </td>
@@ -177,7 +179,7 @@
                     @if (!report.Rows.Any())
                     {
                         <tr>
-                            <td colspan="13" class="text-center text-muted p-4">
+                            <td colspan="14" class="text-center text-muted p-4">
                                 @(isDebtors ? "طرف حساب بدهکاری" : "طرف حساب بستانکاری") با این فیلتر پیدا نشد.
                             </td>
                         </tr>
@@ -195,6 +197,7 @@
                             <td class="text-left">@report.TotalAge31To60.ToString("N0")</td>
                             <td class="text-left">@report.TotalAge61To90.ToString("N0")</td>
                             <td class="text-left">@report.TotalAge90Plus.ToString("N0")</td>
+                            <td class="text-left">@report.TotalOverdue.ToString("N0")</td>
                             <td class="text-left">@report.TotalOther.ToString("N0")</td>
                             <td class="text-left">@report.TotalPendingCheque.ToString("N0")</td>
                             <td class="text-left">@report.TotalIfChequesBounce.ToString("N0")</td>
@@ -238,6 +241,7 @@
         <i class="fa fa-info-circle"></i>
         «مانده» از دفتر (اسناد قطعی) است. «سایر» = مانده منهای فاکتورهای باز؛ قرض، پیش‌پرداخت تخصیص‌نیافته و اسناد دستی (منفی یعنی فاکتورهای باز از مانده بیشتر است).
         «چک در انتظار» قبلاً از مانده کم شده است؛ ستون آخر ریسک برگشت چک‌ها را نشان می‌دهد.
+        «معوق» = باقی‌مانده‌ی فاکتورهای بازی که سررسید دارند و سررسیدشان قبل از «مانده تا تاریخ» است (فاکتور بدون سررسید معوق نمی‌شود).
     </div>
 }
 

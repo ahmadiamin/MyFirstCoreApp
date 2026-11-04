@@ -12,11 +12,12 @@ public sealed class TenantSmsSettingConfiguration : IEntityTypeConfiguration<Ten
         builder.HasKey(x => x.Id);
         builder.Property(x => x.ProtectedApiKey).HasMaxLength(2000);
         builder.Property(x => x.LineNumber).HasMaxLength(50).IsRequired();
-        builder.Property(x => x.PortalLinkText).HasMaxLength(1000);
-        builder.Property(x => x.ChequeReminderText).HasMaxLength(1000);
+        builder.Property(x => x.PortalLinkPatternCode).HasMaxLength(50);
         builder.Property(x => x.ChequeReminderTime).HasDefaultValue(new TimeOnly(9, 0));
         builder.Property(x => x.ChequeReminderMobile).HasMaxLength(30);
         builder.HasIndex(x => x.TenantId).IsUnique();
+        builder.Property(x => x.ChequeReminderPatternCode).HasMaxLength(100);
+
         builder.HasOne(x => x.Tenant)
             .WithMany()
             .HasForeignKey(x => x.TenantId)

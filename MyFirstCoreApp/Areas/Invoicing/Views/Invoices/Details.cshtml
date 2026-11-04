@@ -4,9 +4,85 @@
 @inject TimeProvider Clock
 @{
     ViewData["Title"] = $"مشاهده فاکتور شماره {Model.Number}";
+    var isPreInvoice = Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.PreInvoice;
+    var remaining = Model.TotalAmount - Model.PaidAmount - Model.SettlementDiscount;
 }
 
-<div class="card card-info">
+<style>
+    .invoice-details .info-box {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #fafafa;
+        height: 100%;
+    }
+
+        .invoice-details .info-box .label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+
+        .invoice-details .info-box .value {
+            font-weight: 600;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+            .invoice-details .info-box .value.money {
+                direction: ltr;
+                text-align: right;
+                font-family: inherit;
+            }
+
+    .invoice-details table.items-table,
+    .invoice-details table.history-table {
+        font-size: 13px;
+    }
+
+        .invoice-details table.items-table th,
+        .invoice-details table.items-table td,
+        .invoice-details table.history-table th,
+        .invoice-details table.history-table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+    .invoice-details .mobile-items .item-card,
+    .invoice-details .mobile-history .history-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #fff;
+    }
+
+        .invoice-details .mobile-items .item-card .row-line,
+        .invoice-details .mobile-history .history-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+
+        .invoice-details .mobile-items .item-card .total {
+            font-weight: 600;
+            color: #0d6efd;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+    .invoice-details .card-footer .btn {
+        margin-bottom: 6px;
+    }
+
+    @@media (max-width: 767.98px) {
+        .invoice-details .card-body {
+            padding: 10px;
+        }
+    }
+</style>
+
+<div class="card card-info invoice-details">
     <div class="card-header">
         <h3 class="card-title">
             <i class="fa fa-file-invoice"></i>
@@ -23,111 +99,217 @@
             }
         </div>
     </div>
+
     <div class="card-body">
 
-        <!-- اطلاعات فاکتور -->
+        <!-- ==========================================
+             اطلاعات فاکتور
+             ========================================== -->
         <div class="row">
-            <div class="col-md-3">
-                <strong>شماره:</strong>
-                <span class="persian-number">@Model.Number</span>
-            </div>
-            <div class="col-md-3">
-                <strong>تاریخ:</strong>
-                <span>@PersianDate.Format(Model.Date)</span>
-            </div>
-            <div class="col-md-3">
-                <strong>نوع:</strong>
-                <span>
-                    @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale)
-                    {
-                        <span>فروش</span>
-                    }
-                    else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase)
-                    {
-                        <span>خرید</span>
-                    }
-                    else
-                    {
-                        <span>پیش‌فاکتور</span>
-                    }
-                </span>
-            </div>
-            <div class="col-md-3">
-                <strong>طرف حساب:</strong>
-                <span>@Model.Contact?.Name</span>
-            </div>
-        </div>
-
-        @if (!string.IsNullOrEmpty(Model.Description))
-        {
-            <div class="row mt-2">
-                <div class="col-md-12">
-                    <strong>شرح:</strong>
-                    <span>@Model.Description</span>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">شماره</div>
+                    <div class="value persian-number">@Model.Number</div>
                 </div>
             </div>
-        }
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">تاریخ</div>
+                    <div class="value">@PersianDate.Format(Model.Date)</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">سررسید</div>
+                    <div class="value">
+                        @(Model.DueDate.HasValue? PersianDate.Format(Model.DueDate.Value) : "—")
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">نوع</div>
+                    <div class="value">
+                        @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale)
+                        {
+                            <span>فروش</span>
+                        }
+                        else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase)
+                        {
+                            <span>خرید</span>
+                        }
+                        else
+                        {
+                            <span>پیش‌فاکتور</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">طرف حساب</div>
+                    <div class="value">@Model.Contact?.Name</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">مبلغ نهایی</div>
+                    <div class="value money persian-number-comma">
+                        @Model.TotalAmount.ToString("N0") <small class="text-muted">ریال</small>
+                    </div>
+                </div>
+            </div>
+            @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted && !isPreInvoice)
+            {
+                <div class="col-md-3 col-6 mb-2">
+                    <div class="info-box">
+                        <div class="label">پرداخت‌شده</div>
+                        <div class="value money persian-number-comma">
+                            @Model.PaidAmount.ToString("N0") <small class="text-muted">ریال</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-2">
+                    <div class="info-box">
+                        <div class="label">باقی‌مانده</div>
+                        <div class="value money persian-number-comma @(remaining > 0 ? "text-danger" : "text-success")">
+                            @remaining.ToString("N0") <small class="text-muted">ریال</small>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="col-12 mb-2">
+                    <div class="info-box">
+                        <div class="label">شرح</div>
+                        <div class="value">@Model.Description</div>
+                    </div>
+                </div>
+            }
+        </div>
 
         <hr />
 
-        <!-- اقلام -->
-        <h5><i class="fa fa-list"></i> اقلام فاکتور</h5>
+        <!-- ==========================================
+             اقلام فاکتور
+             ========================================== -->
+        <h5 class="mb-3">
+            <i class="fa fa-list"></i> اقلام فاکتور
+            <span class="badge badge-secondary mr-1">@Model.Items.Count()</span>
+        </h5>
 
-        <table class="table table-bordered table-striped">
-            <thead>
-                <tr>
-                    <th style="width: 40px;">#</th>
-                    <th>کالا</th>
-                    <th>انبار</th>
-                    <th>تعداد</th>
-                    <th>قیمت واحد</th>
-                    <th>تخفیف</th>
-                    <th>مالیات</th>
-                    <th>جمع</th>
-                </tr>
-            </thead>
-            <tbody>
+        @if (Model.Items.Any())
+        {
+            <!-- دسکتاپ: جدول -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-bordered table-striped items-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;" class="text-center">#</th>
+                            <th>کالا</th>
+                            <th>انبار</th>
+                            <th class="text-center">تعداد</th>
+                            <th class="text-left">قیمت واحد</th>
+                            <th class="text-left">تخفیف</th>
+                            <th class="text-left">مالیات</th>
+                            <th class="text-left">جمع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var i = 1;
+                        }
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="text-center persian-number">@i</td>
+                                <td>@item.Product?.Name</td>
+                                <td>@(item.Warehouse?.Name ?? "—")</td>
+                                <td class="text-center persian-number">@item.Quantity</td>
+                                <td class="text-left persian-number-comma">@item.UnitPrice.ToString("N0")</td>
+                                <td class="text-left persian-number-comma">@item.DiscountAmount.ToString("N0")</td>
+                                <td class="text-left persian-number-comma">@item.TaxAmount.ToString("N0")</td>
+                                <td class="text-left persian-number-comma">@item.LineTotal.ToString("N0")</td>
+                            </tr>
+                            i++;
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="7" class="text-left">جمع اقلام:</th>
+                            <th class="text-left persian-number-comma">@Model.SubTotal.ToString("N0")</th>
+                        </tr>
+                        <tr>
+                            <th colspan="7" class="text-left">جمع تخفیف:</th>
+                            <th class="text-left persian-number-comma">@Model.DiscountAmount.ToString("N0")</th>
+                        </tr>
+                        <tr>
+                            <th colspan="7" class="text-left">جمع مالیات:</th>
+                            <th class="text-left persian-number-comma">@Model.TaxAmount.ToString("N0")</th>
+                        </tr>
+                        <tr class="bg-info">
+                            <th colspan="7" class="text-left">مبلغ نهایی:</th>
+                            <th class="text-left persian-number-comma"><strong>@Model.TotalAmount.ToString("N0")</strong></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- موبایل: کارت‌ها -->
+            <div class="mobile-items d-md-none">
                 @{
-                    var i = 1;
+                    var mi = 1;
                 }
                 @foreach (var item in Model.Items)
                 {
-                    <tr>
-                        <td class="persian-number">@i</td>
-                        <td>@item.Product?.Name</td>
-                        <td>@(item.Warehouse?.Name ?? "—")</td>
-                        <td class="persian-number">@item.Quantity</td>
-                        <td class="persian-number-comma">@item.UnitPrice.ToString("N0")</td>
-                        <td class="persian-number-comma">@item.DiscountAmount.ToString("N0")</td>
-                        <td class="persian-number-comma">@item.TaxAmount.ToString("N0")</td>
-                        <td class="persian-number-comma">@item.LineTotal.ToString("N0")</td>
-                    </tr>
-                    i++;
+                    <div class="item-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong>
+                                <span class="badge badge-secondary ml-1">@mi</span>
+                                @item.Product?.Name
+                            </strong>
+                        </div>
+                        @if (item.Warehouse != null)
+                        {
+                            <div class="row-line">انبار: @item.Warehouse.Name</div>
+                        }
+                        <div class="row-line">تعداد: <span class="persian-number" dir="ltr">@item.Quantity</span></div>
+                        <div class="row-line">قیمت واحد: <span class="persian-number-comma" dir="ltr">@item.UnitPrice.ToString("N0")</span></div>
+                        @if (item.DiscountAmount > 0)
+                        {
+                            <div class="row-line">تخفیف: <span class="persian-number-comma" dir="ltr">@item.DiscountAmount.ToString("N0")</span></div>
+                        }
+                        @if (item.TaxAmount > 0)
+                        {
+                            <div class="row-line">مالیات: <span class="persian-number-comma" dir="ltr">@item.TaxAmount.ToString("N0")</span></div>
+                        }
+                        <div class="total persian-number-comma" dir="ltr">جمع: @item.LineTotal.ToString("N0")</div>
+                    </div>
+                    mi++;
                 }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="7" class="text-left">جمع اقلام:</th>
-                    <th class="persian-number-comma">@Model.SubTotal.ToString("N0")</th>
-                </tr>
-                <tr>
-                    <th colspan="7" class="text-left">جمع تخفیف:</th>
-                    <th class="persian-number-comma">@Model.DiscountAmount.ToString("N0")</th>
-                </tr>
-                <tr>
-                    <th colspan="7" class="text-left">جمع مالیات:</th>
-                    <th class="persian-number-comma">@Model.TaxAmount.ToString("N0")</th>
-                </tr>
-                <tr class="bg-info">
-                    <th colspan="7" class="text-left">مبلغ نهایی:</th>
-                    <th class="persian-number-comma"><strong>@Model.TotalAmount.ToString("N0")</strong></th>
-                </tr>
-            </tfoot>
-        </table>
+
+                <!-- جمع کل موبایل -->
+                <div class="item-card" style="background:#f1f8ff;">
+                    <div class="row-line">جمع اقلام: <span class="persian-number-comma" dir="ltr">@Model.SubTotal.ToString("N0")</span></div>
+                    <div class="row-line">جمع تخفیف: <span class="persian-number-comma" dir="ltr">@Model.DiscountAmount.ToString("N0")</span></div>
+                    <div class="row-line">جمع مالیات: <span class="persian-number-comma" dir="ltr">@Model.TaxAmount.ToString("N0")</span></div>
+                    <div class="total persian-number-comma" dir="ltr" style="font-size:15px;">
+                        مبلغ نهایی: @Model.TotalAmount.ToString("N0")
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="text-center text-muted py-3">
+                <i class="fa fa-info-circle"></i> قلمی ثبت نشده است.
+            </div>
+        }
 
         @if (Model.TransactionId.HasValue)
         {
-            <div class="alert alert-success">
+            <div class="alert alert-success mt-3">
                 <i class="fa fa-check"></i>
                 سند حسابداری مرتبط:
                 <a asp-area="Accounting" asp-controller="Transactions"
@@ -136,68 +318,89 @@
                 </a>
             </div>
         }
-        <!-- 🆕 تاریخچه -->
+
+        <!-- ==========================================
+             تاریخچه
+             ========================================== -->
         @if (Model.Histories != null && Model.Histories.Any())
         {
             <hr />
-            <h5><i class="fa fa-history"></i> تاریخچه</h5>
+            <h5 class="mb-3">
+                <i class="fa fa-history"></i> تاریخچه
+                <span class="badge badge-secondary mr-1">@Model.Histories.Count()</span>
+            </h5>
 
-            <table class="table table-sm table-bordered">
-                <thead>
-                    <tr>
-                        <th style="width: 40px;">#</th>
-                        <th style="width: 130px;">تاریخ</th>
-                        <th style="width: 130px;">از وضعیت</th>
-                        <th style="width: 130px;">به وضعیت</th>
-                        <th>توضیحات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @{
-                        var hi = 1;
-                    }
-                    @foreach (var h in Model.Histories.OrderBy(x => x.Date))
-                    {
+            <!-- دسکتاپ: جدول -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-sm table-bordered history-table mb-0">
+                    <thead>
                         <tr>
-                            <td class="persian-number">@hi</td>
-                            <td>@PersianDate.Format(Clock.ToLocalDate(h.Date))</td>
-                            <td>
-                                @if (h.FromStatus.HasValue)
-                                {
-                                    <span>@GetStatusName(h.FromStatus.Value)</span>
-                                }
-                            </td>
-                            <td>
-                                <span class="badge badge-info">@GetStatusName(h.ToStatus)</span>
-                            </td>
-                            <td>@h.Description</td>
+                            <th style="width: 40px;" class="text-center">#</th>
+                            <th style="width: 130px;">تاریخ</th>
+                            <th style="width: 130px;">از وضعیت</th>
+                            <th style="width: 130px;">به وضعیت</th>
+                            <th>توضیحات</th>
                         </tr>
-                        hi++;
-                    }
-                </tbody>
-            </table>
-        }
+                    </thead>
+                    <tbody>
+                        @{
+                            var hi = 1;
+                        }
+                        @foreach (var h in Model.Histories.OrderBy(x => x.Date))
+                        {
+                            <tr>
+                                <td class="text-center persian-number">@hi</td>
+                                <td dir="ltr" class="text-right">@PersianDate.Format(Clock.ToLocalDate(h.Date))</td>
+                                <td>
+                                    @if (h.FromStatus.HasValue)
+                                    {
+                                        <span>@GetStatusName(h.FromStatus.Value)</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">@GetStatusName(h.ToStatus)</span>
+                                </td>
+                                <td>@h.Description</td>
+                            </tr>
+                            hi++;
+                        }
+                    </tbody>
+                </table>
+            </div>
 
-        @functions {
-            string GetStatusName(MyFirstCoreApp.Domain.Enums.InvoiceStatus status)
-            {
-                return status switch
+            <!-- موبایل: کارت‌ها -->
+            <div class="mobile-history d-md-none">
+                @{
+                    var mh = 1;
+                }
+                @foreach (var h in Model.Histories.OrderBy(x => x.Date))
                 {
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft => "پیش‌نویس",
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Sent => "ارسال شده",
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised => "اصلاح شده",
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Approved => "تایید شده",
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Rejected => "رد شده",
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Postponed => "به تعویق",
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Converted => "تبدیل شده",
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Cancelled => "لغو شده",
-                    MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted => "قطعی",
-                    _ => "نامشخص"
-                };
-            }
+                    <div class="history-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong>
+                                <span class="badge badge-secondary ml-1">@mh</span>
+                                <span class="badge badge-info">@GetStatusName(h.ToStatus)</span>
+                            </strong>
+                            <small class="text-muted" dir="ltr">@PersianDate.Format(Clock.ToLocalDate(h.Date))</small>
+                        </div>
+                        @if (h.FromStatus.HasValue)
+                        {
+                            <div class="row-line">از: @GetStatusName(h.FromStatus.Value)</div>
+                        }
+                        @if (!string.IsNullOrEmpty(h.Description))
+                        {
+                            <div class="row-line">@h.Description</div>
+                        }
+                    </div>
+                    mh++;
+                }
+            </div>
         }
     </div>
 
+    <!-- ==========================================
+         دکمه‌های عملیات
+         ========================================== -->
     <div class="card-footer">
         <a asp-action="Index"
            asp-route-invoiceType="@((int)Model.InvoiceType)"
@@ -205,9 +408,15 @@
             <i class="fa-solid fa-arrow-right"></i> بازگشت
         </a>
 
-        @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.PreInvoice)
+        @if (Model.Status == InvoiceStatus.Posted && Model.RemainingAmount > 0 && !isPreInvoice)
         {
-            // 🆕 گردش کار پیش‌فاکتور
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnExtendDue">
+                <i class="fa fa-calendar-plus"></i> تمدید سررسید
+            </button>
+        }
+
+        @if (isPreInvoice)
+        {
             if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft ||
             Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised)
             {
@@ -242,7 +451,6 @@
         }
         else
         {
-            // 🆕 فاکتور فروش/خرید
             if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft)
             {
                 <button type="button" class="btn btn-success post-details-btn" data-id="@Model.Id" id="btnFinalizing">
@@ -255,179 +463,196 @@
             else if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
             {
                 <button type="button" class="btn btn-warning unpost-details-btn" data-id="@Model.Id">
-                    <i class="fa fa-undo"></i> برگشت به پیش نویس
+                    <i class="fa fa-undo"></i> برگشت به پیش‌نویس
                 </button>
             }
         }
 
-        @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted &&
-                Model.InvoiceType != MyFirstCoreApp.Domain.Enums.InvoiceType.PreInvoice)
+        @if (Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted && !isPreInvoice && remaining > 0)
         {
-            var remaining = Model.TotalAmount - Model.PaidAmount - Model.SettlementDiscount;
-            if (remaining > 0)
-            {
-                <button type="button" class="btn btn-warning" id="btnSettleDiscount">
-                    <i class="fa-solid fa-percent"></i> تسویه با تخفیف
-                </button>
-            }
+            <button type="button" class="btn btn-warning" id="btnSettleDiscount">
+                <i class="fa-solid fa-percent"></i> تسویه با تخفیف
+            </button>
         }
     </div>
 
     @Html.AntiForgeryToken()
-    @section Scripts {
-        <script>
-            $(document).ready(function () {
 
-                // 🆕 مبلغ باقی‌مانده
-                const remainingAmount = @(Model.TotalAmount - Model.PaidAmount - Model.SettlementDiscount);
+    @functions {
+        string GetStatusName(MyFirstCoreApp.Domain.Enums.InvoiceStatus status)
+        {
+            return status switch
+            {
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Draft => "پیش‌نویس",
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Sent => "ارسال شده",
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Revised => "اصلاح شده",
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Approved => "تایید شده",
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Rejected => "رد شده",
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Postponed => "به تعویق",
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Converted => "تبدیل شده",
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Cancelled => "لغو شده",
+                MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted => "قطعی",
+                _ => "نامشخص"
+            };
+        }
+    }
+</div>
 
-                // 🆕 دکمه‌ی "تسویه با تخفیف"
-                $('#btnSettleDiscount').on('click', function () {
+@section Scripts {
+    <script>
+        $(document).ready(function () {
 
-                    const bodyHtml = `
-                        <div class="alert alert-info">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>مبلغ کل فاکتور:</span>
-                                <strong class="persian-number-comma">${remainingAmount.toLocaleString('en-US')}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span>باقی‌مانده:</span>
-                                <strong class="text-danger persian-number-comma">${remainingAmount.toLocaleString('en-US')}</strong>
-                            </div>
+            // ============================================
+            // مقدار باقی‌مانده (server-side)
+            // ============================================
+            const remainingAmount = @remaining.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            // ============================================
+            // دکمه‌ی "تسویه با تخفیف"
+            // ============================================
+            $('#btnSettleDiscount').on('click', function () {
+
+                const bodyHtml = `
+                    <div class="alert alert-info">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>مبلغ کل فاکتور:</span>
+                            <strong class="persian-number-comma">${remainingAmount.toLocaleString('en-US')}</strong>
                         </div>
-
-                        <div class="form-group">
-                            <label for="discountAmountInput">
-                                <i class="fa-solid fa-percent"></i> مبلغ تخفیف تسویه:
-                            </label>
-                            <input type="text"
-                                   id="discountAmountInput"
-                                   class="form-control form-control-lg ltr"
-                                   placeholder="0"
-                                   autocomplete="off"
-                                   dir="ltr" />
-                            <small class="form-text text-muted">
-                                مبلغی که مشتری به‌عنوان تخفیف کنار می‌گذارد.
-                            </small>
+                        <div class="d-flex justify-content-between">
+                            <span>باقی‌مانده:</span>
+                            <strong class="text-danger persian-number-comma">${remainingAmount.toLocaleString('en-US')}</strong>
                         </div>
+                    </div>
 
-                        <div class="form-group mb-0">
-                            <div class="d-flex justify-content-between">
-                                <span>مانده پس از تخفیف:</span>
-                                <strong id="remainingAfterDiscount" class="text-success persian-number-comma">0</strong>
-                            </div>
+                    <div class="form-group">
+                        <label for="discountAmountInput">
+                            <i class="fa-solid fa-percent"></i> مبلغ تخفیف تسویه:
+                        </label>
+                        <input type="text"
+                               id="discountAmountInput"
+                               class="form-control form-control-lg ltr"
+                               placeholder="0"
+                               autocomplete="off"
+                               dir="ltr" />
+                        <small class="form-text text-muted">
+                            مبلغی که مشتری به‌عنوان تخفیف کنار می‌گذارد.
+                        </small>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <div class="d-flex justify-content-between">
+                            <span>مانده پس از تخفیف:</span>
+                            <strong id="remainingAfterDiscount" class="text-success persian-number-comma">0</strong>
                         </div>
-                    `;
+                    </div>
+                `;
 
-                    ModalHelper.show({
-                        title: 'تسویه با تخفیف',
-                        icon: 'fa-solid fa-percent',
-                        headerClass: 'bg-warning text-white',
-                        size: 'modal-md',
-                        body: bodyHtml,
-                        buttons: [
-                            {
-                                text: 'انصراف',
-                                class: 'btn-secondary',
-                                icon: 'fa-solid fa-times',
-                                dismiss: true
-                            },
-                            {
-                                text: 'تسویه با تخفیف',
-                                class: 'btn-warning',
-                                icon: 'fa-solid fa-check',
-                                action: 'confirm'
-                            }
-                        ],
-                        onShow: function () {
-                            // 🆕 focus روی input
-                            $('#discountAmountInput').focus();
-                            updateRemainingAfterDiscount();
+                ModalHelper.show({
+                    title: 'تسویه با تخفیف',
+                    icon: 'fa-solid fa-percent',
+                    headerClass: 'bg-warning text-white',
+                    size: 'modal-md',
+                    body: bodyHtml,
+                    buttons: [
+                        {
+                            text: 'انصراف',
+                            class: 'btn-secondary',
+                            icon: 'fa-solid fa-times',
+                            dismiss: true
                         },
-                        onConfirm: function () {
-                            const val = $('#discountAmountInput').val();
-                            const discount = parseFloat(toEnglishNumber(val).replace(/,/g, '')) || 0;
+                        {
+                            text: 'تسویه با تخفیف',
+                            class: 'btn-warning',
+                            icon: 'fa-solid fa-check',
+                            action: 'confirm'
+                        }
+                    ],
+                    onShow: function () {
+                        $('#discountAmountInput').focus();
+                        updateRemainingAfterDiscount();
+                    },
+                    onConfirm: function () {
+                        const val = $('#discountAmountInput').val();
+                        const discount = parseFloat(toEnglishNumber(val).replace(/,/g, '')) || 0;
 
-                            if (discount <= 0) {
-                                ModalHelper.error('مبلغ تخفیف نامعتبر است.');
-                                return;
-                            }
+                        if (discount <= 0) {
+                            ModalHelper.error('مبلغ تخفیف نامعتبر است.');
+                            return;
+                        }
 
-                            if (discount > remainingAmount) {
-                                ModalHelper.error('مبلغ تخفیف (' + discount.toLocaleString('en-US') + ') بیشتر از باقی‌مانده (' + remainingAmount.toLocaleString('en-US') + ') است.');
-                                return;
-                            }
+                        if (discount > remainingAmount) {
+                            ModalHelper.error('مبلغ تخفیف (' + discount.toLocaleString('en-US') + ') بیشتر از باقی‌مانده (' + remainingAmount.toLocaleString('en-US') + ') است.');
+                            return;
+                        }
 
-                            // 🆕 غیرفعال کردن دکمه تایید
-                            $('#generalModal button[data-action="confirm"]')
-                                .prop('disabled', true)
-                                .html('<i class="fa-solid fa-spinner fa-spin"></i> در حال ثبت...');
+                        $('#generalModal button[data-action="confirm"]')
+                            .prop('disabled', true)
+                            .html('<i class="fa-solid fa-spinner fa-spin"></i> در حال ثبت...');
 
-                            $.ajax({
-                                url: '/Invoicing/Invoices/SettleWithDiscount',
-                                type: 'POST',
-                                data: {
-                                    id: @Model.Id,
-                                    discountAmount: discount.toString(),
-                                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                                },
-                                success: function (r) {
-                                    if (r.success) {
-                                        ModalHelper.close();
-                                        ModalHelper.success(r.message, {
-                                            onClose: function () {
-                                                location.reload();
-                                            }
-                                        });
-                                        // 🆕 رفرش بعد از بستن Modal
-                                        setTimeout(function () { location.reload(); }, 1500);
-                                    } else {
-                                        ModalHelper.error(r.message);
-                                        $('#generalModal button[data-action="confirm"]')
-                                            .prop('disabled', false)
-                                            .html('<i class="fa-solid fa-check"></i> تسویه با تخفیف');
-                                    }
-                                },
-                                error: function () {
-                                    ModalHelper.error('خطا در ارتباط با سرور');
+                        $.ajax({
+                            url: '/Invoicing/Invoices/SettleWithDiscount',
+                            type: 'POST',
+                            data: {
+                                id: @Model.Id,
+                                discountAmount: discount.toString(),
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function (r) {
+                                if (r.success) {
+                                    ModalHelper.close();
+                                    ModalHelper.success(r.message, {
+                                        onClose: function () {
+                                            location.reload();
+                                        }
+                                    });
+                                    setTimeout(function () { location.reload(); }, 1500);
+                                } else {
+                                    ModalHelper.error(r.message);
                                     $('#generalModal button[data-action="confirm"]')
                                         .prop('disabled', false)
                                         .html('<i class="fa-solid fa-check"></i> تسویه با تخفیف');
                                 }
-                            });
-                        }
-                    });
-                });
-
-                // 🆕 محاسبه‌ی زنده‌ی مانده
-                $(document).on('input', '#discountAmountInput', function () {
-                    let val = $(this).val();
-                    if (val) {
-                        // 🆕 فرمت خودکار با کاما
-                        val = toEnglishNumber(val).replace(/,/g, '');
-                        $(this).val(formatNumberWithComma(val));
+                            },
+                            error: function () {
+                                ModalHelper.error('خطا در ارتباط با سرور');
+                                $('#generalModal button[data-action="confirm"]')
+                                    .prop('disabled', false)
+                                    .html('<i class="fa-solid fa-check"></i> تسویه با تخفیف');
+                            }
+                        });
                     }
-                    updateRemainingAfterDiscount();
                 });
+            });
 
-                // 🆕 به‌روزرسانی مانده
-                function updateRemainingAfterDiscount() {
-                    const val = $('#discountAmountInput').val();
-                    const discount = parseFloat(toEnglishNumber(val).replace(/,/g, '')) || 0;
-                    const after = remainingAmount - discount;
-
-                    $('#remainingAfterDiscount').text(formatNumberWithComma(after.toString()));
-
-                    if (after < 0) {
-                        $('#remainingAfterDiscount')
-                            .addClass('text-danger')
-                            .removeClass('text-success');
-                    } else {
-                        $('#remainingAfterDiscount')
-                            .addClass('text-success')
-                            .removeClass('text-danger');
-                    }
+            // ============================================
+            // محاسبه‌ی زنده‌ی مانده
+            // ============================================
+            $(document).on('input', '#discountAmountInput', function () {
+                let val = $(this).val();
+                if (val) {
+                    val = toEnglishNumber(val).replace(/,/g, '');
+                    $(this).val(formatNumberWithComma(val));
                 }
+                updateRemainingAfterDiscount();
+            });
+
+            function updateRemainingAfterDiscount() {
+                const val = $('#discountAmountInput').val();
+                const discount = parseFloat(toEnglishNumber(val).replace(/,/g, '')) || 0;
+                const after = remainingAmount - discount;
+
+                $('#remainingAfterDiscount').text(formatNumberWithComma(after.toString()));
+
+                if (after < 0) {
+                    $('#remainingAfterDiscount')
+                        .addClass('text-danger')
+                        .removeClass('text-success');
+                } else {
+                    $('#remainingAfterDiscount')
+                        .addClass('text-success')
+                        .removeClass('text-danger');
+                }
+            }
 
             // ============================================
             // دکمه قطعی
@@ -449,7 +674,7 @@
                                 if (r.success) {
                                     ModalHelper.success(r.message || 'فاکتور قطعی شد.', {
                                         onClose: function () {
-                                                location.href = '/Invoicing/Invoices?invoiceType=' + '@((int)Model.InvoiceType)';
+                                            location.href = '/Invoicing/Invoices?invoiceType=' + '@((int)Model.InvoiceType)';
                                         }
                                     });
                                 } else {
@@ -461,7 +686,25 @@
                     { title: 'قطعی کردن فاکتور', icon: 'fa-solid fa-circle-check', headerClass: 'bg-success text-white' }
                 );
             });
+
+            // ============================================
+            // تمدید سررسید
+            // ============================================
+            $('#btnExtendDue').on('click', function () {
+                var newDate = prompt('سررسید جدید (مثلاً 1405/03/15):');
+                if (!newDate) return;
+                var reason = prompt('دلیل (اختیاری):') || '';
+
+                $.post('/Invoicing/Invoices/ExtendDueDate', {
+                    id: @Model.Id,
+                    newDueDate: newDate,
+                    reason: reason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                }).done(function (r) {
+                    if (r.success) { location.reload(); } else { alert(r.message); }
+                });
             });
-        </script>
-    }
-</div>
+
+        });
+    </script>
+}

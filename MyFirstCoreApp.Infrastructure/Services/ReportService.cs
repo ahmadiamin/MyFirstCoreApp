@@ -145,11 +145,55 @@ public class ReportService : IReportService
 
     public async Task<ContactReport> GetContactAsync(ContactReportQuery query, CancellationToken cancellationToken = default)
     {
-        return await GetContactAsync(RequireTenant(), query, cancellationToken);
+        ValidateRange(query.From, query.To);
+        var tenantId = RequireTenant();
+
+        var contact = await _context.Contacts
+            .AsNoTracking()
+            .Where(c => c.Id == query.ContactId && c.TenantId == tenantId)
+            .Select(c => new { c.Name, c.Code, c.Mobile, c.Phone, c.ContactType })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException("طرف حساب پیدا نشد.");
+
+        var parameters = new DynamicParameters();
+        parameters.Add("TenantId", tenantId, DbType.Int32);
+        parameters.Add("ContactId", query.ContactId, DbType.Int32);
+        AddDate(parameters, "FromDate", query.From);
+        AddDate(parameters, "ToDate", query.To);
+        parameters.Add("OnlyPosted", query.OnlyPosted, DbType.Boolean);
+
+        var (summary, rows) = await QueryAsync<SummaryRow, ContactLineRow>(
+            "dbo.usp_Report_Contact", parameters, cancellationToken);
+
+        return new ContactReport
+        {
+            ContactName = contact.Name,
+            ContactCode = contact.Code,
+            Mobile = contact.Mobile,
+            Phone = contact.Phone,
+            ContactType = contact.ContactType,
+            OpeningBalance = summary.OpeningBalance,
+            TotalDebit = summary.TotalDebit,
+            TotalCredit = summary.TotalCredit,
+            ClosingBalance = summary.OpeningBalance + summary.TotalDebit - summary.TotalCredit,
+            Lines = rows.Select(r => new ContactLine
+            {
+                TransactionId = r.TransactionId,
+                TransactionNumber = r.TransactionNumber,
+                Date = DateOnly.FromDateTime(r.Date),
+                Description = r.Description,
+                Reference = r.Reference,
+                ReferenceType = r.ReferenceType,
+                ReferenceId = r.ReferenceId,
+                AccountName = r.AccountName,
+                Debit = r.Debit,
+                Credit = r.Credit,
+                RunningBalance = r.RunningBalance
+            }).ToList()
+        };
     }
 
-    public async Task<ContactReport> GetContactAsync(
-        int tenantId, ContactReportQuery query, CancellationToken cancellationToken = default)
+    public async Task<ContactReport> GetContactAsync(int tenantId, ContactReportQuery query, CancellationToken cancellationToken = default)
     {
         ValidateRange(query.From, query.To);
         if (tenantId <= 0) throw new InvalidOperationException("شرکت معتبر نیست.");
@@ -224,6 +268,9 @@ public class ReportService : IReportService
         parameters.Add("OnlyOpen", query.OnlyOpen, DbType.Boolean);
         parameters.Add("PageNumber", pageNumber, DbType.Int32);
         parameters.Add("PageSize", pageSize, DbType.Int32);
+        parameters.Add("OnlyOverdue", query.OnlyOverdue, DbType.Boolean);
+        AddDate(parameters, "Today", query.Today);
+        parameters.Add("InvoiceStatusPosted", (int)InvoiceStatus.Posted, DbType.Int32);
 
         var (summary, rows) = await QueryAsync<InvoiceSummaryRow, InvoiceRow>(
             "dbo.usp_Report_Invoices", parameters, cancellationToken);
@@ -235,6 +282,8 @@ public class ReportService : IReportService
             TotalPaid = summary.TotalPaid,
             TotalSettlementDiscount = summary.TotalSettlementDiscount,
             TotalRemaining = summary.TotalRemaining,
+            OverdueCount = summary.OverdueCount,
+            TotalOverdueRemaining = summary.TotalOverdueRemaining,
             PageNumber = pageNumber,
             PageSize = pageSize,
             Rows = rows.Select(r => new InvoiceReportRow
@@ -250,7 +299,9 @@ public class ReportService : IReportService
                 TotalAmount = r.TotalAmount,
                 PaidAmount = r.PaidAmount,
                 SettlementDiscount = r.SettlementDiscount,
-                RemainingAmount = r.RemainingAmount
+                RemainingAmount = r.RemainingAmount,
+                DueDate = r.DueDate.HasValue ? DateOnly.FromDateTime(r.DueDate.Value) : null,
+                IsOverdue = r.IsOverdue
             }).ToList()
         };
     }
@@ -311,6 +362,7 @@ public class ReportService : IReportService
             TotalAge31To60 = summary.TotalAge31To60,
             TotalAge61To90 = summary.TotalAge61To90,
             TotalAge90Plus = summary.TotalAge90Plus,
+            TotalOverdue = summary.TotalOverdue,
             TotalPendingCheque = summary.TotalPendingCheque,
             PageNumber = pageNumber,
             PageSize = pageSize,
@@ -332,6 +384,7 @@ public class ReportService : IReportService
                 Age31To60 = r.Age31To60,
                 Age61To90 = r.Age61To90,
                 Age90Plus = r.Age90Plus,
+                OverdueAmount = r.OverdueAmount,
                 PendingChequeAmount = r.PendingChequeAmount
             }).ToList()
         };
@@ -473,6 +526,7 @@ public class ReportService : IReportService
         public decimal TotalAge31To60 { get; set; }
         public decimal TotalAge61To90 { get; set; }
         public decimal TotalAge90Plus { get; set; }
+        public decimal TotalOverdue { get; set; }
         public decimal TotalPendingCheque { get; set; }
     }
 
@@ -492,12 +546,15 @@ public class ReportService : IReportService
         public decimal Age31To60 { get; set; }
         public decimal Age61To90 { get; set; }
         public decimal Age90Plus { get; set; }
+        public decimal OverdueAmount { get; set; }
         public decimal PendingChequeAmount { get; set; }
     }
 
     private sealed class InvoiceSummaryRow
     {
         public int Count { get; set; }
+        public int OverdueCount { get; set; }
+        public decimal TotalOverdueRemaining { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal TotalPaid { get; set; }
         public decimal TotalSettlementDiscount { get; set; }
@@ -518,5 +575,7 @@ public class ReportService : IReportService
         public decimal PaidAmount { get; set; }
         public decimal SettlementDiscount { get; set; }
         public decimal RemainingAmount { get; set; }
+        public DateTime? DueDate { get; set; }
+        public bool IsOverdue { get; set; }
     }
 }

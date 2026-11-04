@@ -15,6 +15,9 @@ public class InvoiceFormViewModel
     [Display(Name = "تاریخ")]
     public string Date { get; set; } = string.Empty;
 
+    [Display(Name = "سررسید پرداخت")]
+    public string? DueDate { get; set; } = string.Empty;
+    
     [Required(ErrorMessage = "نوع فاکتور الزامی است")]
     [Display(Name = "نوع فاکتور")]
     public InvoiceType InvoiceType { get; set; } = InvoiceType.Sale;

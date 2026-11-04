@@ -66,6 +66,32 @@ public sealed class CustomerPortalServiceTests : IDisposable
             });
             await context.SaveChangesAsync();
         }
+        await using (var checkContext = _db.NewContext())
+        {
+            var savedInvoice = await checkContext.Invoices
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(x => x.TenantId == TenantId && x.ContactId == contactId)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.InvoiceType,
+                    x.Status,
+                    x.TotalAmount,
+                    x.PaidAmount,
+                    x.SettlementDiscount
+                })
+                .ToListAsync();
+
+            foreach (var item in savedInvoice)
+            {
+                Console.WriteLine(
+                    $"Type: {item.InvoiceType}, Status: {item.Status}, " +
+                    $"Total: {item.TotalAmount}, Paid: {item.PaidAmount}, " +
+                    $"Discount: {item.SettlementDiscount}, " +
+                    $"Remaining: {item.TotalAmount - item.PaidAmount - item.SettlementDiscount}");
+            }
+        }
 
         await using var serviceContext = _db.NewContext();
         var service = CreateService(serviceContext);
@@ -76,7 +102,7 @@ public sealed class CustomerPortalServiceTests : IDisposable
         var stored = await serviceContext.CustomerPortalShares.AsNoTracking().SingleAsync(x => x.Id == created.Id);
         Assert.NotEqual(created.Token, stored.TokenHash);
         Assert.Equal(64, stored.TokenHash.Length);
-        Assert.Equal(43, created.Token.Length);
+        Assert.Equal(22, created.Token.Length);
         Assert.NotNull(stored.ProtectedToken);
         Assert.NotEqual(created.Token, stored.ProtectedToken);
         var listed = Assert.Single(await service.GetSharesAsync(TenantId, contactId));

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyFirstCoreApp.Application.CustomerPortal;
@@ -37,7 +37,6 @@ public sealed class ChequeReminderHostedServiceTests : IDisposable
                 ChequeReminderDayBeforeEnabled = true,
                 ChequeReminderTime = new TimeOnly(9, 0),
                 ChequeReminderMobile = "09123456789",
-                ChequeReminderText = "Pattern %var1% %var2% %var3% %var4%"
             });
             setup.Cheques.Add(new Cheque
             {
@@ -97,6 +96,11 @@ public sealed class ChequeReminderHostedServiceTests : IDisposable
 
     private sealed class RecordingSmsService : IFarazSmsService
     {
+        public Task<SmsBalanceResult> GetBalanceAsync(int tenantId, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new SmsBalanceResult(false, null, null, "در تست استفاده نمی‌شود."));
+        }
+
         public TaskCompletionSource<SentReminder> Sent { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 

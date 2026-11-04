@@ -10,6 +10,74 @@
     ViewData["Title"] = pageTitle;
 }
 
+<style>
+    #invoicesGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #invoicesGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+        .action-buttons .btn {
+            padding: 3px 6px;
+            line-height: 1;
+        }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .invoice-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+        .invoice-card .title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .invoice-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+            word-break: break-all;
+        }
+
+        .invoice-card .amount {
+            font-weight: 600;
+            color: #0d6efd;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .invoice-card .remaining {
+            color: #dc3545;
+            font-weight: 600;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .invoice-card .actions {
+            margin-top: 8px;
+        }
+</style>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
@@ -69,80 +137,131 @@
             </div>
         </div>
 
-        <div id="invoicesGrid" class="ag-theme-alpine"
+        <!-- دسکتاپ: AG Grid -->
+        <div id="invoicesGrid" class="ag-theme-alpine d-none d-md-block"
              style="height: 600px; width: 100%;">
         </div>
+
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobileInvoices" class="d-md-none"></div>
 
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // ============================================
-        // 🆕 متغیر global برای Grid API
-        // ============================================
-        let invoicesGridApi = null;
-
         $(document).ready(function () {
+
+            var gridApi = null;
+            var allRows = [];
 
             // ============================================
             // ۱. URL با فیلتر نوع
             // ============================================
-            const urlParams = new URLSearchParams(window.location.search);
-            const invoiceType = urlParams.get('invoiceType');
-
-            let dataUrl = '/Invoicing/Invoices/GetData';
-            if (invoiceType) dataUrl += '?invoiceType=' + invoiceType;
+            var urlParams = new URLSearchParams(window.location.search);
+            var invoiceTypeFilter = urlParams.get('invoiceType') || '';
 
             // ============================================
-            // ۲. تعریف ستون‌ها
+            // ۲. ستون‌ها
             // ============================================
             const columnDefs = [
-                AgGridHelper.rowNumberColumn(),
-                AgGridHelper.numberColumn('number', 'شماره', 90),
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'number',
+                    headerName: 'شماره',
+                    width: 90,
+                    cellStyle: { textAlign: 'center' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(p.value) : '';
+                    }
+                },
                 {
                     field: 'date',
                     headerName: 'تاریخ',
-                    width: 110
+                    width: 110,
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'dueDate',
+                    headerName: 'سررسید',
+                    width: 120,
+                    sortable: false,
+                    cellRenderer: function (p) {
+                        if (!p.value) return '<span class="text-muted">—</span>';
+                        return p.data.isOverdue
+                            ? '<span class="badge badge-danger" title="معوق">' + p.value + '</span>'
+                            : p.value;
+                    }
                 },
                 {
                     field: 'invoiceTypeName',
                     headerName: 'نوع',
                     width: 100,
-                    cellRenderer: function (params) {
-                        if (!params.data) return '';
-                        const span = document.createElement('span');
-                        if (params.data.invoiceType === 1) span.className = 'badge badge-info';
-                        else if (params.data.invoiceType === 2) span.className = 'badge badge-success';
-                        else span.className = 'badge badge-warning';
-                        span.textContent = params.value;
-                        return span;
+                    cellRenderer: function (p) {
+                        var cls = 'badge-info';
+                        if (p.data.invoiceType === 2) cls = 'badge-success';
+                        else if (p.data.invoiceType === 3) cls = 'badge-warning';
+                        return '<span class="badge ' + cls + '">' + (p.value || '') + '</span>';
                     }
                 },
                 { field: 'contactName', headerName: 'طرف حساب', width: 180, flex: 1 },
-                AgGridHelper.moneyColumn('totalAmount', 'مبلغ کل', 140),
-                AgGridHelper.moneyColumn('paidAmount', 'پرداخت‌شده', 130),
-                AgGridHelper.moneyColumn('remainingAmount', 'مانده', 130),
+                {
+                    field: 'totalAmount',
+                    headerName: 'مبلغ کل',
+                    width: 140,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(Number(p.value).toLocaleString('en-US')) : '';
+                    }
+                },
+                {
+                    field: 'paidAmount',
+                    headerName: 'پرداخت‌شده',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(Number(p.value).toLocaleString('en-US')) : '';
+                    }
+                },
+                {
+                    field: 'remainingAmount',
+                    headerName: 'مانده',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr', color: '#dc3545' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(Number(p.value).toLocaleString('en-US')) : '';
+                    }
+                },
                 {
                     field: 'statusName',
                     headerName: 'وضعیت',
                     width: 110,
-                    cellRenderer: function (params) {
-                        if (!params.data) return '';
-                        const span = document.createElement('span');
-                        const s = params.data.status;
-                        if (s === 1) span.className = 'badge badge-secondary';
-                        else if (s === 2) span.className = 'badge badge-primary';
-                        else if (s === 3) span.className = 'badge badge-warning';
-                        else if (s === 4) span.className = 'badge badge-success';
-                        else if (s === 5) span.className = 'badge badge-danger';
-                        else if (s === 6) span.className = 'badge badge-warning';
-                        else if (s === 7) span.className = 'badge badge-info';
-                        else if (s === 8) span.className = 'badge badge-dark';
-                        else if (s === 9) span.className = 'badge badge-success';
-                        else span.className = 'badge badge-secondary';
-                        span.textContent = params.value;
-                        return span;
+                    cellRenderer: function (p) {
+                        var cls = 'badge-secondary';
+                        var s = p.data.status;
+                        if (s === 1) cls = 'badge-secondary';
+                        else if (s === 2) cls = 'badge-primary';
+                        else if (s === 3) cls = 'badge-warning';
+                        else if (s === 4) cls = 'badge-success';
+                        else if (s === 5) cls = 'badge-danger';
+                        else if (s === 6) cls = 'badge-warning';
+                        else if (s === 7) cls = 'badge-info';
+                        else if (s === 8) cls = 'badge-dark';
+                        else if (s === 9) cls = 'badge-success';
+                        return '<span class="badge ' + cls + '">' + (p.value || '') + '</span>';
                     }
                 },
                 {
@@ -155,415 +274,549 @@
                     pinned: 'left',
                     cellRenderer: function (params) {
                         if (!params.data) return '';
-                        const div = document.createElement('div');
-                        div.className = 'action-buttons';
-                        const d = params.data;
-
-                        // 👁 مشاهده (همیشه)
-                        const viewBtn = document.createElement('a');
-                        viewBtn.href = `/Invoicing/Invoices/Details/${d.id}`;
-                        viewBtn.className = 'btn btn-sm btn-outline-info action-icon-btn';
-                        viewBtn.title = 'مشاهده';
-                        viewBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
-                        div.appendChild(viewBtn);
-
-
-                        // PDF
-                        const printBtn = document.createElement('a');
-                        printBtn.href = `/Invoicing/Invoices/PrintPdf/${d.id}`;
-                        printBtn.className = 'btn btn-sm btn-outline-info action-icon-btn';
-                        printBtn.title = 'PDF';
-                        printBtn.innerHTML = '<i class="fa-solid fa-file-pdf"></i>';
-                        div.appendChild(printBtn);
-
-                        // ============================================
-                        // 🆕 پیش‌فاکتور (invoiceType === 1)
-                        // ============================================
-                        if (d.invoiceType === 1) {
-                            // 📤 ارسال
-                            if (d.status === 1 || d.status === 3 || d.status === 6) {
-                                const sendBtn = document.createElement('a');
-                                sendBtn.href = 'javascript:void(0)';
-                                sendBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn wf-btn';
-                                sendBtn.dataset.id = d.id;
-                                sendBtn.dataset.action = 'sent';
-                                sendBtn.title = 'ارسال به مشتری';
-                                sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-                                div.appendChild(sendBtn);
-                            }
-
-                            // ✅ تایید / ❌ رد / ⏰ به تعویق
-                            if (d.status === 2 || d.status === 3 || d.status === 6) {
-                                const approveBtn = document.createElement('a');
-                                approveBtn.href = 'javascript:void(0)';
-                                approveBtn.className = 'btn btn-sm btn-outline-success action-icon-btn wf-btn';
-                                approveBtn.dataset.id = d.id;
-                                approveBtn.dataset.action = 'approved';
-                                approveBtn.title = 'تایید مشتری';
-                                approveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                                div.appendChild(approveBtn);
-
-                                const rejectBtn = document.createElement('a');
-                                rejectBtn.href = 'javascript:void(0)';
-                                rejectBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn wf-btn';
-                                rejectBtn.dataset.id = d.id;
-                                rejectBtn.dataset.action = 'rejected';
-                                rejectBtn.title = 'رد مشتری';
-                                rejectBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
-                                div.appendChild(rejectBtn);
-
-                                const postponeBtn = document.createElement('a');
-                                postponeBtn.href = 'javascript:void(0)';
-                                postponeBtn.className = 'btn btn-sm btn-outline-warning action-icon-btn wf-btn';
-                                postponeBtn.dataset.id = d.id;
-                                postponeBtn.dataset.action = 'postponed';
-                                postponeBtn.title = 'به تعویق';
-                                postponeBtn.innerHTML = '<i class="fa-solid fa-clock"></i>';
-                                div.appendChild(postponeBtn);
-                            }
-
-                            if(d.status === 2)
-                            {
-                                const revisedBtn = document.createElement('a');
-                                revisedBtn.href = 'javascript:void(0)';
-                                revisedBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn wf-btn';
-                                revisedBtn.dataset.id = d.id;
-                                revisedBtn.dataset.action = 'Revised';
-                                revisedBtn.title = 'اصلاح مشتری';
-                                revisedBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
-                                div.appendChild(revisedBtn);
-                            }
-
-                            // 🔄 تبدیل (Approved=4)
-                            if (d.status === 4) {
-                                const convertBtn = document.createElement('a');
-                                convertBtn.href = 'javascript:void(0)';
-                                convertBtn.className = 'btn btn-sm btn-outline-success action-icon-btn convert-btn';
-                                convertBtn.dataset.id = d.id;
-                                convertBtn.dataset.number = d.number;
-                                convertBtn.title = 'تبدیل به فاکتور فروش';
-                                convertBtn.innerHTML = '<i class="fa-solid fa-exchange-alt"></i>';
-                                div.appendChild(convertBtn);
-                            }
-
-                            // ✏ ویرایش (Draft=1 یا Revised=3)
-                            if (d.status === 1 || d.status === 3 || d.status === 3) {
-                                const editBtn = document.createElement('a');
-                                editBtn.href = `/Invoicing/Invoices/Edit/${d.id}`;
-                                editBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn';
-                                editBtn.title = 'ویرایش';
-                                editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
-                                div.appendChild(editBtn);
-                            }
-
-                            // 🗑 حذف (Draft=1)
-                            if (d.status === 1) {
-                                const deleteBtn = document.createElement('a');
-                                deleteBtn.href = 'javascript:void(0)';
-                                deleteBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn delete-btn';
-                                deleteBtn.dataset.id = d.id;
-                                deleteBtn.dataset.title = d.number || '';
-                                deleteBtn.dataset.contact = d.contactName || '';
-                                deleteBtn.dataset.amount = d.totalAmount || 0;
-                                deleteBtn.dataset.type = d.invoiceTypeName || '';
-                                deleteBtn.title = 'حذف';
-                                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                                div.appendChild(deleteBtn);
-                            }
-                        }
-                        // ============================================
-                        // 🆕 فاکتور فروش/خرید (invoiceType === 2 یا 3)
-                        // ============================================
-                        else {
-                            // ✅ قطعی (Draft=1)
-                            if (d.status === 1) {
-                                const postBtn = document.createElement('a');
-                                postBtn.href = 'javascript:void(0)';
-                                postBtn.className = 'btn btn-sm btn-outline-success action-icon-btn post-btn';
-                                postBtn.dataset.id = d.id;
-                                postBtn.title = 'قطعی کردن';
-                                postBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-                                div.appendChild(postBtn);
-                            }
-                            // ↩ برگشت (Posted=9)
-                            else if (d.status === 9) {
-                                const unpostBtn = document.createElement('a');
-                                unpostBtn.href = 'javascript:void(0)';
-                                unpostBtn.className = 'btn btn-sm btn-outline-warning action-icon-btn unpost-btn';
-                                unpostBtn.dataset.id = d.id;
-                                unpostBtn.title = 'برگشت به پیش‌نویس';
-                                unpostBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i>';
-                                div.appendChild(unpostBtn);
-                            }
-
-                            // ✏ ویرایش (Draft=1)
-                            if (d.status === 1) {
-                                const editBtn = document.createElement('a');
-                                editBtn.href = `/Invoicing/Invoices/Edit/${d.id}`;
-                                editBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn';
-                                editBtn.title = 'ویرایش';
-                                editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
-                                div.appendChild(editBtn);
-                            }
-
-                            // 🗑 حذف (Draft=1)
-                            if (d.status === 1) {
-                                const deleteBtn = document.createElement('a');
-                                deleteBtn.href = 'javascript:void(0)';
-                                deleteBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn delete-btn';
-                                deleteBtn.dataset.id = d.id;
-                                deleteBtn.dataset.title = d.number || '';
-                                deleteBtn.dataset.contact = d.contactName || '';
-                                deleteBtn.dataset.amount = d.totalAmount || 0;
-                                deleteBtn.dataset.type = d.invoiceTypeName || '';
-                                deleteBtn.title = 'حذف';
-                                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                                div.appendChild(deleteBtn);
-                            }
-                        }
-
-                        return div;
+                        return '<div class="action-buttons">' + buildActionButtons(params.data) + '</div>';
                     }
                 }
             ];
 
             // ============================================
-            // ۳. ساخت Grid
+            // ۳. دکمه‌های عملیات (مشترک دسکتاپ/موبایل)
             // ============================================
-            invoicesGridApi = AgGridHelper.create(
-                'invoicesGrid',
-                columnDefs,
-                dataUrl,
-                'txtSearch',
-                'lblCount'
-            );
+            function buildActionButtons(d) {
+                var html = '';
 
-        });
+                // 👁 مشاهده
+                html += '<a href="/Invoicing/Invoices/Details/' + d.id + '" ' +
+                        'class="btn btn-sm btn-outline-info action-icon-btn" title="مشاهده">' +
+                        '<i class="fa-solid fa-eye"></i></a>';
 
-        // ============================================
-        // ۴. رویداد حذف
-        // ============================================
-        $(document).on('click', '.delete-btn', function () {
-            const $btn = $(this);
-            const id = $btn.data('id');
-            const title = $btn.data('title');
-            const contact = $btn.data('contact');
-            const amount = $btn.data('amount');
-            const type = $btn.data('type');
+                // PDF
+                html += '<a href="/Invoicing/Invoices/PrintPdf/' + d.id + '" ' +
+                        'class="btn btn-sm btn-outline-info action-icon-btn" title="PDF">' +
+                        '<i class="fa-solid fa-file-pdf"></i></a>';
 
-            const items = [];
-            if (title) items.push({ label: 'شماره', value: title });
-            if (type) items.push({ label: 'نوع', value: type });
-            if (contact) items.push({ label: 'طرف حساب', value: contact });
-            if (amount) items.push({ label: 'مبلغ', value: Number(amount).toLocaleString('en-US') + ' ریال' });
+                if (d.invoiceType === 1) {
+                    // پیش‌فاکتور
+                    if (d.status === 1 || d.status === 3 || d.status === 6) {
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-primary action-icon-btn wf-btn" ' +
+                                'data-id="' + d.id + '" data-action="sent" title="ارسال به مشتری">' +
+                                '<i class="fa-solid fa-paper-plane"></i></a>';
+                    }
 
-            ModalHelper.confirmDelete({
-                url: '/Invoicing/Invoices/Delete',
-                data: {
-                    id: id,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                title: 'حذف ' + (type || 'فاکتور') + ' شماره ' + title,
-                message: 'آیا از حذف این ' + (type || 'فاکتور') + ' مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
-                items: items,
-                onSuccess: function () {
-                    if (invoicesGridApi) {
-                        const ds = invoicesGridApi.getGridOption('datasource');
-                        invoicesGridApi.setGridOption('datasource', ds);
-                    } else {
-                        location.reload();
+                    if (d.status === 2 || d.status === 3 || d.status === 6) {
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-success action-icon-btn wf-btn" ' +
+                                'data-id="' + d.id + '" data-action="approved" title="تایید مشتری">' +
+                                '<i class="fa-solid fa-check"></i></a>';
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-danger action-icon-btn wf-btn" ' +
+                                'data-id="' + d.id + '" data-action="rejected" title="رد مشتری">' +
+                                '<i class="fa-solid fa-times"></i></a>';
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-warning action-icon-btn wf-btn" ' +
+                                'data-id="' + d.id + '" data-action="postponed" title="به تعویق">' +
+                                '<i class="fa-solid fa-clock"></i></a>';
+                    }
+
+                    if (d.status === 2) {
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-primary action-icon-btn wf-btn" ' +
+                                'data-id="' + d.id + '" data-action="Revised" title="اصلاح مشتری">' +
+                                '<i class="fa-solid fa-pencil"></i></a>';
+                    }
+
+                    if (d.status === 4) {
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-success action-icon-btn convert-btn" ' +
+                                'data-id="' + d.id + '" data-number="' + escapeAttr(d.number) + '" ' +
+                                'title="تبدیل به فاکتور فروش">' +
+                                '<i class="fa-solid fa-exchange-alt"></i></a>';
+                    }
+
+                    if (d.status === 1 || d.status === 3) {
+                        html += '<a href="/Invoicing/Invoices/Edit/' + d.id + '" ' +
+                                'class="btn btn-sm btn-outline-primary action-icon-btn" title="ویرایش">' +
+                                '<i class="fa-solid fa-pen-to-square"></i></a>';
+                    }
+
+                    if (d.status === 1) {
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-danger action-icon-btn delete-btn" ' +
+                                'data-id="' + d.id + '" ' +
+                                'data-title="' + escapeAttr(d.number) + '" ' +
+                                'data-contact="' + escapeAttr(d.contactName) + '" ' +
+                                'data-amount="' + (d.totalAmount || 0) + '" ' +
+                                'data-type="' + escapeAttr(d.invoiceTypeName) + '" ' +
+                                'title="حذف">' +
+                                '<i class="fa-solid fa-trash"></i></a>';
+                    }
+                } else {
+                    // فاکتور فروش/خرید
+                    if (d.status === 1) {
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-success action-icon-btn post-btn" ' +
+                                'data-id="' + d.id + '" title="قطعی کردن">' +
+                                '<i class="fa-solid fa-circle-check"></i></a>';
+                    } else if (d.status === 9) {
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-warning action-icon-btn unpost-btn" ' +
+                                'data-id="' + d.id + '" title="برگشت به پیش‌نویس">' +
+                                '<i class="fa-solid fa-rotate-left"></i></a>';
+                    }
+
+                    if (d.status === 1) {
+                        html += '<a href="/Invoicing/Invoices/Edit/' + d.id + '" ' +
+                                'class="btn btn-sm btn-outline-primary action-icon-btn" title="ویرایش">' +
+                                '<i class="fa-solid fa-pen-to-square"></i></a>';
+                    }
+
+                    if (d.status === 1) {
+                        html += '<a href="javascript:void(0)" ' +
+                                'class="btn btn-sm btn-outline-danger action-icon-btn delete-btn" ' +
+                                'data-id="' + d.id + '" ' +
+                                'data-title="' + escapeAttr(d.number) + '" ' +
+                                'data-contact="' + escapeAttr(d.contactName) + '" ' +
+                                'data-amount="' + (d.totalAmount || 0) + '" ' +
+                                'data-type="' + escapeAttr(d.invoiceTypeName) + '" ' +
+                                'title="حذف">' +
+                                '<i class="fa-solid fa-trash"></i></a>';
                     }
                 }
+
+                return html;
+            }
+
+            function escapeAttr(s) {
+                return (s == null ? '' : String(s))
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            // ============================================
+            // ۴. ساخت Grid (دسکتاپ)
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'داده‌ای برای نمایش نیست',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('invoicesGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+                loadData();
+            }
+
+            // ============================================
+            // ۵. بارگذاری داده
+            // ============================================
+            function loadData() {
+                var request = {
+                    startRow: 0,
+                    endRow: 10000,
+                    search: ($('#txtSearch').val() || '').trim(),
+                    sortBy: null,
+                    sortDir: null
+                };
+
+                if (gridApi) {
+                    try {
+                        var state = gridApi.getColumnState() || [];
+                        var sorted = state.filter(function (c) { return c.sort; });
+                        if (sorted.length) {
+                            request.sortBy = sorted[0].colId;
+                            request.sortDir = sorted[0].sort;
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+
+                // فیلتر نوع از query string
+                if (invoiceTypeFilter) {
+                    request.invoiceType = invoiceTypeFilter;
+                }
+
+                $.ajax({
+                    url: '/Invoicing/Invoices/GetData',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(request),
+                    success: function (result) {
+                        var rows = [];
+                        var total = 0;
+                        if (Array.isArray(result)) {
+                            rows = result;
+                            total = result.length;
+                        } else if (result && Array.isArray(result.rows)) {
+                            rows = result.rows;
+                            total = result.lastRow || rows.length;
+                        } else if (result && Array.isArray(result.data)) {
+                            rows = result.data;
+                            total = result.total || rows.length;
+                        }
+
+                        allRows = rows;
+
+                        if (gridApi) {
+                            gridApi.setGridOption('rowData', allRows);
+                            setTimeout(function () {
+                                gridApi.refreshCells({ columns: ['#'], force: true });
+                            }, 50);
+                        }
+
+                        $('#lblCount').text('تعداد: ' + toPersianDigits(total));
+
+                        if (isMobile()) {
+                            renderMobileList(allRows);
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('GetData error:', xhr.status, xhr.responseText);
+                        $('#lblCount').text('خطا در بارگذاری (کد ' + xhr.status + ')');
+                    }
+                });
+            }
+
+            // ============================================
+            // ۶. جستجو
+            // ============================================
+            var searchTimer = null;
+            $('#txtSearch').on('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    loadData();
+                }, 300);
             });
-        });
 
-        // ============================================
-        // ۵. رویداد قطعی
-        // ============================================
-        $(document).on('click', '.post-btn', function () {
-            const id = $(this).data('id');
+            // ============================================
+            // ۷. موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileInvoices');
+                var html = '';
 
-            ModalHelper.confirm(
-                'آیا از قطعی کردن این فاکتور مطمئن هستید؟ سند حسابداری ساخته می‌شود.',
-                function () {
-                    $.ajax({
-                        url: '/Invoicing/Invoices/Post',
-                        type: 'POST',
-                        data: {
-                            id: id,
-                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                        },
-                        success: function (r) {
-                            if (r.success) {
-                                ModalHelper.success(r.message || 'فاکتور قطعی شد.', {
-                                    onClose: function () {
-                                        if (invoicesGridApi) {
-                                            const ds = invoicesGridApi.getGridOption('datasource');
-                                            invoicesGridApi.setGridOption('datasource', ds);
-                                        } else {
-                                            location.reload();
-                                        }
-                                    }
-                                });
-                            } else {
-                                ModalHelper.error(r.message);
-                            }
-                        }
-                    });
-                },
-                { title: 'قطعی کردن فاکتور', icon: 'fa-solid fa-circle-check', headerClass: 'bg-success text-white' }
-            );
-        });
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>داده‌ای برای نمایش نیست</div>';
+                    return;
+                }
 
-        // ============================================
-        // ۶. رویداد برگشت
-        // ============================================
-        $(document).on('click', '.unpost-btn', function () {
-            const id = $(this).data('id');
+                rows.forEach(function (d, index) {
+                    var typeCls = 'badge-info';
+                    if (d.invoiceType === 2) typeCls = 'badge-success';
+                    else if (d.invoiceType === 3) typeCls = 'badge-warning';
 
-            ModalHelper.confirm(
-                'آیا از برگشت این فاکتور به پیش‌نویس مطمئن هستید؟ سند حسابداری حذف می‌شود.',
-                function () {
-                    $.ajax({
-                        url: '/Invoicing/Invoices/Unpost',
-                        type: 'POST',
-                        data: {
-                            id: id,
-                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                        },
-                        success: function (r) {
-                            if (r.success) {
-                                ModalHelper.success(r.message || 'فاکتور به پیش‌نویس برگشت.', {
-                                    onClose: function () {
-                                        if (invoicesGridApi) {
-                                            const ds = invoicesGridApi.getGridOption('datasource');
-                                            invoicesGridApi.setGridOption('datasource', ds);
-                                        } else {
-                                            location.reload();
-                                        }
-                                    }
-                                });
-                            } else {
-                                ModalHelper.error(r.message);
-                            }
-                        }
-                    });
-                },
-                { title: 'برگشت فاکتور', icon: 'fa-solid fa-rotate-left', headerClass: 'bg-warning text-white' }
-            );
-        });
+                    var statusCls = 'badge-secondary';
+                    var s = d.status;
+                    if (s === 1) statusCls = 'badge-secondary';
+                    else if (s === 2) statusCls = 'badge-primary';
+                    else if (s === 3) statusCls = 'badge-warning';
+                    else if (s === 4) statusCls = 'badge-success';
+                    else if (s === 5) statusCls = 'badge-danger';
+                    else if (s === 6) statusCls = 'badge-warning';
+                    else if (s === 7) statusCls = 'badge-info';
+                    else if (s === 8) statusCls = 'badge-dark';
+                    else if (s === 9) statusCls = 'badge-success';
 
-        // ============================================
-        // ۷. رویدادهای گردش کار پیش‌فاکتور
-        // ============================================
-        $(document).on('click', '.wf-btn', function () {
-            const id = $(this).data('id');
-            const action = $(this).data('action');
-            handleWorkflow(id, action);
-        });
+                    var totalStr = toPersianDigits(Number(d.totalAmount || 0).toLocaleString('en-US'));
+                    var paidStr = toPersianDigits(Number(d.paidAmount || 0).toLocaleString('en-US'));
+                    var remainingStr = toPersianDigits(Number(d.remainingAmount || 0).toLocaleString('en-US'));
 
-        function handleWorkflow(id, action) {
-            let url = '', data = { id: id, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() }, title = '', icon = 'fa-solid fa-check', headerClass = 'bg-primary text-white';
+                    html += '<div class="invoice-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="title">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-file-invoice text-muted ml-1"></i>' +
+                                'فاکتور ' + toPersianDigits(d.number || '') +
+                            '</div>' +
+                            '<div>' +
+                                '<span class="badge ' + typeCls + ' ml-1">' + (d.invoiceTypeName || '') + '</span>' +
+                                '<span class="badge ' + statusCls + '">' + (d.statusName || '') + '</span>' +
+                            '</div>' +
+                        '</div>' +
+                        (d.date ? '<div class="row-line">تاریخ: <span dir="ltr">' + d.date + '</span></div>' : '') +
+                        (d.dueDate
+                            ? '<div class="row-line">سررسید: <span dir="ltr">' + d.dueDate + '</span>' +
+                              (d.isOverdue ? ' <span class="badge badge-danger">معوق</span>' : '') +
+                              '</div>'
+                            : '') +
+                        (d.contactName ? '<div class="row-line">طرف حساب: ' + d.contactName + '</div>' : '') +
+                        '<div class="amount">مبلغ کل: ' + totalStr + ' ریال</div>' +
+                        '<div class="row-line">پرداخت‌شده: ' + paidStr + ' ریال</div>' +
+                        '<div class="remaining">مانده: ' + remainingStr + ' ریال</div>' +
+                        '<div class="actions">' + buildActionButtons(d) + '</div>' +
+                    '</div>';
+                });
 
-            if (action === 'sent') {
-                title = 'ارسال به مشتری';
-                headerClass = 'bg-primary text-white';
-                ModalHelper.confirm('آیا پیش‌فاکتور به مشتری ارسال شد؟', function () {
-                    sendWorkflowRequest('/Invoicing/Invoices/MarkAsSent', data, 'ارسال شد');
-                }, { title: title, icon: 'fa-solid fa-paper-plane', headerClass: headerClass });
+                container.innerHTML = html;
             }
-            else if (action === 'approved') {
-                title = 'تایید مشتری';
-                headerClass = 'bg-success text-white';
-                const desc = prompt('توضیحات تایید (اختیاری):');
-                if (desc === null) return;
-                data.description = desc;
-                sendWorkflowRequest('/Invoicing/Invoices/MarkAsApproved', data, 'تایید شد');
-            }
-            else if (action === 'rejected') {
-                title = 'رد مشتری';
-                headerClass = 'bg-danger text-white';
-                const reason = prompt('دلیل رد:');
-                if (reason === null) return;
-                data.reason = reason;
-                sendWorkflowRequest('/Invoicing/Invoices/MarkAsRejected', data, 'رد شد');
-            }
-            else if (action === 'Revised') {
-                title = 'اصلاح مشتری';
-                headerClass = 'bg-danger text-white';
-                const reason = prompt('دلیل اصلاح:');
-                if (reason === null) return;
-                data.reason = reason;
-                sendWorkflowRequest('/Invoicing/Invoices/MarkAsRevised', data, 'اصلاح شد');
-            }
-            else if (action === 'postponed') {
-                title = 'به تعویق';
-                headerClass = 'bg-warning text-white';
-                const date = prompt('تاریخ پیگیری بعدی (مثلاً 1405/08/15):');
-                if (!date) return;
-                const reason = prompt('دلیل (اختیاری):');
-                data.nextFollowUpDate = date;
-                data.reason = reason;
-                sendWorkflowRequest('/Invoicing/Invoices/MarkAsPostponed', data, 'به تعویق افتاد');
-            }
-        }
 
-        function sendWorkflowRequest(url, data, successMsg) {
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: data,
-                success: function (r) {
-                    if (r.success) {
-                        ModalHelper.success(r.message || successMsg, {
-                            onClose: function () {
-                                if (invoicesGridApi) {
-                                    const ds = invoicesGridApi.getGridOption('datasource');
-                                    invoicesGridApi.setGridOption('datasource', ds);
+            // ============================================
+            // ۸. ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ۹. سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('invoicesGrid');
+                var mobileDiv = document.getElementById('mobileInvoices');
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    if (!allRows.length) loadData();
+                    else renderMobileList(allRows);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // ۱۰. حذف
+            // ============================================
+            $(document).on('click', '.delete-btn', function () {
+                var $btn = $(this);
+                var id = $btn.data('id');
+                var title = $btn.data('title');
+                var contact = $btn.data('contact');
+                var amount = $btn.data('amount');
+                var type = $btn.data('type');
+
+                var items = [];
+                if (title) items.push({ label: 'شماره', value: title });
+                if (type) items.push({ label: 'نوع', value: type });
+                if (contact) items.push({ label: 'طرف حساب', value: contact });
+                if (amount) items.push({ label: 'مبلغ', value: Number(amount).toLocaleString('en-US') + ' ریال' });
+
+                ModalHelper.confirmDelete({
+                    url: '/Invoicing/Invoices/Delete',
+                    data: {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    title: 'حذف ' + (type || 'فاکتور') + ' شماره ' + title,
+                    message: 'آیا از حذف این ' + (type || 'فاکتور') + ' مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
+                    items: items,
+                    onSuccess: function () {
+                        loadData();
+                    }
+                });
+            });
+
+            // ============================================
+            // ۱۱. قطعی
+            // ============================================
+            $(document).on('click', '.post-btn', function () {
+                var id = $(this).data('id');
+
+                ModalHelper.confirm(
+                    'آیا از قطعی کردن این فاکتور مطمئن هستید؟ سند حسابداری ساخته می‌شود.',
+                    function () {
+                        $.ajax({
+                            url: '/Invoicing/Invoices/Post',
+                            type: 'POST',
+                            data: {
+                                id: id,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function (r) {
+                                if (r.success) {
+                                    ModalHelper.success(r.message || 'فاکتور قطعی شد.', {
+                                        onClose: function () { loadData(); }
+                                    });
                                 } else {
-                                    location.reload();
+                                    ModalHelper.error(r.message);
                                 }
+                            },
+                            error: function () {
+                                ModalHelper.error('خطا در ارتباط با سرور');
                             }
                         });
-                    } else {
-                        ModalHelper.error(r.message);
-                    }
-                }
+                    },
+                    { title: 'قطعی کردن فاکتور', icon: 'fa-solid fa-circle-check', headerClass: 'bg-success text-white' }
+                );
             });
-        }
 
-        // ============================================
-        // ۸. رویداد تبدیل
-        // ============================================
-        $(document).on('click', '.convert-btn', function () {
-            const id = $(this).data('id');
-            const number = $(this).data('number');
+            // ============================================
+            // ۱۲. برگشت
+            // ============================================
+            $(document).on('click', '.unpost-btn', function () {
+                var id = $(this).data('id');
 
-            ModalHelper.confirm(
-                'آیا از تبدیل پیش‌فاکتور شماره ' + number + ' به فاکتور فروش مطمئن هستید؟',
-                function () {
-                    $.ajax({
-                        url: '/Invoicing/Invoices/Convert',
-                        type: 'POST',
-                        data: {
-                            id: id,
-                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                        },
-                        success: function (r) {
-                            if (r.success) {
-                                ModalHelper.success(r.message || 'فاکتور فروش ساخته شد.', {
-                                    onClose: function () {
-                                        location.href = '/Invoicing/Invoices/Edit/' + r.newId;
-                                    }
-                                });
-                            } else {
-                                ModalHelper.error(r.message);
+                ModalHelper.confirm(
+                    'آیا از برگشت این فاکتور به پیش‌نویس مطمئن هستید؟ سند حسابداری حذف می‌شود.',
+                    function () {
+                        $.ajax({
+                            url: '/Invoicing/Invoices/Unpost',
+                            type: 'POST',
+                            data: {
+                                id: id,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function (r) {
+                                if (r.success) {
+                                    ModalHelper.success(r.message || 'فاکتور به پیش‌نویس برگشت.', {
+                                        onClose: function () { loadData(); }
+                                    });
+                                } else {
+                                    ModalHelper.error(r.message);
+                                }
+                            },
+                            error: function () {
+                                ModalHelper.error('خطا در ارتباط با سرور');
                             }
+                        });
+                    },
+                    { title: 'برگشت فاکتور', icon: 'fa-solid fa-rotate-left', headerClass: 'bg-warning text-white' }
+                );
+            });
+
+            // ============================================
+            // ۱۳. گردش کار پیش‌فاکتور
+            // ============================================
+            $(document).on('click', '.wf-btn', function () {
+                var id = $(this).data('id');
+                var action = $(this).data('action');
+                handleWorkflow(id, action);
+            });
+
+            function handleWorkflow(id, action) {
+                var data = {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                };
+
+                if (action === 'sent') {
+                    ModalHelper.confirm('آیا پیش‌فاکتور به مشتری ارسال شد؟', function () {
+                        sendWorkflowRequest('/Invoicing/Invoices/MarkAsSent', data, 'ارسال شد');
+                    }, { title: 'ارسال به مشتری', icon: 'fa-solid fa-paper-plane', headerClass: 'bg-primary text-white' });
+                }
+                else if (action === 'approved') {
+                    var desc = prompt('توضیحات تایید (اختیاری):');
+                    if (desc === null) return;
+                    data.description = desc;
+                    sendWorkflowRequest('/Invoicing/Invoices/MarkAsApproved', data, 'تایید شد');
+                }
+                else if (action === 'rejected') {
+                    var reason = prompt('دلیل رد:');
+                    if (reason === null) return;
+                    data.reason = reason;
+                    sendWorkflowRequest('/Invoicing/Invoices/MarkAsRejected', data, 'رد شد');
+                }
+                else if (action === 'Revised') {
+                    var reason2 = prompt('دلیل اصلاح:');
+                    if (reason2 === null) return;
+                    data.reason = reason2;
+                    sendWorkflowRequest('/Invoicing/Invoices/MarkAsRevised', data, 'اصلاح شد');
+                }
+                else if (action === 'postponed') {
+                    var date = prompt('تاریخ پیگیری بعدی (مثلاً 1405/08/15):');
+                    if (!date) return;
+                    var reason3 = prompt('دلیل (اختیاری):');
+                    data.nextFollowUpDate = date;
+                    data.reason = reason3;
+                    sendWorkflowRequest('/Invoicing/Invoices/MarkAsPostponed', data, 'به تعویق افتاد');
+                }
+            }
+
+            function sendWorkflowRequest(url, data, successMsg) {
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: data,
+                    success: function (r) {
+                        if (r.success) {
+                            ModalHelper.success(r.message || successMsg, {
+                                onClose: function () { loadData(); }
+                            });
+                        } else {
+                            ModalHelper.error(r.message);
                         }
-                    });
-                },
-                { title: 'تبدیل پیش‌فاکتور', icon: 'fa-solid fa-exchange-alt', headerClass: 'bg-success text-white' }
-            );
+                    },
+                    error: function () {
+                        ModalHelper.error('خطا در ارتباط با سرور');
+                    }
+                });
+            }
+
+            // ============================================
+            // ۱۴. تبدیل
+            // ============================================
+            $(document).on('click', '.convert-btn', function () {
+                var id = $(this).data('id');
+                var number = $(this).data('number');
+
+                ModalHelper.confirm(
+                    'آیا از تبدیل پیش‌فاکتور شماره ' + number + ' به فاکتور فروش مطمئن هستید؟',
+                    function () {
+                        $.ajax({
+                            url: '/Invoicing/Invoices/Convert',
+                            type: 'POST',
+                            data: {
+                                id: id,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function (r) {
+                                if (r.success) {
+                                    ModalHelper.success(r.message || 'فاکتور فروش ساخته شد.', {
+                                        onClose: function () {
+                                            location.href = '/Invoicing/Invoices/Edit/' + r.newId;
+                                        }
+                                    });
+                                } else {
+                                    ModalHelper.error(r.message);
+                                }
+                            },
+                            error: function () {
+                                ModalHelper.error('خطا در ارتباط با سرور');
+                            }
+                        });
+                    },
+                    { title: 'تبدیل پیش‌فاکتور', icon: 'fa-solid fa-exchange-alt', headerClass: 'bg-success text-white' }
+                );
+            });
+
+            // ============================================
+            // ۱۵. شروع
+            // ============================================
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+
         });
     </script>
 }

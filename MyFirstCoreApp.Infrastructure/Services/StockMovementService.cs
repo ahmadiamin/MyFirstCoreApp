@@ -478,7 +478,7 @@ public class StockMovementService : IStockMovementService
             .Distinct()
             .OrderBy(x => x)
             .ToList();
-        
+
         var productName = await _context.Products
             .Where(x =>
                 x.Id == productId &&
@@ -616,14 +616,34 @@ public class StockMovementService : IStockMovementService
 
     }
 
-
     public async Task ReverseInvoiceAsync(int invoiceId, int tenantId)
     {
         await _context.ExecuteInTransactionAsync(
             IsolationLevel.Serializable,
             async () =>
             {
-                var movements = await _context.StockMovements
+                var invoiceExists = await _context.Invoices.AnyAsync(i =>
+                i.Id == invoiceId &&
+                i.TenantId == tenantId);
+
+                if (!invoiceExists)
+                    throw new InvalidOperationException("فاکتور موردنظر پیدا نشد.");
+
+                var invoice = await _context.Invoices
+                    .Where(i =>
+                        i.Id == invoiceId &&
+                        i.TenantId == tenantId)
+                    .Select(i => new
+                    {
+                        i.InvoiceType,
+                        i.Status
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (invoice is null)
+                    throw new InvalidOperationException("فاکتور موردنظر پیدا نشد.");
+
+                var originalMovements = await _context.StockMovements
                     .Include(x => x.Items)
                     .Where(x =>
                         x.TenantId == tenantId &&
@@ -631,16 +651,41 @@ public class StockMovementService : IStockMovementService
                         x.ReversesMovementId == null &&
                         x.Status == StockMovementStatus.Posted &&
                         (x.MovementType == StockMovementType.Issue ||
-                         x.MovementType == StockMovementType.Receipt) &&
-                        !_context.StockMovements.Any(r =>
-                            r.ReversesMovementId == x.Id &&
-                            r.TenantId == tenantId &&
-                            r.Status == StockMovementStatus.Posted))
+                         x.MovementType == StockMovementType.Receipt))
                     .ToListAsync();
 
-                if (movements.Count == 0)
+                var reversedMovementIds = await _context.StockMovements
+                    .Where(x =>
+                        x.TenantId == tenantId &&
+                        x.ReversesMovementId.HasValue &&
+                        x.Status == StockMovementStatus.Posted)
+                    .Select(x => x.ReversesMovementId!.Value)
+                    .ToHashSetAsync();
+
+                var movements = originalMovements
+                    .Where(x => !reversedMovementIds.Contains(x.Id))
+                    .ToList();
+
+                if (originalMovements.Count > 0 && movements.Count == 0)
+                {
                     throw new InvalidOperationException(
-                        "گردش انبار فعال برای این فاکتور پیدا نشد.");
+                        "گردش انبار این فاکتور قبلاً برگشت داده شده است.");
+                }
+
+                if (originalMovements.Count == 0)
+                {
+                    if (invoice.InvoiceType is InvoiceType.Sale or InvoiceType.Purchase &&
+                        invoice.Status != InvoiceStatus.Posted)
+                    {
+                        throw new InvalidOperationException(
+                            "فاکتور قطعی‌شده و دارای گردش انبار برای برگشت وجود ندارد.");
+                    }
+
+                    return;
+                }
+
+                if (movements.Count == 0)
+                    return;
 
                 foreach (var original in movements)
                 {
@@ -663,8 +708,6 @@ public class StockMovementService : IStockMovementService
                             : StockMovementType.Issue,
                         Status = StockMovementStatus.Draft,
 
-                        // خروج اصلی ← ورود معکوس
-                        // ورود اصلی ← خروج معکوس
                         SourceWarehouseId = isReversingIssue
                             ? null
                             : original.DestinationWarehouseId,
@@ -692,12 +735,11 @@ public class StockMovementService : IStockMovementService
                     _context.StockMovements.Add(reversal);
                     await _context.SaveChangesAsync();
 
-                    // از همان تراکنش جاری استفاده می‌کند.
-                    // اگر موجودی برای خروج معکوس کافی نباشد، عملیات کامل Rollback می‌شود.
                     await PostAsync(reversal.Id, tenantId);
                 }
             });
     }
+
     public Task<decimal> GetBalanceAsync(
     int productId,
     int warehouseId,

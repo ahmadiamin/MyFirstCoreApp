@@ -222,6 +222,13 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                     GroupName = "مدیریت سامانه",
                     IsActive = true
                 },
+                new Permission
+                {
+                    Name = "TenantSmsBalance.View",
+                    DisplayName = "مشاهده اعتبار پیامک شرکت",
+                    GroupName = "تنظیمات پیامک",
+                    IsActive = true
+                },
 
                 // AccountCategory
                 new Permission { Name = "AccountCategory.View",   DisplayName = "مشاهده دسته‌بندی حساب‌ها", GroupName = "Accounting", IsActive = true },
@@ -543,6 +550,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
             // ============================================
             var parents = new[]
             {
+                new Menu { Title = "داشبورد", Url = "/Dashboard/Index", Icon = "fa fa-dashboard", Permission = null, SortOrder = 0, IsActive = true },
                 new Menu { Title = "کاربران و دسترسی‌ها", Url = null, Icon = "fa-solid fa-users", Permission = null, SortOrder = 1, IsActive = true },
                 new Menu { Title = "اطلاعات پایه", Url = null, Icon = "fa-solid fa-list", Permission = null, SortOrder = 2, IsActive = true },
                 new Menu { Title = "حسابداری", Url = null, Icon = "fa-solid fa-calculator", Permission = null, SortOrder = 3, IsActive = true },
@@ -578,7 +586,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
             // ۳. زیرمنوها
             // ============================================
             var children = new[]
-            {
+            {            
                 // کاربران و دسترسی‌ها
                 new Menu { Title = "کاربران", Url = "/Admin/Users", Icon = "fa-solid fa-user", Permission = "User.View", ParentId = usersParent.Id, SortOrder = 1, IsActive = true },
                 new Menu { Title = "نقش‌ها", Url = "/Admin/Roles", Icon = "fa-solid fa-user-tag", Permission = "Role.View", ParentId = usersParent.Id, SortOrder = 2, IsActive = true },

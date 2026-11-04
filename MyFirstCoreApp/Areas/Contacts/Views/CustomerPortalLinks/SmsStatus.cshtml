@@ -1,21 +1,165 @@
 @model MyFirstCoreApp.Application.CustomerPortal.CustomerPortalSmsStatusViewModel
+
 @{
     ViewData["Title"] = "وضعیت تحویل پیامک";
+
+    string GetStatusTitle(string? status) => status?.ToLowerInvariant() switch
+    {
+        "delivered" => "تحویل داده شده",
+        "sent" => "ارسال شده",
+        "pending" => "در انتظار ارسال",
+        "queued" => "در صف ارسال",
+        "failed" => "ناموفق",
+        "rejected" => "رد شده",
+        _ => "نامشخص"
+    };
+
+    string GetStatusClass(string? status) => status?.ToLowerInvariant() switch
+    {
+        "delivered" => "success",
+        "sent" => "info",
+        "pending" or "queued" => "warning",
+        "failed" or "rejected" => "danger",
+        _ => "secondary"
+    };
 }
+
 <div class="card">
-    <div class="card-header"><h3 class="card-title">وضعیت پیامک پرتال: @Model.ContactName</h3></div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title mb-0">
+            وضعیت پیامک پرتال: @Model.ContactName
+        </h3>
+    </div>
+
     <div class="card-body">
-        <p>@Model.Report.Message</p>
+
+        @if (Model.Report.HttpSuccess)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                دریافت گزارش از سرویس پیامک با موفقیت انجام شد.
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                دریافت وضعیت تحویل از سرویس پیامک ناموفق بود.
+                <div class="mt-2">@Model.Report.Message</div>
+            </div>
+        }
+
         @if (!string.IsNullOrWhiteSpace(Model.Report.RequestId))
         {
-            <p>شناسه درخواست: <span class="ltr">@Model.Report.RequestId</span></p>
+            <div class="mb-3">
+                <strong>شناسه درخواست:</strong>
+                <span class="ltr">@Model.Report.RequestId</span>
+            </div>
         }
-        @if (!Model.Report.HttpSuccess)
+
+        @if (Model.DeliveryItems.Count > 0)
         {
-            <div class="alert alert-warning">دریافت وضعیت تحویل از سرویس ناموفق بود.</div>
+            <h5 class="mb-3">جزئیات تحویل پیامک</h5>
+
+            @foreach (var item in Model.DeliveryItems)
+            {
+                var statusClass = GetStatusClass(item.Status);
+
+                <div class="card border mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>
+                            پیامک به شماره
+                            <span class="ltr">@item.Destination</span>
+                        </strong>
+
+                        <span class="badge badge-@statusClass">
+                            @GetStatusTitle(item.Status)
+                        </span>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row mb-3">
+                            <div class="col-md-4 mb-2">
+                                <small class="text-muted d-block">وضعیت تحویل</small>
+                                <strong>@GetStatusTitle(item.Status)</strong>
+                            </div>
+
+                            <div class="col-md-4 mb-2">
+                                <small class="text-muted d-block">تعداد صفحات پیامک</small>
+                                <strong>@item.Pages</strong>
+                            </div>
+
+                            <div class="col-md-4 mb-2">
+                                <small class="text-muted d-block">شناسه پیامک</small>
+                                <strong class="ltr">@item.Id</strong>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-2">
+                                <small class="text-muted d-block">زمان ثبت درخواست</small>
+                                <strong>
+                                    @(item.CreatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")
+                                    <small class="text-muted">UTC</small>
+                                </strong>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <small class="text-muted d-block">آخرین بروزرسانی وضعیت</small>
+                                <strong>
+                                    @(item.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")
+                                    <small class="text-muted">UTC</small>
+                                </strong>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div>
+                            <strong class="d-block mb-2">متن پیامک</strong>
+                            <div class="bg-light rounded p-3" dir="auto"
+                                 style="white-space:pre-wrap;overflow-wrap:anywhere">
+                                @item.Text
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(item.Error))
+                        {
+                            <div class="alert alert-danger mt-3 mb-0">
+                                <strong>علت عدم تحویل:</strong>
+                                @item.Error
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
         }
-        <h5>گزارش سرویس پیامک</h5>
-        <pre class="border rounded p-3" dir="ltr" style="white-space:pre-wrap;overflow-wrap:anywhere">@Model.Report.ResponseJson</pre>
-        <a asp-action="Index" asp-route-contactId="@Model.ContactId" class="btn btn-secondary">بازگشت</a>
+        else if (Model.Report.HttpSuccess)
+        {
+            <div class="alert alert-info">
+                گزارشی از جزئیات پیامک در پاسخ سرویس وجود ندارد.
+            </div>
+        }
+
+        <details class="mt-4">
+            <summary class="text-muted" style="cursor:pointer">
+                مشاهده جزئیات فنی پاسخ سرویس
+            </summary>
+
+            <pre class="border rounded p-3 mt-2"
+                 dir="ltr"
+                 style="white-space:pre-wrap;overflow-wrap:anywhere">@Model.Report.ResponseJson</pre>
+        </details>
+
+        <div class="mt-4">
+            <a asp-action="Index"
+               asp-route-contactId="@Model.ContactId"
+               class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i>
+                بازگشت
+            </a>
+        </div>
+
     </div>
 </div>

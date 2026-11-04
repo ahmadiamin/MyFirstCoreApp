@@ -3,65 +3,367 @@
     ViewData["Title"] = "انتقال بین انبارها";
 }
 
+<style>
+    #stockTransfersGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #stockTransfersGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .action-buttons .btn {
+        padding: 3px 6px;
+        line-height: 1;
+    }
+
+    .action-buttons form {
+        display: inline-block;
+        margin: 0;
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .transfer-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .transfer-card .title {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .transfer-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .transfer-card .actions {
+        margin-top: 8px;
+    }
+</style>
+
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="card-title"><i class="fa-solid fa-right-left"></i> انتقال کالا بین انبارها</h3>
-        <a asp-action="Create" class="btn btn-primary"><i class="fa fa-plus"></i> انتقال جدید</a>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <h3 class="card-title">
+            <i class="fa-solid fa-right-left"></i> انتقال کالا بین انبارها
+        </h3>
+        <a asp-action="Create" class="btn btn-primary btn-sm mt-1">
+            <i class="fa fa-plus"></i> انتقال جدید
+        </a>
     </div>
     <div class="card-body">
+
         <div class="alert alert-info">
+            <i class="fa fa-info-circle"></i>
             ثبت انتقال ابتدا یک پیش‌نویس می‌سازد. با قطعی‌کردن سند، موجودی مبدأ کم و به موجودی مقصد اضافه می‌شود.
         </div>
+
         @if (Model.Transfers.Count > 0)
         {
-            <button type="button" class="btn btn-outline-success mb-3" data-csv-table="stockTransfersTable" data-csv-filename="انتقال-بین-انبارها.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+            <button type="button" class="btn btn-outline-success btn-sm mb-3"
+                    data-csv-table="stockTransfersTable" data-csv-filename="انتقال-بین-انبارها.csv">
+                <i class="fa fa-file-csv"></i> خروجی Excel (CSV)
+            </button>
         }
-        <div class="table-responsive">
-            <table id="stockTransfersTable" class="table table-bordered table-striped">
+
+        <!-- دسکتاپ: AG Grid -->
+        <div id="stockTransfersGrid" class="ag-theme-alpine d-none d-md-block"
+             style="height: 550px; width: 100%;">
+        </div>
+
+        <!-- جدول مخفی برای CSV (منبع خروجی) -->
+        <div class="d-none">
+            <table id="stockTransfersTable">
                 <thead>
                     <tr>
                         <th>شماره</th><th>تاریخ</th><th>از انبار</th><th>به انبار</th>
-                        <th>اقلام</th><th>وضعیت</th><th>شرح</th><th data-csv-exclude>عملیات</th>
+                        <th>اقلام</th><th>وضعیت</th><th>شرح</th>
                     </tr>
                 </thead>
                 <tbody>
-                @if (Model.Transfers.Count == 0)
-                {
-                    <tr><td colspan="8" class="text-center text-muted">هنوز انتقالی ثبت نشده است.</td></tr>
-                }
-                @foreach (var transfer in Model.Transfers)
-                {
-                    <tr>
-                        <td>@transfer.Number</td><td>@transfer.Date</td>
-                        <td>@transfer.SourceWarehouse</td><td>@transfer.DestinationWarehouse</td>
-                        <td title="@transfer.ItemsSummary">@transfer.ItemsSummary</td>
-                        <td><span class="badge @(transfer.Status == "قطعی" ? "badge-success" : transfer.Status == "پیش‌نویس" ? "badge-warning" : "badge-secondary")">@transfer.Status</span></td>
-                        <td>@transfer.Description</td>
-                        <td class="text-nowrap" data-csv-exclude>
-                            @if (transfer.Status == "پیش‌نویس")
-                            {
-                                <form asp-action="Post" method="post" class="d-inline" onsubmit="return confirm('انتقال قطعی شود؟ موجودی مبدأ کنترل خواهد شد.');">
-                                    @Html.AntiForgeryToken()<input type="hidden" name="id" value="@transfer.Id" />
-                                    <button type="submit" class="btn btn-sm btn-success"><i class="fa fa-check"></i> قطعی‌کردن</button>
-                                </form>
-                                <form asp-action="Cancel" method="post" class="d-inline" onsubmit="return confirm('پیش‌نویس انتقال لغو شود؟');">
-                                    @Html.AntiForgeryToken()<input type="hidden" name="id" value="@transfer.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa fa-times"></i> لغو</button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
+                    @foreach (var transfer in Model.Transfers)
+                    {
+                        <tr>
+                            <td>@transfer.Number</td>
+                            <td>@transfer.Date</td>
+                            <td>@transfer.SourceWarehouse</td>
+                            <td>@transfer.DestinationWarehouse</td>
+                            <td>@transfer.ItemsSummary</td>
+                            <td>@transfer.Status</td>
+                            <td>@transfer.Description</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
+
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobileTransfers" class="d-md-none"></div>
+
         @if (Model.Transfers.Count == 200)
         {
-            <small class="text-muted">۲۰۰ انتقال اخیر نمایش داده شده‌اند.</small>
+            <small class="text-muted d-block mt-2">۲۰۰ انتقال اخیر نمایش داده شده‌اند.</small>
         }
+
     </div>
 </div>
 
 @section Scripts {
     <partial name="_CsvExportScripts" />
+
+    <script>
+        $(document).ready(function () {
+
+            var gridApi = null;
+
+            // ============================================
+            // ۱. داده‌ها از سرور
+            // ============================================
+            var transfersData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Transfers.Select(t => new {
+                    id = t.Id,
+                    number = t.Number,
+                    date = t.Date,
+                    sourceWarehouse = t.SourceWarehouse,
+                    destinationWarehouse = t.DestinationWarehouse,
+                    itemsSummary = t.ItemsSummary,
+                    status = t.Status,
+                    description = t.Description
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            // ============================================
+            // ۲. توکن CSRF
+            // ============================================
+            function getCsrfToken() {
+                var input = document.querySelector('input[name="__RequestVerificationToken"]');
+                return input ? input.value : '';
+            }
+
+            // ============================================
+            // ۳. ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'number',
+                    headerName: 'شماره',
+                    width: 100,
+                    cellStyle: { textAlign: 'center' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(p.value) : '';
+                    }
+                },
+                { field: 'date', headerName: 'تاریخ', width: 110,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                { field: 'sourceWarehouse', headerName: 'از انبار', minWidth: 150, flex: 1 },
+                { field: 'destinationWarehouse', headerName: 'به انبار', minWidth: 150, flex: 1 },
+                {
+                    field: 'itemsSummary',
+                    headerName: 'اقلام',
+                    minWidth: 180, flex: 2,
+                    tooltipValueGetter: function (p) { return p.value; }
+                },
+                {
+                    headerName: 'وضعیت',
+                    field: 'status',
+                    width: 110,
+                    cellRenderer: function (p) {
+                        var cls = p.value === 'قطعی' ? 'badge-success'
+                                : p.value === 'پیش‌نویس' ? 'badge-warning'
+                                : 'badge-secondary';
+                        return '<span class="badge ' + cls + '">' + (p.value || '') + '</span>';
+                    }
+                },
+                { field: 'description', headerName: 'شرح', minWidth: 150, flex: 1 },
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 180,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        return '<div class="action-buttons">' + buildActionButtons(params.data) + '</div>';
+                    }
+                }
+            ];
+
+            // ============================================
+            // ۴. دکمه‌های عملیات (مشترک دسکتاپ/موبایل)
+            // ============================================
+            function buildActionButtons(t) {
+                if (t.status !== 'پیش‌نویس') return '';
+
+                var token = getCsrfToken();
+                var html = '';
+
+                // قطعی‌کردن
+                html += '<form action="/Inventory/StockTransfers/Post" method="post" ' +
+                        'onsubmit="return confirm(\'انتقال قطعی شود؟ موجودی مبدأ کنترل خواهد شد.\');">' +
+                        '<input type="hidden" name="__RequestVerificationToken" value="' + token + '">' +
+                        '<input type="hidden" name="id" value="' + t.id + '">' +
+                        '<button type="submit" class="btn btn-sm btn-success" title="قطعی‌کردن">' +
+                        '<i class="fa fa-check"></i></button></form>';
+
+                // لغو
+                html += '<form action="/Inventory/StockTransfers/Cancel" method="post" ' +
+                        'onsubmit="return confirm(\'پیش‌نویس انتقال لغو شود؟\');">' +
+                        '<input type="hidden" name="__RequestVerificationToken" value="' + token + '">' +
+                        '<input type="hidden" name="id" value="' + t.id + '">' +
+                        '<button type="submit" class="btn btn-sm btn-outline-danger" title="لغو">' +
+                        '<i class="fa fa-times"></i></button></form>';
+
+                return html;
+            }
+
+            // ============================================
+            // ۵. ساخت Grid (دسکتاپ)
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: transfersData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'هنوز انتقالی ثبت نشده است.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('stockTransfersGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // ۶. موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileTransfers');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>هنوز انتقالی ثبت نشده است.</div>';
+                    return;
+                }
+
+                rows.forEach(function (t, index) {
+                    var statusCls = t.status === 'قطعی' ? 'badge-success'
+                                  : t.status === 'پیش‌نویس' ? 'badge-warning'
+                                  : 'badge-secondary';
+
+                    html += '<div class="transfer-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="title">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa-solid fa-right-left text-muted ml-1"></i>' +
+                                'انتقال ' + toPersianDigits(t.number || '') +
+                            '</div>' +
+                            '<span class="badge ' + statusCls + '">' + (t.status || '') + '</span>' +
+                        '</div>' +
+                        (t.date ? '<div class="row-line">تاریخ: <span dir="ltr">' + t.date + '</span></div>' : '') +
+                        '<div class="row-line">از: ' + (t.sourceWarehouse || '—') + '</div>' +
+                        '<div class="row-line">به: ' + (t.destinationWarehouse || '—') + '</div>' +
+                        (t.itemsSummary ? '<div class="row-line">اقلام: ' + t.itemsSummary + '</div>' : '') +
+                        (t.description ? '<div class="row-line">شرح: ' + t.description + '</div>' : '') +
+                        '<div class="actions">' + buildActionButtons(t) + '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // ۷. ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ۸. سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('stockTransfersGrid');
+                var mobileDiv = document.getElementById('mobileTransfers');
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(transfersData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // ۹. شروع
+            // ============================================
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+
+        });
+    </script>
 }

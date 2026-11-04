@@ -12,6 +12,11 @@ public sealed class InvoiceRequest
     public int Id { get; set; }
 
     public DateOnly Date { get; set; }
+    
+    /// <summary>
+    /// تاریخ سررسید
+    /// </summary>
+    public DateOnly? DueDate { get; set; }
     public InvoiceType InvoiceType { get; set; }
 
     /// <summary>طرف حساب موجود. اگر خالی باشد باید NewContactName پر باشد.</summary>
@@ -41,4 +46,10 @@ public sealed class InvoiceItemRequest
     public decimal UnitPrice { get; set; }
     public decimal DiscountPercent { get; set; }
     public decimal TaxRate { get; set; }
+    /// <summary>
+    /// آیا این قلم خرید، دارایی ثابت شرکت محسوب می‌شود؟
+    /// فقط در فاکتور خرید کاربرد دارد.
+    /// </summary>
+    public bool IsCapitalAsset { get; set; }
+    public bool IsService { get; set; }
 }

@@ -3,25 +3,92 @@
     ViewData["Title"] = "موجودی انبارها";
 }
 
+<style>
+    #stockBalancesGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #stockBalancesGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .action-buttons .btn {
+        padding: 3px 6px;
+        line-height: 1;
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .balance-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .balance-card .name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .balance-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .balance-card .qty {
+        font-weight: 600;
+        color: #0d6efd;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .balance-card .actions {
+        margin-top: 8px;
+    }
+</style>
+
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fa-solid fa-boxes-stacked"></i> موجودی کالا به تفکیک انبار</h3>
+        <h3 class="card-title">
+            <i class="fa-solid fa-boxes-stacked"></i> موجودی کالا به تفکیک انبار
+        </h3>
     </div>
     <div class="card-body">
-        <form asp-area="Inventory" asp-controller="StockBalances" asp-action="Index" method="get" class="mb-3">
+
+        <!-- فرم فیلتر -->
+        <form asp-area="Inventory" asp-controller="StockBalances" asp-action="Index"
+              method="get" class="mb-3">
             <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="form-row align-items-end">
-                <div class="col-md-5 form-group">
+            <div class="row">
+                <div class="col-md-5 col-12 mb-2">
                     <label asp-for="WarehouseId">انبار</label>
                     <select asp-for="WarehouseId" asp-items="Model.Warehouses" class="form-control select2">
                         <option value="">همهٔ انبارها</option>
                     </select>
                 </div>
-                <div class="col-md-3 form-group">
-                    <button type="submit" name="search" value="true" class="btn btn-primary">
+                <div class="col-md-4 col-12 mb-2 d-flex align-items-end">
+                    <button type="submit" name="search" value="true" class="btn btn-primary mr-1">
                         <i class="fa fa-search"></i> نمایش موجودی
                     </button>
-                    <a asp-action="Index" class="btn btn-secondary">پاک‌کردن</a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fa fa-eraser"></i> پاک‌کردن
+                    </a>
                 </div>
             </div>
         </form>
@@ -30,44 +97,268 @@
         {
             @if (Model.Rows.Count > 0)
             {
-                <button type="button" class="btn btn-outline-success mb-3" data-csv-table="stockBalancesTable" data-csv-filename="موجودی-انبارها.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+                <button type="button" class="btn btn-outline-success btn-sm mb-3"
+                        data-csv-table="stockBalancesTable" data-csv-filename="موجودی-انبارها.csv">
+                    <i class="fa fa-file-csv"></i> خروجی Excel (CSV)
+                </button>
             }
-            <div class="table-responsive">
-                <table id="stockBalancesTable" class="table table-bordered table-striped">
+
+            <!-- دسکتاپ: AG Grid -->
+            <div id="stockBalancesGrid" class="ag-theme-alpine d-none d-md-block"
+                 style="height: 550px; width: 100%;">
+            </div>
+
+            <!-- جدول مخفی برای CSV -->
+            <div class="d-none">
+                <table id="stockBalancesTable">
                     <thead>
-                        <tr><th>انبار</th><th>کد کالا</th><th>کالا</th><th class="text-right">موجودی</th><th>واحد</th><th data-csv-exclude>کاردکس</th></tr>
+                        <tr>
+                            <th>انبار</th>
+                            <th>کد کالا</th>
+                            <th>کالا</th>
+                            <th>موجودی</th>
+                            <th>واحد</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    @if (Model.Rows.Count == 0)
-                    {
-                        <tr><td colspan="6" class="text-center text-muted">برای فیلتر انتخاب‌شده موجودی غیرصفر ثبت نشده است.</td></tr>
-                    }
-                    @foreach (var row in Model.Rows)
-                    {
-                        <tr>
-                            <td>@row.WarehouseName</td>
-                            <td>@(row.ProductCode ?? "—")</td>
-                            <td>@row.ProductName</td>
-                            <td class="text-right">@row.Quantity.ToString("N3")</td>
-                            <td>@row.UnitName</td>
-                            <td data-csv-exclude>
-                                <a asp-area="Inventory" asp-controller="Kardex" asp-action="Index"
-                                   asp-route-productId="@row.ProductId" asp-route-warehouseId="@row.WarehouseId"
-                                   class="btn btn-sm btn-outline-info"><i class="fa fa-list"></i> مشاهده</a>
-                            </td>
-                        </tr>
-                    }
+                        @foreach (var row in Model.Rows)
+                        {
+                            <tr>
+                                <td>@row.WarehouseName</td>
+                                <td>@(row.ProductCode ?? "—")</td>
+                                <td>@row.ProductName</td>
+                                <td>@row.Quantity.ToString("N3")</td>
+                                <td>@row.UnitName</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
-            <small class="text-muted">این گزارش موجودی غیرصفر را از گردش‌های قطعی‌شده محاسبه می‌کند.</small>
+
+            <!-- موبایل: کارت‌ها -->
+            <div id="mobileBalances" class="d-md-none"></div>
+
+            <small class="text-muted d-block mt-2">
+                <i class="fa fa-info-circle"></i>
+                این گزارش موجودی غیرصفر را از گردش‌های قطعی‌شده محاسبه می‌کند.
+            </small>
         }
     </div>
 </div>
+
 @section Scripts {
     <partial name="_CsvExportScripts" />
+
     <script>
         $(document).ready(function () {
+
+            var gridApi = null;
+
+            // ============================================
+            // ۱. داده‌ها از سرور
+            // ============================================
+            var balancesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Rows.Select(r => new {
+                    warehouseName = r.WarehouseName,
+                    warehouseId = r.WarehouseId,
+                    productCode = r.ProductCode,
+                    productName = r.ProductName,
+                    productId = r.ProductId,
+                    quantity = r.Quantity,
+                    unitName = r.UnitName
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            var hasSearched = @(Model.HasSearched ? "true" : "false");
+
+            // ============================================
+            // ۲. ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                { field: 'warehouseName', headerName: 'انبار', minWidth: 150, flex: 1 },
+                { field: 'productCode', headerName: 'کد کالا', width: 120,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' },
+                    valueFormatter: function (p) {
+                        return p.value ? p.value : '—';
+                    }
+                },
+                { field: 'productName', headerName: 'کالا', minWidth: 180, flex: 2 },
+                {
+                    field: 'quantity',
+                    headerName: 'موجودی',
+                    width: 120,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        if (p.value == null) return '';
+                        var n = Number(p.value);
+                        if (isNaN(n)) return p.value;
+                        return toPersianDigits(n.toLocaleString('en-US', {
+                            minimumFractionDigits: 3,
+                            maximumFractionDigits: 3
+                        }));
+                    }
+                },
+                { field: 'unitName', headerName: 'واحد', width: 90,
+                    cellStyle: { textAlign: 'center' } },
+                {
+                    headerName: 'کاردکس',
+                    colId: 'actions',
+                    width: 110,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        return '<div class="action-buttons">' +
+                               '<a href="/Inventory/Kardex?productId=' + encodeURIComponent(params.data.productId) +
+                               '&warehouseId=' + encodeURIComponent(params.data.warehouseId) + '" ' +
+                               'class="btn btn-sm btn-outline-info" title="مشاهده کاردکس">' +
+                               '<i class="fa fa-list"></i></a></div>';
+                    }
+                }
+            ];
+
+            // ============================================
+            // ۳. ساخت Grid (دسکتاپ)
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: balancesData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'برای فیلتر انتخاب‌شده موجودی غیرصفر ثبت نشده است.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('stockBalancesGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // ۴. موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileBalances');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>' +
+                        'برای فیلتر انتخاب‌شده موجودی غیرصفر ثبت نشده است.</div>';
+                    return;
+                }
+
+                rows.forEach(function (r, index) {
+                    var qtyStr = '';
+                    if (r.quantity != null) {
+                        var n = Number(r.quantity);
+                        if (!isNaN(n)) {
+                            qtyStr = toPersianDigits(n.toLocaleString('en-US', {
+                                minimumFractionDigits: 3,
+                                maximumFractionDigits: 3
+                            }));
+                        } else {
+                            qtyStr = r.quantity;
+                        }
+                    }
+
+                    html += '<div class="balance-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="name">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa-solid fa-cube text-muted ml-1"></i>' +
+                                (r.productName || '') +
+                            '</div>' +
+                            (r.unitName
+                                ? '<span class="badge badge-info">' + r.unitName + '</span>'
+                                : '') +
+                        '</div>' +
+                        '<div class="row-line">انبار: ' + (r.warehouseName || '—') + '</div>' +
+                        (r.productCode
+                            ? '<div class="row-line">کد کالا: <span dir="ltr">' + r.productCode + '</span></div>'
+                            : '') +
+                        '<div class="qty">موجودی: ' + qtyStr + ' ' + (r.unitName || '') + '</div>' +
+                        '<div class="actions">' +
+                            '<a href="/Inventory/Kardex?productId=' + encodeURIComponent(r.productId) +
+                            '&warehouseId=' + encodeURIComponent(r.warehouseId) + '" ' +
+                            'class="btn btn-sm btn-outline-info">' +
+                            '<i class="fa fa-list"></i> کاردکس</a>' +
+                        '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // ۵. ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ۶. سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('stockBalancesGrid');
+                var mobileDiv = document.getElementById('mobileBalances');
+
+                if (!gridDiv || !mobileDiv) return;
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(balancesData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // ۷. select2
+            // ============================================
             $('.select2').select2({
                 dir: 'rtl',
                 placeholder: '-- انتخاب کنید --',
@@ -76,25 +367,16 @@
                 language: 'fa'
             });
 
-            $('.datepicker').persianDatepicker({
-                format: 'YYYY/MM/DD',
-                initialValue: true,               // 🆕
-                initialValueType: 'persian',      // 🆕
-                autoClose: true,
-                observer: true,
-                calendar: {
-                    persian: {
-                        locale: 'fa',
-                        showHint: true,
-                        leapYearMode: 'algorithmic'
-                    }
-                },
-                toolbox: {
-                    calendarSwitch: {
-                        enabled: false
-                    }
-                }
-            });
+            // ============================================
+            // ۸. شروع (فقط اگر جستجو شده)
+            // ============================================
+            if (hasSearched) {
+                applyLayout();
+
+                var mql = window.matchMedia('(max-width: 767.98px)');
+                mql.addEventListener('change', applyLayout);
+            }
+
         });
     </script>
 }

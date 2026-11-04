@@ -43,6 +43,8 @@
 
     <!-- MagicSuggest -->
     <link rel="stylesheet" href="~/plugins/magicsuggest/magicsuggest.css" />
+
+    @await RenderSectionAsync("Styles", required: false)   
 </head>
 
 
@@ -133,27 +135,6 @@
                         data-widget="treeview"
                         role="menu"
                         data-accordion="false">
-
-
-                        <!-- Dashboard -->
-
-                        <li class="nav-item">
-
-                            <a asp-area=""
-                               asp-controller="Dashboard"
-                               asp-action="Index"
-                               class="nav-link">
-
-                                <i class="nav-icon fa fa-dashboard"></i>
-
-                                <p>
-                                    داشبورد
-                                </p>
-
-                            </a>
-
-                        </li>
-
 
                         <!-- Dynamic Menu -->
                         @await Component.InvokeAsync("AdminMenu")

@@ -20,6 +20,13 @@
         if (cheque.DaysLeft == 0) return "<span class=\"badge badge-warning\">امروز</span>";
         return $"<span class=\"badge badge-info\">{cheque.DaysLeft} روز مانده</span>";
     }
+
+    string InvoiceDueBadge(MyFirstCoreApp.Application.Dashboard.DueInvoiceDto invoice)
+    {
+        if (invoice.DaysLeft < 0) return $"<span class=\"badge badge-danger\">{-invoice.DaysLeft} روز معوق</span>";
+        if (invoice.DaysLeft == 0) return "<span class=\"badge badge-warning\">امروز</span>";
+        return $"<span class=\"badge badge-info\">{invoice.DaysLeft} روز مانده</span>";
+    }
 }
 
 <!-- هدر شرکت -->
@@ -33,11 +40,41 @@
                             <i class="fa fa-building"></i>
                             @Model.TenantName
                         </h4>
+
                         @if (!string.IsNullOrEmpty(Model.TenantLegalName))
                         {
                             <small class="text-muted">@Model.TenantLegalName</small>
                         }
+
+                        @if (Model.ShowTenantSmsBalance)
+                        {
+                            <div class="mt-3">
+                                <span class="text-muted">
+                                    <i class="fa fa-sms"></i>
+                                    اعتبار پیامک :
+                                </span>
+
+                                @if (Model.TenantSmsBalance?.Success == true)
+                                {
+                                    <strong class="text-success mr-1">
+                                        @Model.TenantSmsBalance.BalanceAmount?.ToString("N0") تومان
+                                    </strong>
+
+                                    <span class="text-muted small">
+                                        (تعداد پیامک قابل ارسال:
+                                        @Model.TenantSmsBalance.BalanceCount?.ToString("N2"))
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger small mr-1">
+                                        دریافت موجودی امکان‌پذیر نیست.
+                                    </span>
+                                }
+                            </div>
+                        }
                     </div>
+
                     <div class="text-left">
                         @if (Model.IsTenantOwner)
                         {
@@ -46,12 +83,17 @@
                                 مالک شرکت
                             </span>
                         }
+
                         <div class="text-muted small mt-1">
                             امروز: <span dir="ltr">@Model.TodayText</span>
+
                             @if (!string.IsNullOrEmpty(Model.FiscalRangeText))
                             {
                                 <span class="mx-1">|</span>
-                                <span>سال مالی جاری: <span dir="ltr">@Model.FiscalRangeText</span></span>
+                                <span>
+                                    سال مالی جاری:
+                                    <span dir="ltr">@Model.FiscalRangeText</span>
+                                </span>
                             }
                         </div>
                     </div>
@@ -143,6 +185,10 @@
                 <div class="info-box-content">
                     <span class="info-box-text">فاکتور فروش باز (@summary.OpenSaleCount)</span>
                     <span class="info-box-number">@summary.OpenSaleRemaining.ToString("N0")</span>
+                    @if (summary.OverdueSaleCount > 0)
+                    {
+                        <span class="progress-description text-danger">معوق: @summary.OverdueSaleCount | @summary.OverdueSaleRemaining.ToString("N0")</span>
+                    }
                 </div>
             </div>
         </div>
@@ -152,6 +198,10 @@
                 <div class="info-box-content">
                     <span class="info-box-text">فاکتور خرید باز (@summary.OpenPurchaseCount)</span>
                     <span class="info-box-number">@summary.OpenPurchaseRemaining.ToString("N0")</span>
+                    @if (summary.OverduePurchaseCount > 0)
+                    {
+                        <span class="progress-description text-danger">معوق: @summary.OverduePurchaseCount | @summary.OverduePurchaseRemaining.ToString("N0")</span>
+                    }
                 </div>
             </div>
         </div>
@@ -246,6 +296,96 @@
     </div>
 }
 
+@if (summary != null && Model.ShowInvoices)
+{
+    <!-- فاکتورهای معوق / نزدیک به سررسید -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card card-success card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fa fa-calendar-check"></i>
+                        فاکتورهای فروشِ سررسید (دریافتنی)
+                    </h3>
+                    @if (summary.OverdueSaleCount > 0)
+                    {
+                        <div class="card-tools">
+                            <span class="badge badge-danger">@summary.OverdueSaleCount معوق | @summary.OverdueSaleRemaining.ToString("N0")</span>
+                        </div>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var invoice in summary.DueSaleInvoices)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-area="Invoicing" asp-controller="Invoices" asp-action="Details" asp-route-id="@invoice.Id">@invoice.Number</a>
+                                    </td>
+                                    <td>@invoice.ContactName</td>
+                                    <td class="text-left">@invoice.Remaining.ToString("N0")</td>
+                                    <td dir="ltr" class="text-right">@MyFirstCoreApp.Application.Common.Utilities.PersianDate.Format(invoice.DueDate)</td>
+                                    <td>@Html.Raw(InvoiceDueBadge(invoice))</td>
+                                </tr>
+                            }
+                            @if (!summary.DueSaleInvoices.Any())
+                            {
+                                <tr><td class="text-center text-muted p-3">فاکتور فروشِ معوق یا نزدیک سررسید نداریم.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-center">
+                    <a asp-area="Accounting" asp-controller="Reports" asp-action="Invoices" asp-route-invoiceType="2" asp-route-onlyOverdue="true">همه‌ی فاکتورهای فروش معوق</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card card-danger card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fa fa-calendar-xmark"></i>
+                        فاکتورهای خریدِ سررسید (پرداختنی)
+                    </h3>
+                    @if (summary.OverduePurchaseCount > 0)
+                    {
+                        <div class="card-tools">
+                            <span class="badge badge-danger">@summary.OverduePurchaseCount معوق | @summary.OverduePurchaseRemaining.ToString("N0")</span>
+                        </div>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var invoice in summary.DuePurchaseInvoices)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-area="Invoicing" asp-controller="Invoices" asp-action="Details" asp-route-id="@invoice.Id">@invoice.Number</a>
+                                    </td>
+                                    <td>@invoice.ContactName</td>
+                                    <td class="text-left">@invoice.Remaining.ToString("N0")</td>
+                                    <td dir="ltr" class="text-right">@MyFirstCoreApp.Application.Common.Utilities.PersianDate.Format(invoice.DueDate)</td>
+                                    <td>@Html.Raw(InvoiceDueBadge(invoice))</td>
+                                </tr>
+                            }
+                            @if (!summary.DuePurchaseInvoices.Any())
+                            {
+                                <tr><td class="text-center text-muted p-3">فاکتور خریدِ معوق یا نزدیک سررسید نداریم.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-center">
+                    <a asp-area="Accounting" asp-controller="Reports" asp-action="Invoices" asp-route-invoiceType="3" asp-route-onlyOverdue="true">همه‌ی فاکتورهای خرید معوق</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @if (summary != null && Model.ShowFinance)
 {
     <!-- مانده‌ی طرف حساب‌ها -->
@@ -304,7 +444,7 @@
             </div>
         </div>
     </div>
-        
+
     <!-- گزارش کامل بدهکاران -->
     <div class="row">
         <div class="col-lg-6">
@@ -485,5 +625,34 @@
                 </a>
             </div>
         </div>
+        @if (Model.ShowSystemSmsBalance)
+        {
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success-gradient">
+                    <div class="inner">
+                        @if (Model.SystemSmsBalance?.Success == true)
+                        {
+                            <h3 class="font-weight-bold">
+                                @Model.SystemSmsBalance.BalanceAmount?.ToString("N0") تومان
+                            </h3>
+                            <strong>
+                                @Model.SystemSmsBalance.BalanceCount?.ToString("N2") عدد
+                            </strong>
+                        }
+                        else
+                        {
+                            <p class="font-weight-bold text-danger">
+                                دریافت اطلاعات اعتبار امکان‌پذیر نیست.
+                            </p>
+                        }
+                        <p>اعتبار پیامک سامانه</p>
+                    </div>
+                    <div class="icon"><i class="fa fa-comment-sms"></i></div>
+                    <a href="https://farazsms.com" class="small-box-footer" target="_blank">
+                        سامانه پیامک <i class="fa fa-sms"></i>
+                    </a>
+                </div>
+            </div>
+        }
     </div>
 }

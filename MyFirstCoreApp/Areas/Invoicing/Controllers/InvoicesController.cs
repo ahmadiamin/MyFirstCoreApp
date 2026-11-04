@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Models;
 using MyFirstCoreApp.Application.Common.Utilities;
@@ -101,6 +100,7 @@ public class InvoicesController : Controller
                 x.Id,
                 x.Number,
                 x.Date,
+                x.DueDate,
                 x.InvoiceType,
                 ContactName = x.Contact != null ? x.Contact.Name : null,
                 x.TotalAmount,
@@ -114,11 +114,19 @@ public class InvoicesController : Controller
 
         // تاریخ شمسی و نام‌ها سمت سرور؛ مانده فقط از InvoiceBalance
         // (قبلاً مانده بدون تخفیف تسویه حساب می‌شد)
+        var today = _timeProvider.Today(); 
+        
         var items = rows.Select(x => new
         {
             id = x.Id,
             number = x.Number,
             date = PersianDate.Format(x.Date),
+            dueDate = PersianDate.Format(x.DueDate),
+            // معوق = قطعی + دارای باقی‌مانده + سررسید قبل از امروز (بدون سررسید هیچ‌وقت معوق نیست)
+            isOverdue = x.Status == InvoiceStatus.Posted
+                        && x.DueDate.HasValue
+                        && x.DueDate.Value < today
+                        && InvoiceBalance.Remaining(x.TotalAmount, x.PaidAmount, x.SettlementDiscount) > 0,
             invoiceType = (int)x.InvoiceType,
             invoiceTypeName = GetInvoiceTypeName(x.InvoiceType),
             contactName = x.ContactName,
@@ -178,6 +186,8 @@ public class InvoicesController : Controller
         if (!PersianDate.TryParse(model.Date, out var date))
             ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
 
+        var dueDate = ParseDueDate(model);
+
         if (!ModelState.IsValid)
         {
             await ReloadOptionsAsync(model);
@@ -188,7 +198,7 @@ public class InvoicesController : Controller
         {
             // طرف‌حساب/کالای جدید داخل همان تراکنش سرویس ساخته می‌شود؛
             // با خطا، هیچ رکورد یتیمی باقی نمی‌ماند.
-            var invoice = await _invoiceService.CreateAsync(ToRequest(model, date), tenantId.Value);
+            var invoice = await _invoiceService.CreateAsync(ToRequest(model, date, dueDate), tenantId.Value);
 
             TempData["Success"] = $"فاکتور شماره {invoice.Number} با موفقیت ثبت شد.";
             return RedirectToAction(nameof(Index), new { invoiceType = (int)invoice.InvoiceType });
@@ -240,6 +250,7 @@ public class InvoicesController : Controller
             Id = entity.Id,
             Number = entity.Number,
             Date = PersianDate.Format(entity.Date),
+            DueDate = entity.DueDate.HasValue ? PersianDate.Format(entity.DueDate.Value) : null,
             InvoiceType = entity.InvoiceType,
             ContactId = entity.ContactId,
             ContactName = entity.Contact?.Name,
@@ -280,6 +291,8 @@ public class InvoicesController : Controller
 
         if (!PersianDate.TryParse(model.Date, out var date))
             ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
+        
+        var dueDate = ParseDueDate(model);
 
         if (!ModelState.IsValid)
         {
@@ -290,7 +303,7 @@ public class InvoicesController : Controller
         try
         {
             // سرویس: وضعیت قابل ویرایش، ثابت بودن نوع فاکتور، اعتبارسنجی، محاسبه و ذخیره‌ی اتمیک
-            await _invoiceService.UpdateAsync(ToRequest(model, date), tenantId.Value);
+            await _invoiceService.UpdateAsync(ToRequest(model, date, dueDate), tenantId.Value);
 
             TempData["Success"] = $"فاکتور شماره {model.Number} با موفقیت ویرایش شد.";
             return RedirectToAction(nameof(Index), new { invoiceType = (int)model.InvoiceType });
@@ -389,6 +402,24 @@ public class InvoicesController : Controller
         => RunAjaxAsync(
             tenantId => _invoiceService.SettleWithDiscountAsync(id, tenantId, discountAmount),
             "تسویه با تخفیف با موفقیت انجام شد.");
+
+    // ============================================
+    // تمدید سررسید  (AJAX)
+    // ============================================
+
+    // POST: /Invoicing/Invoices/ExtendDueDate
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Invoice.Edit")]
+    public Task<IActionResult> ExtendDueDate(int id, string newDueDate, string? reason)
+    {
+        if (!PersianDate.TryParse(newDueDate, out var due))
+            return Task.FromResult<IActionResult>(Json(new { success = false, message = InvalidDateMessage }));
+
+        return RunAjaxAsync(
+            tenantId => _invoiceService.ExtendDueDateAsync(id, tenantId, due, reason),
+            "سررسید فاکتور تغییر کرد.");
+    }
 
     // ============================================
     // گردش کار پیش‌فاکتور  (AJAX)
@@ -819,15 +850,32 @@ public class InvoicesController : Controller
     }
 
     /// <summary>
+    /// سررسید اختیاری است: خالی = بدون سررسید؛ پر ولی نامعتبر = خطای فیلد
+    /// (قبلاً تاریخ نامعتبر بی‌صدا نادیده گرفته می‌شد).
+    /// </summary>
+    private DateOnly? ParseDueDate(InvoiceFormViewModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.DueDate))
+            return null;
+
+        if (PersianDate.TryParse(model.DueDate, out var due))
+            return due;
+
+        ModelState.AddModelError(nameof(model.DueDate), InvalidDateMessage);
+        return null;
+    }
+
+    /// <summary>
     /// فرم → درخواست. ردیف‌های خالی فرم (بدون کالا یا بدون تعداد) نادیده گرفته می‌شوند؛
     /// بقیه‌ی قواعد (تکراری، مقادیر، ...) در InvoiceService اعمال می‌شود.
     /// </summary>
-    private static InvoiceRequest ToRequest(InvoiceFormViewModel model, DateOnly date)
+    private static InvoiceRequest ToRequest(InvoiceFormViewModel model, DateOnly date, DateOnly? dueDate)
     {
         return new InvoiceRequest
         {
             Id = model.Id,
             Date = date,
+            DueDate = dueDate,
             InvoiceType = model.InvoiceType,
             ContactId = model.ContactId > 0 ? model.ContactId : null,
             NewContactName = model.ContactName,

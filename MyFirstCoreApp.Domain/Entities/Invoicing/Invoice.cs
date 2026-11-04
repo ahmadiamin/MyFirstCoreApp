@@ -47,7 +47,6 @@ public class Invoice : TenantEntity
     public Invoice? ReferenceInvoice { get; set; }
 
 
-
     // ---- مالی ----
 
     /// <summary>
@@ -115,6 +114,11 @@ public class Invoice : TenantEntity
     /// تاریخ پیگیری بعدی (تاریخ انتخابی کاربر؛ فقط تاریخ)
     /// </summary>
     public DateOnly? NextFollowUpDate { get; set; }
+
+    /// <summary>
+    /// تاریخ سررسید
+    /// </summary>
+    public DateOnly? DueDate { get; set; }
 
     /// <summary>
     /// پاسخ/توضیحات مشتری

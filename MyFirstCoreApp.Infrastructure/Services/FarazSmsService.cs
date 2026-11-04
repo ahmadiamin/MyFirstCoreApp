@@ -13,40 +13,41 @@ namespace MyFirstCoreApp.Infrastructure.Services;
 public sealed class FarazSmsService : IFarazSmsService
 {
     private const string BaseAddress = "https://api.iranpayamak.com/ws/v1/";
-    private const string LinkVariable = "%var1%";
     private static readonly SemaphoreSlim SmsRequestGate = new(1, 1);
     private static DateTimeOffset _nextSmsRequestUtc = DateTimeOffset.MinValue;
     private readonly HttpClient _httpClient;
     private readonly ApplicationDbContext _context;
     private readonly ITenantSmsSettingsService _settings;
     private readonly TimeProvider _timeProvider;
+    private readonly IFarazSmsBalanceService _balanceService;
 
     public FarazSmsService(HttpClient httpClient, ApplicationDbContext context,
-        ITenantSmsSettingsService settings, TimeProvider timeProvider)
+        ITenantSmsSettingsService settings, TimeProvider timeProvider, IFarazSmsBalanceService balanceService)
     {
         _httpClient = httpClient;
         _context = context;
         _settings = settings;
         _timeProvider = timeProvider;
+        _balanceService = balanceService;
     }
 
     public async Task<FarazSmsSendResult> SendPortalLinkAsync(
-        int tenantId, int contactId, int shareId, string mobile, string portalUrl, string? sentBy,
+        int tenantId, int contactId, int shareId, string mobile, string token, string? sentBy,
         CancellationToken cancellationToken = default)
     {
         var settings = await _settings.GetForSendingAsync(tenantId, cancellationToken);
-        if (settings is null) return new(false, null, "تنظیمات پیامک این شرکت ثبت نشده یا کلید آن قابل رمزگشایی نیست.");
+        if (settings is null)
+            return new(false, null, "تنظیمات پیامک این شرکت ثبت نشده یا کلید آن قابل رمزگشایی نیست.");
+        
+        if (string.IsNullOrWhiteSpace(settings.PortalLinkPatternCode))
+            return new(false, null, "کد الگوی پیامک لینک پرتال ثبت نشده است.");
+
         var configurationError = ValidateConfiguration(settings);
         if (configurationError is not null) return new(false, null, configurationError);
 
         mobile = NormalizeMobile(mobile);
         if (!System.Text.RegularExpressions.Regex.IsMatch(mobile, "^09[0-9]{9}$"))
             return new(false, null, "شماره موبایل مشتری باید ۱۱ رقم و با 09 شروع شود.");
-        if (!Uri.TryCreate(portalUrl, UriKind.Absolute, out var linkUri) ||
-            (linkUri.Scheme != Uri.UriSchemeHttps && linkUri.Scheme != Uri.UriSchemeHttp))
-            return new(false, null, "لینک پرتال معتبر نیست.");
-        if (linkUri.AbsoluteUri.Length > 500)
-            return new(false, null, "طول لینک از حد مجاز الگوی پیامک بیشتر است.");
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var share = await _context.CustomerPortalShares.IgnoreQueryFilters()
@@ -58,20 +59,25 @@ public sealed class FarazSmsService : IFarazSmsService
         var recipient = new Dictionary<string, string>
         {
             ["mobile"] = mobile,
-            ["var1"] = linkUri.AbsoluteUri
+            ["code"] = token
         };
-        var payload = new
+
+        var payload = new Dictionary<string, object>
         {
-            text = settings.PortalLinkText,
-            line_number = settings.LineNumber,
-            recipients = new[] { recipient },
-            number_format = "english"
+            ["code"] = settings.PortalLinkPatternCode.Trim(),
+            ["attributes"] = new Dictionary<string, string>
+            {
+                ["var1"] = token
+            },
+            ["recipient"] = mobile,
+            ["line_number"] = settings.LineNumber,
+            ["number_format"] = "english"
         };
 
         try
         {
             await WaitForSmsRequestSlotAsync(cancellationToken);
-            using var request = CreateRequest(HttpMethod.Post, "sms/keywords", settings.ApiKey);
+            using var request = CreateRequest(HttpMethod.Post, "sms/pattern", settings.ApiKey);
             request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
             using var response = await _httpClient.SendAsync(request, cancellationToken);
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -107,63 +113,88 @@ public sealed class FarazSmsService : IFarazSmsService
         }
     }
 
+
     public async Task<FarazSmsSendResult> SendChequeReminderAsync(
         int tenantId, string mobile, string chequeNumber, decimal amount, DateOnly dueDate,
         string bankAccountName, string reminderKind, DateTime? scheduleIranLocal,
         CancellationToken cancellationToken = default)
     {
         var settings = await _settings.GetForSendingAsync(tenantId, cancellationToken);
+
         if (settings is null)
-            return new(false, null, "SMS settings or API key are unavailable.");
-        if (string.IsNullOrWhiteSpace(settings.ApiKey) || string.IsNullOrWhiteSpace(settings.LineNumber))
-            return new(false, null, "SMS API key or sender line is missing.");
-        var template = settings.ChequeReminderText;
-        if (string.IsNullOrWhiteSpace(template) ||
-            new[] { "%var1%", "%var2%", "%var3%", "%var4%" }
-                .Any(token => !template.Contains(token, StringComparison.Ordinal)))
-            return new(false, null, "Cheque reminder SMS template is missing required variables.");
+            return new(false, null, "تنظیمات پیامک این شرکت در دسترس نیست.");
+
+        if (string.IsNullOrWhiteSpace(settings.ApiKey) ||
+            string.IsNullOrWhiteSpace(settings.LineNumber))
+            return new(false, null, "کلید API پیامک یا خط فرستنده موجود نیست.");
+
+        if (string.IsNullOrWhiteSpace(settings.ChequeReminderPatternCode))
+            return new(false, null, "شناسه الگوی یادآوری چک ثبت نشده است.");
 
         mobile = NormalizeMobile(mobile);
-        if (!System.Text.RegularExpressions.Regex.IsMatch(mobile, "^09[0-9]{9}$"))
-            return new(false, null, "Contact mobile must be 11 digits beginning with 09.");
 
-        var recipient = new Dictionary<string, string>
+        if (!System.Text.RegularExpressions.Regex.IsMatch(mobile, "^09[0-9]{9}$"))
+            return new(false, null, "شماره موبایل تماس باید ۱۱ رقمی باشد و با ۰۹ شروع شود.");
+
+        var attributes = new Dictionary<string, string>
         {
-            ["mobile"] = mobile,
             ["var1"] = chequeNumber,
             ["var2"] = amount.ToString("N0", CultureInfo.GetCultureInfo("fa-IR")),
             ["var3"] = PersianDate.Format(dueDate),
             ["var4"] = $"{bankAccountName} - {reminderKind}"
         };
+
         var payload = new Dictionary<string, object>
         {
-            ["text"] = template,
+            ["code"] = settings.ChequeReminderPatternCode,
+            ["attributes"] = attributes,
+            ["recipient"] = mobile,
             ["line_number"] = settings.LineNumber,
-            ["recipients"] = new[] { recipient },
             ["number_format"] = "persian"
         };
+
         if (scheduleIranLocal.HasValue)
-            payload["schedule"] = scheduleIranLocal.Value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        {
+            payload["schedule"] = scheduleIranLocal.Value.ToString(
+                "yyyy-MM-dd HH:mm:ss",
+                CultureInfo.InvariantCulture);
+        }
 
         try
         {
             await WaitForSmsRequestSlotAsync(cancellationToken);
-            using var request = CreateRequest(HttpMethod.Post, "sms/keywords", settings.ApiKey);
-            request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            using var request = CreateRequest(
+                HttpMethod.Post, "sms/pattern", settings.ApiKey);
+
+            request.Content = new StringContent(
+                JsonSerializer.Serialize(payload),
+                Encoding.UTF8,
+                "application/json");
+
             using var response = await _httpClient.SendAsync(request, cancellationToken);
+
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
             var (accepted, requestId, providerMessage) = ParseSendResponse(responseBody);
+
             if (!response.IsSuccessStatusCode || !accepted)
-                return new(false, requestId, providerMessage ?? $"SMS request was rejected (HTTP {(int)response.StatusCode}).");
-            return new(true, requestId, "Cheque reminder accepted by FarazSMS.");
+            {
+                return new(
+                    false,
+                    requestId,
+                    providerMessage ?? $"درخواست پیامک رد شد (HTTP {(int)response.StatusCode}).");
+            }
+
+            return new(true, requestId, "یادآوری چک توسط FarazSMS پذیرفته شد.");
         }
         catch (HttpRequestException)
         {
-            return new(false, null, "Could not connect to the SMS service.");
+            return new(false, null, "امکان اتصال به سرویس پیامک وجود نداشت.");
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return new(false, null, "SMS service request timed out.");
+            return new(false, null, "مهلت درخواست سرویس پیامک به پایان رسید.");
         }
     }
 
@@ -236,28 +267,45 @@ public sealed class FarazSmsService : IFarazSmsService
             return "کلید API پیامک در تنظیمات شرکت ثبت نشده است.";
         if (string.IsNullOrWhiteSpace(settings.LineNumber))
             return "شماره خط ارسال پیامک تنظیم نشده است.";
-        if (string.IsNullOrWhiteSpace(settings.PortalLinkText) ||
-            !settings.PortalLinkText.Contains(LinkVariable, StringComparison.Ordinal))
-            return "الگوی پیامک باید در تنظیمات شرکت و پنل FarazSMS یکسان بوده و شامل %var1% باشد.";
         return null;
     }
 
-    private static (bool Accepted, string? RequestId, string? Message) ParseSendResponse(string responseBody)
+    private static (bool Accepted, string? RequestId, string? Message)
+        ParseSendResponse(string responseBody)
     {
         try
         {
             using var document = JsonDocument.Parse(responseBody);
             var root = document.RootElement;
+
             var accepted = root.TryGetProperty("status", out var status) &&
-                           string.Equals(status.ToString(), "success", StringComparison.OrdinalIgnoreCase);
-            var message = root.TryGetProperty("message", out var messageElement) ? messageElement.ToString() : null;
+                string.Equals(status.ToString(), "success", StringComparison.OrdinalIgnoreCase);
+
+            var message =
+                root.TryGetProperty("messages", out var messages)
+                    ? messages.ToString()
+                    : root.TryGetProperty("message", out var messageElement)
+                        ? messageElement.ToString()
+                        : null;
+
             string? requestId = null;
-            if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object &&
-                data.TryGetProperty("id", out var id) && id.ValueKind is JsonValueKind.String or JsonValueKind.Number)
-                requestId = id.ToString();
+
+            if (root.TryGetProperty("data", out var data))
+            {
+                if (data.ValueKind == JsonValueKind.Object &&
+                    data.TryGetProperty("id", out var id))
+                {
+                    requestId = id.ToString();
+                }
+                else if (data.ValueKind is JsonValueKind.String or JsonValueKind.Number)
+                {
+                    requestId = data.ToString();
+                }
+            }
+
             return (accepted, requestId, message);
         }
-        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+        catch (JsonException)
         {
             return (false, null, null);
         }
@@ -273,5 +321,17 @@ public sealed class FarazSmsService : IFarazSmsService
             else result.Append(character);
         }
         return result.ToString();
+    }
+
+    public async Task<SmsBalanceResult> GetBalanceAsync(int tenantId, CancellationToken cancellationToken = default)
+    {
+        var settings = await _settings.GetForSendingAsync(tenantId, cancellationToken);
+
+        if (settings is null || string.IsNullOrWhiteSpace(settings.ApiKey))
+        {
+            return new(false, null, null, "تنظیمات پیامک شرکت یا کلید API آن در دسترس نیست.");
+        }
+
+        return await _balanceService.GetBalanceAsync(settings.ApiKey, cancellationToken);
     }
 }

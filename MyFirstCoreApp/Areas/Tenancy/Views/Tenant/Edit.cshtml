@@ -54,10 +54,10 @@
                         <span asp-validation-for="EconomicCode" class="text-danger"></span>
                     </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label asp-for="Address"></label>
-                        <textarea asp-for="Address" class="form-control" rows="3"></textarea>
+                        <input asp-for="Address" class="form-control" dir="ltr" />
                         <span asp-validation-for="Address" class="text-danger"></span>
                     </div>
                 </div>
@@ -91,12 +91,14 @@
                         <span asp-validation-for="SmsLineNumber" class="text-danger"></span>
                     </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
-                        <label asp-for="SmsPortalLinkText">متن الگوی لینک پرتال</label>
-                        <textarea asp-for="SmsPortalLinkText" class="form-control" rows="2" placeholder="لینک پرتال مشتری: %var1%"></textarea>
-                        <span asp-validation-for="SmsPortalLinkText" class="text-danger"></span>
-                        <small class="form-text text-muted">این متن باید دقیقاً با الگوی ساخته‌شده در پنل FarazSMS یکسان باشد و متغیر %var1% را داشته باشد. طول مجاز متغیر var1 در پنل باید برای لینک کامل کافی باشد.</small>
+                        <label asp-for="PortalLinkPatternCode">کد پترن پیامک لینک پرتال</label>
+                        <input asp-for="PortalLinkPatternCode" class="form-control" dir="ltr" placeholder="کد پترن پیامک لینک پرتال" />
+                        <span asp-validation-for="PortalLinkPatternCode" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            در پنل FarazSMS یک الگوی پیامک بسازید با متغیر %code%. مثال: @($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}/customer-portal/%code%")
+                        </small>
                     </div>
                 </div>
             </div>
@@ -132,16 +134,24 @@
                         <span asp-validation-for="SmsChequeReminderMobile" class="text-danger"></span>
                     </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label asp-for="SmsChequeReminderText">الگوی پیامک یادآوری</label>
-                        <textarea asp-for="SmsChequeReminderText" class="form-control" rows="2"
-                                  placeholder="یادآوری چک %var1% به مبلغ %var2% سررسید %var3% از حساب %var4%"></textarea>
-                        <span asp-validation-for="SmsChequeReminderText" class="text-danger"></span>
-                        <small class="form-text text-muted">این الگو باید در پنل FarazSMS نیز تعریف شده باشد و دقیقاً شامل %var1% (شماره چک)، %var2% (مبلغ)، %var3% (سررسید شمسی) و %var4% (حساب بانکی، جهت و زمان یادآوری) باشد. ظرفیت متغیر %var4% را برای طول واقعی مقدار آن در پنل کافی در نظر بگیرید.</small>
+                        <label asp-for="SmsChequeReminderPatternCode">
+                            کد الگوی پیامک یادآوری چک در FarazSMS
+                        </label>
+
+                        <input asp-for="SmsChequeReminderPatternCode"
+                               class="form-control ltr"
+                               dir="ltr" />
+
+                        <span asp-validation-for="SmsChequeReminderPatternCode"
+                              class="text-danger"></span>
+
+                        <small class="form-text text-muted">
+                            در پنل FarazSMS یک الگوی پیامک بسازید با متغیرهای var1, var2, var3 و var4
+                        </small>
                     </div>
                 </div>
-            </div>
         </div>
 
         <div class="card-footer">

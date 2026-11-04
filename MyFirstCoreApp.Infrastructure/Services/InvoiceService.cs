@@ -82,10 +82,11 @@ public class InvoiceService : IInvoiceService
                 Number = 0, // خودکار
                 Date = request.Date,
                 InvoiceType = request.InvoiceType,
+                DueDate = EffectiveDueDate(request),
                 ContactId = contactId,
                 Status = InvoiceStatus.Draft,
                 Description = request.Description?.Trim(),
-                Items = items
+                Items = items,
             };
 
             InvoiceCalculator.Calculate(invoice);
@@ -124,6 +125,7 @@ public class InvoiceService : IInvoiceService
             invoice.Date = request.Date;
             invoice.ContactId = contactId;
             invoice.Description = request.Description?.Trim();
+            invoice.DueDate = EffectiveDueDate(request);
 
             // اقلام قدیمی حذف نرم (Interceptor)، اقلام جدید اضافه
             _context.InvoiceItems.RemoveRange(invoice.Items.ToList());
@@ -264,6 +266,43 @@ public class InvoiceService : IInvoiceService
             AddHistory(invoice, InvoiceStatus.Posted, InvoiceStatus.Draft, "برگشت به پیش‌نویس");
             await _context.SaveChangesAsync();
         });
+    }
+    // ============================================
+    // سررسید
+    // ============================================
+
+    public async Task ExtendDueDateAsync(int invoiceId, int tenantId, DateOnly newDueDate, string? reason)
+    {
+        var invoice = await GetInvoiceAsync(invoiceId, tenantId);
+
+        if (invoice.InvoiceType == InvoiceType.PreInvoice)
+            throw new InvalidOperationException("پیش‌فاکتور سررسید ندارد.");
+
+        if (invoice.Status != InvoiceStatus.Posted)
+            throw new InvalidOperationException(
+                "سررسید فقط برای فاکتور قطعی تمدید می‌شود. فاکتور پیش‌نویس را از صفحه‌ی ویرایش تغییر دهید.");
+
+        if (InvoiceBalance.Remaining(invoice) <= 0)
+            throw new InvalidOperationException("این فاکتور تسویه شده و سررسید ندارد.");
+
+        if (newDueDate == default)
+            throw new InvalidOperationException("تاریخ سررسید جدید الزامی است.");
+
+        if (newDueDate < invoice.Date)
+            throw new InvalidOperationException("سررسید نباید قبل از تاریخ فاکتور باشد.");
+
+        if (invoice.DueDate == newDueDate)
+            throw new InvalidOperationException("این تاریخ همین حالا سررسید فاکتور است.");
+
+        var old = invoice.DueDate.HasValue ? PersianDate.Format(invoice.DueDate.Value) : "بدون سررسید";
+        invoice.DueDate = newDueDate;
+
+        var description = $"تغییر سررسید از {old} به {PersianDate.Format(newDueDate)}";
+        if (!string.IsNullOrWhiteSpace(reason))
+            description += $" - {reason.Trim()}";
+
+        AddHistory(invoice, invoice.Status, invoice.Status, description);
+        await _context.SaveChangesAsync();
     }
 
     // ============================================
@@ -475,6 +514,15 @@ public class InvoiceService : IInvoiceService
         if (!Enum.IsDefined(request.InvoiceType))
             throw new InvalidOperationException("نوع فاکتور نامعتبر است.");
 
+        if (request.InvoiceType != InvoiceType.PreInvoice && request.DueDate.HasValue)
+        {
+            if (request.DueDate.Value == default)
+                throw new InvalidOperationException("تاریخ سررسید نامعتبر است.");
+
+            if (request.DueDate.Value < request.Date)
+                throw new InvalidOperationException("سررسید نباید قبل از تاریخ فاکتور باشد.");
+        }
+
         if (!(request.ContactId is > 0) && string.IsNullOrWhiteSpace(request.NewContactName))
             throw new InvalidOperationException("لطفاً طرف حساب را انتخاب کنید.");
 
@@ -522,6 +570,10 @@ public class InvoiceService : IInvoiceService
     // ============================================
     // طرف حساب و کالا (شامل ساخت سریع)
     // ============================================
+
+    /// <summary>سررسید فقط برای فاکتور فروش/خرید معنا دارد؛ پیش‌فاکتور همیشه بدون سررسید است.</summary>
+    private static DateOnly? EffectiveDueDate(InvoiceRequest request)
+        => request.InvoiceType == InvoiceType.PreInvoice ? null : request.DueDate;
 
     private async Task<int> ResolveContactAsync(InvoiceRequest request, int tenantId)
     {
@@ -604,9 +656,10 @@ public class InvoiceService : IInvoiceService
                     TenantId = tenantId,
                     Name = item.NewProductName!.Trim(),
                     UnitId = defaultUnit.Id,
-                    SalePrice = 0,
+                    SalePrice = item.UnitPrice,
                     LastPurchasePrice = 0,
-                    IsActive = true
+                    IsActive = true,
+                    TrackInventory = !item.IsService
                 };
                 if (request.InvoiceType == InvoiceType.Purchase)
                     product.LastPurchasePrice = item.UnitPrice;
@@ -634,7 +687,8 @@ public class InvoiceService : IInvoiceService
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 DiscountPercent = item.DiscountPercent,
-                TaxRate = item.TaxRate
+                TaxRate = item.TaxRate,
+                IsCapitalAsset = request.InvoiceType == InvoiceType.Purchase && item.IsCapitalAsset
             });
         }
 

@@ -136,8 +136,16 @@ public sealed class InvoiceReportQuery
     public DateOnly? From { get; set; }
     public DateOnly? To { get; set; }
 
+    /// <summary>
+    /// «امروز» برای تعیین معوق (کنترلر آن را به وقت ایران می‌دهد).
+    /// اگر null باشد هیچ فاکتوری معوق شمرده نمی‌شود.
+    /// </summary>
+    public DateOnly? Today { get; set; }
+
     /// <summary>فقط فاکتورهای دارای باقی‌مانده‌ی مثبت.</summary>
     public bool OnlyOpen { get; set; }
+    /// <summary>فقط فاکتورهای معوق (قطعی، دارای باقی‌مانده، سررسید قبل از Today).</summary>
+    public bool OnlyOverdue { get; set; }
 
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 50;
@@ -148,6 +156,9 @@ public sealed class InvoiceReportRow
     public int Id { get; set; }
     public int Number { get; set; }
     public DateOnly Date { get; set; }
+    
+    /// <summary>سررسید پرداخت؛ null = بدون سررسید.</summary>
+    public DateOnly? DueDate { get; set; }
     public InvoiceType InvoiceType { get; set; }
     public InvoiceStatus Status { get; set; }
     public int? ContactId { get; set; }
@@ -157,6 +168,9 @@ public sealed class InvoiceReportRow
     public decimal PaidAmount { get; set; }
     public decimal SettlementDiscount { get; set; }
     public decimal RemainingAmount { get; set; }
+    
+    /// <summary>قطعی + دارای باقی‌مانده + سررسید قبل از «امروز».</summary>
+    public bool IsOverdue { get; set; }
 }
 
 public sealed class InvoiceReport
@@ -169,11 +183,16 @@ public sealed class InvoiceReport
     public decimal TotalPaid { get; set; }
     public decimal TotalSettlementDiscount { get; set; }
     public decimal TotalRemaining { get; set; }
+    
+    /// <summary>تعداد و مجموع باقی‌مانده‌ی فاکتورهای معوق (در میان ردیف‌های فیلترشده).</summary> 
+    public int OverdueCount { get; set; }
+    public decimal TotalOverdueRemaining { get; set; }
 
     public int PageNumber { get; set; }
     public int PageSize { get; set; }
 
     public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling(Count / (double)PageSize);
+
 }
 
 // ============================================
@@ -235,6 +254,9 @@ public sealed class ContactBalanceRow
     /// <summary>مانده‌ی مثبت در جهتِ گزارش (بدهکاران: بدهکار−بستانکار؛ بستانکاران: بستانکار−بدهکار).</summary>
     public decimal Amount { get; set; }
 
+    /// <summary>باقی‌مانده‌ی فاکتورهای باز که سررسیدشان قبل از «تا تاریخ» است (بدون سررسید = معوق نیست).</summary> 
+    public decimal OverdueAmount { get; set; }    
+
     public DateOnly? LastTransactionDate { get; set; }
 
     // فاکتورهای بازِ هم‌نوع (وضعیت فعلی)
@@ -262,7 +284,6 @@ public sealed class ContactBalancesReport
 {
     public ContactBalanceMode Mode { get; set; }
     public DateOnly AsOf { get; set; }
-
     public List<ContactBalanceRow> Rows { get; set; } = new();
 
     // جمع «همه‌ی ردیف‌های فیلترشده» (نه فقط صفحه‌ی جاری)
@@ -275,6 +296,7 @@ public sealed class ContactBalancesReport
     public decimal TotalAge31To60 { get; set; }
     public decimal TotalAge61To90 { get; set; }
     public decimal TotalAge90Plus { get; set; }
+    public decimal TotalOverdue { get; set; }
     public decimal TotalPendingCheque { get; set; }
 
     public decimal TotalOther => TotalAmount - TotalOpenInvoiceRemaining;

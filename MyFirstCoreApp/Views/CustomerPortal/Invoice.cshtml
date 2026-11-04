@@ -59,8 +59,9 @@
         th, td {
             padding: 10px;
             border-bottom: 1px solid #e5e9ec;
-            text-align: right;
-            overflow-wrap: anywhere
+            text-align: center;
+            vertical-align: middle;
+            overflow-wrap: anywhere;
         }
 
         th {
@@ -68,10 +69,10 @@
         }
 
         .number {
-            text-align: left;
+            text-align: center;
             white-space: nowrap;
             direction: ltr;
-            font-variant-numeric: tabular-nums
+            font-variant-numeric: tabular-nums;
         }
 
         a {
@@ -113,11 +114,11 @@
 
             tbody td {
                 display: flex;
-                align-items: flex-start;
+                align-items: center;
                 justify-content: space-between;
                 gap: 12px;
                 padding: 8px 0;
-                text-align: left
+                text-align: center;
             }
 
                 tbody td::before {
@@ -169,7 +170,14 @@
                 <p>@Model.Data.Description</p>
             }
             <table>
-                <thead><tr><th>شرح</th><th>مقدار</th><th>قیمت واحد</th><th>جمع</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>شرح</th>
+                        <th>مقدار</th>
+                        <th>قیمت واحد</th>
+                        <th>جمع</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @foreach (var item in Model.Data.Items)
                     {
@@ -182,9 +190,18 @@
                     }
                 </tbody>
                 <tfoot>
-                    <tr><th colspan="3">مبلغ کل</th><th class="number">@invoice.TotalAmount.ToString("N0")</th></tr>
-                    <tr><th colspan="3">پرداخت‌شده</th><th class="number">@invoice.PaidAmount.ToString("N0")</th></tr>
-                    <tr><th colspan="3">مانده</th><th class="number">@invoice.RemainingAmount.ToString("N0")</th></tr>
+                    <tr>
+                        <th colspan="3">مبلغ کل</th>
+                        <th class="number">@invoice.TotalAmount.ToString("N0")</th>
+                    </tr>
+                    <tr>
+                        <th colspan="3">پرداخت‌شده</th>
+                        <th class="number">@invoice.PaidAmount.ToString("N0")</th>
+                    </tr>
+                    <tr>
+                        <th colspan="3">مانده</th>
+                        <th class="number">@invoice.RemainingAmount.ToString("N0")</th>
+                    </tr>
                 </tfoot>
             </table>
         </section>

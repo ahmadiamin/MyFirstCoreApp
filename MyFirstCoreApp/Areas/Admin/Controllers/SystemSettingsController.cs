@@ -28,7 +28,9 @@ public sealed class SystemSettingsController : Controller
             ApiKeyConfigured = summary.ApiKeyConfigured,
             LineNumber = summary.LineNumber,
             RegistrationSmsEnabled = summary.RegistrationSmsEnabled,
-            RegistrationSmsPatternCode = summary.RegistrationSmsPatternCode
+            RegistrationSmsPatternCode = summary.RegistrationSmsPatternCode,
+            PasswordRecoverySmsEnabled = summary.PasswordRecoverySmsEnabled,
+            PasswordRecoverySmsPatternCode = summary.PasswordRecoverySmsPatternCode
         });
     }
 
@@ -46,6 +48,13 @@ public sealed class SystemSettingsController : Controller
         if (model.RegistrationSmsEnabled && model.ClearApiKey && string.IsNullOrWhiteSpace(model.ApiKeyInput))
             ModelState.AddModelError(nameof(model.ApiKeyInput), "برای فعال‌ماندن تأیید موبایل، کلید API را پاک نکنید.");
 
+        if (model.PasswordRecoverySmsEnabled && string.IsNullOrWhiteSpace(model.PasswordRecoverySmsPatternCode))
+        {
+            ModelState.AddModelError(
+                nameof(model.PasswordRecoverySmsPatternCode),
+                "کد الگوی پیامک بازیابی رمز عبور الزامی است.");
+        }
+
         if (!ModelState.IsValid)
         {
             model.ApiKeyConfigured = summary.ApiKeyConfigured;
@@ -54,9 +63,17 @@ public sealed class SystemSettingsController : Controller
 
         try
         {
-            await _sms.SaveAsync(model.ApiKeyInput, model.ClearApiKey, model.LineNumber,
-                model.RegistrationSmsEnabled, model.RegistrationSmsPatternCode, _currentUser.UserId,
+            await _sms.SaveAsync(
+                model.ApiKeyInput,
+                model.ClearApiKey,
+                model.LineNumber,
+                model.RegistrationSmsEnabled,
+                model.RegistrationSmsPatternCode,
+                model.PasswordRecoverySmsEnabled,
+                model.PasswordRecoverySmsPatternCode,
+                _currentUser.UserId,
                 cancellationToken);
+
             TempData["Success"] = "تنظیمات پیامک سامانه ذخیره شد.";
             return RedirectToAction(nameof(Sms));
         }

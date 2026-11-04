@@ -2,12 +2,13 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using MyFirstCoreApp.Application.Common.Utilities;
+using MyFirstCoreApp.Application.CustomerPortal;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Domain.Entities.Identity;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
+using MyFirstCoreApp.Infrastructure.Services;
 using MyFirstCoreApp.Models.ViewModels;
 
 namespace MyFirstCoreApp.Controllers
@@ -22,6 +23,9 @@ namespace MyFirstCoreApp.Controllers
         private readonly IAuthorizationService _authorization;
         private readonly TimeProvider _timeProvider;
         private readonly ILogger<DashboardController> _logger;
+        private readonly IFarazSmsService _farazSmsService;
+        private readonly ISystemSmsService _systemSmsService;
+
 
         public DashboardController(
             ApplicationDbContext context,
@@ -30,7 +34,9 @@ namespace MyFirstCoreApp.Controllers
             IDashboardService dashboardService,
             IAuthorizationService authorization,
             TimeProvider timeProvider,
-            ILogger<DashboardController> logger)
+            ILogger<DashboardController> logger,
+            IFarazSmsService farazSmsService,
+            ISystemSmsService systemSmsService)
         {
             _context = context;
             _tenantService = tenantService;
@@ -39,6 +45,8 @@ namespace MyFirstCoreApp.Controllers
             _authorization = authorization;
             _timeProvider = timeProvider;
             _logger = logger;
+            _farazSmsService = farazSmsService;
+            _systemSmsService = systemSmsService;
         }
 
         public async Task<IActionResult> Index()
@@ -76,9 +84,40 @@ namespace MyFirstCoreApp.Controllers
                 ShowSystemStats = await HasAsync("User.View"),
                 ShowFinance = await HasAsync("Report.Ledger"),
                 ShowCheques = await HasAsync("Cheque.View"),
-                ShowInvoices = await HasAsync("Invoice.View")
+                ShowInvoices = await HasAsync("Invoice.View"),
+                ShowSystemSmsBalance = await HasAsync("SystemSmsSettings.View"),
+                ShowTenantSmsBalance = await HasAsync("TenantSmsBalance.View")
             };
 
+            // اعتبار پیامک کل سامانه
+            if (model.ShowSystemSmsBalance)
+            {
+                try
+                {
+                    model.SystemSmsBalance = await _systemSmsService.GetBalanceAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "خطا در دریافت اعتبار پیامک سامانه");
+
+                    model.SystemSmsBalance = new SmsBalanceResult(false, null, null, "خطا در دریافت اعتبار پیامک سامانه.");
+                }
+            }
+
+            // اعتبار پیامک شرکت جاری
+            if (model.ShowTenantSmsBalance)
+            {
+                try
+                {
+                    model.TenantSmsBalance = await _farazSmsService.GetBalanceAsync(tenantId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "خطا در دریافت اعتبار پیامک شرکت {TenantId}", tenantId);
+
+                    model.TenantSmsBalance = new SmsBalanceResult(false, null, null, "خطا در دریافت اعتبار پیامک شرکت.");
+                }
+            }
             // آمار سیستم (کاربران این شرکت؛ نقش‌ها/دسترسی‌ها/منوها سراسری‌اند، فقط برای دارندگان User.View)
             if (model.ShowSystemStats)
             {

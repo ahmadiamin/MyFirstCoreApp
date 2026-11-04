@@ -5,229 +5,203 @@
     ViewData["Title"] = "کاردکس کالا";
 }
 
+<style>
+    #kardexGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #kardexGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .kardex-summary .summary-box {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #fafafa;
+        height: 100%;
+    }
+
+    .kardex-summary .summary-box .label {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 2px;
+    }
+
+    .kardex-summary .summary-box .value {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .kardex-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .kardex-card .title {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .kardex-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .kardex-card .incoming { color: #28a745; font-weight: 600; }
+    .kardex-card .outgoing { color: #dc3545; font-weight: 600; }
+    .kardex-card .balance  { color: #0d6efd; font-weight: 600; }
+
+    .kardex-footer-summary {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px;
+        background: #f1f8ff;
+        margin-top: 8px;
+    }
+</style>
+
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fa-solid fa-warehouse"></i>
-            گزارش کاردکس کالا
+            <i class="fa-solid fa-warehouse"></i> گزارش کاردکس کالا
         </h3>
     </div>
 
     <div class="card-body">
 
-        <form asp-area="Inventory"
-              asp-controller="Kardex"
-              asp-action="Index"
-              method="get">
-
+        <!-- ==========================================
+             فرم فیلتر
+             ========================================== -->
+        <form asp-area="Inventory" asp-controller="Kardex" asp-action="Index" method="get">
             <div class="row">
-
-                <div class="col-md-6 col-lg-4">
-                    <div class="form-group">
-                        <label asp-for="ProductId">کالا</label>
-                        <select asp-for="ProductId"
-                                asp-items="Model.ProductOptions"
-                                class="form-control select2"
-                                style="width: 100%;">
-                            <option value="">-- انتخاب کالا --</option>
-                        </select>
-                    </div>
+                <div class="col-md-6 col-lg-4 col-12 mb-2">
+                    <label asp-for="ProductId">کالا</label>
+                    <select asp-for="ProductId" asp-items="Model.ProductOptions"
+                            class="form-control select2" style="width: 100%;">
+                        <option value="">-- انتخاب کالا --</option>
+                    </select>
                 </div>
-
-                <div class="col-md-6 col-lg-4">
-                    <div class="form-group">
-                        <label asp-for="WarehouseId">انبار</label>
-                        <select asp-for="WarehouseId"
-                                asp-items="Model.WarehouseOptions"
-                                class="form-control select2"
-                                style="width: 100%;">
-                            <option value="">-- انتخاب انبار --</option>
-                        </select>
-                    </div>
+                <div class="col-md-6 col-lg-4 col-12 mb-2">
+                    <label asp-for="WarehouseId">انبار</label>
+                    <select asp-for="WarehouseId" asp-items="Model.WarehouseOptions"
+                            class="form-control select2" style="width: 100%;">
+                        <option value="">-- انتخاب انبار --</option>
+                    </select>
                 </div>
-
-                <div class="col-md-6 col-lg-2">
-                    <div class="form-group">
-                        <label asp-for="FromDate">از تاریخ</label>
-                        <input asp-for="FromDate"
-                               class="form-control datepicker"
-                               autocomplete="off"
-                               dir="ltr"
-                               placeholder="1405/01/01" />
-                    </div>
+                <div class="col-md-6 col-lg-2 col-6 mb-2">
+                    <label asp-for="FromDate">از تاریخ</label>
+                    <input asp-for="FromDate" class="form-control datepicker"
+                           autocomplete="off" dir="ltr" placeholder="1405/01/01" />
                 </div>
-
-                <div class="col-md-6 col-lg-2">
-                    <div class="form-group">
-                        <label asp-for="ToDate">تا تاریخ</label>
-                        <input asp-for="ToDate"
-                               class="form-control datepicker"
-                               autocomplete="off"
-                               dir="ltr"
-                               placeholder="1405/01/31" />
-                    </div>
+                <div class="col-md-6 col-lg-2 col-6 mb-2">
+                    <label asp-for="ToDate">تا تاریخ</label>
+                    <input asp-for="ToDate" class="form-control datepicker"
+                           autocomplete="off" dir="ltr" placeholder="1405/01/31" />
                 </div>
-
             </div>
 
-            <div class="d-flex flex-wrap" style="gap: 8px;">
+            <div class="d-flex flex-wrap mb-2" style="gap: 8px;">
                 <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    نمایش گزارش
+                    <i class="fa-solid fa-magnifying-glass"></i> نمایش گزارش
                 </button>
-
-                <a asp-area="Inventory"
-                   asp-controller="Kardex"
-                   asp-action="Index"
+                <a asp-area="Inventory" asp-controller="Kardex" asp-action="Index"
                    class="btn btn-secondary">
-                    <i class="fa-solid fa-rotate-left"></i>
-                    پاک کردن فیلترها
+                    <i class="fa-solid fa-rotate-left"></i> پاک کردن فیلترها
                 </a>
             </div>
-
         </form>
 
         @if (Model.ProductId.HasValue && Model.WarehouseId.HasValue)
         {
             <hr />
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <div class="alert alert-light border mb-2">
-                        <strong>کالا:</strong>
-                        @Model.ProductName
-
-                        @if (!string.IsNullOrWhiteSpace(Model.ProductCode))
-                        {
-                            <span class="text-muted">
-                                (@Model.ProductCode)
-                            </span>
-                        }
-
-                        @if (!string.IsNullOrWhiteSpace(Model.UnitName))
-                        {
-                            <span class="text-muted">
-                                - واحد: @Model.UnitName
-                            </span>
-                        }
+            <!-- خلاصه کالا و انبار -->
+            <div class="row kardex-summary mb-3">
+                <div class="col-md-6 col-12 mb-2">
+                    <div class="summary-box">
+                        <div class="label">کالا</div>
+                        <div class="value">
+                            @Model.ProductName
+                            @if (!string.IsNullOrWhiteSpace(Model.ProductCode))
+                            {
+                                <span class="text-muted">(@Model.ProductCode)</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.UnitName))
+                            {
+                                <span class="text-muted">- واحد: @Model.UnitName</span>
+                            }
+                        </div>
                     </div>
                 </div>
-
-                <div class="col-md-6">
-                    <div class="alert alert-light border mb-2">
-                        <strong>انبار:</strong>
-                        @Model.WarehouseName
+                <div class="col-md-6 col-12 mb-2">
+                    <div class="summary-box">
+                        <div class="label">انبار</div>
+                        <div class="value">@Model.WarehouseName</div>
                     </div>
                 </div>
             </div>
 
             @if (Model.Rows.Count > 0)
             {
-                <button type="button" class="btn btn-outline-success mb-3" data-csv-table="kardexTable" data-csv-filename="کاردکس-کالا.csv"><i class="fa fa-file-csv"></i> خروجی Excel (CSV)</button>
+                <button type="button" class="btn btn-outline-success btn-sm mb-3"
+                        data-csv-table="kardexTable" data-csv-filename="کاردکس-کالا.csv">
+                    <i class="fa fa-file-csv"></i> خروجی Excel (CSV)
+                </button>
             }
 
-            <div class="table-responsive">
-                <table id="kardexTable" class="table table-bordered table-striped table-hover">
+            <!-- دسکتاپ: AG Grid -->
+            <div id="kardexGrid" class="ag-theme-alpine d-none d-md-block"
+                 style="height: 550px; width: 100%;">
+            </div>
+
+            <!-- جدول مخفی برای CSV -->
+            <div class="d-none">
+                <table id="kardexTable">
                     <thead>
                         <tr>
-                            <th style="min-width: 110px;">تاریخ</th>
-                            <th style="min-width: 130px;">شماره سند</th>
-                            <th style="min-width: 200px;">شرح</th>
-                            <th class="text-center" style="min-width: 110px;">
-                                وارده
-                            </th>
-                            <th class="text-center" style="min-width: 110px;">
-                                صادره
-                            </th>
-                            <th class="text-center" style="min-width: 130px;">
-                                موجودی
-                            </th>
+                            <th>تاریخ</th>
+                            <th>شماره سند</th>
+                            <th>شرح</th>
+                            <th>وارده</th>
+                            <th>صادره</th>
+                            <th>موجودی</th>
                         </tr>
                     </thead>
-
                     <tbody>
-                        @if (Model.Rows.Count == 0)
+                        @foreach (var row in Model.Rows)
                         {
                             <tr>
-                                <td colspan="6" class="text-center text-muted p-4">
-                                    در بازه انتخاب‌شده گردش کالایی یافت نشد.
-                                </td>
+                                <td>@PersianDate.Format(row.Date)</td>
+                                <td>@row.DocumentNumber</td>
+                                <td>@row.Description</td>
+                                <td>@(row.Incoming != 0 ? row.Incoming.ToString("N2") : "")</td>
+                                <td>@(row.Outgoing != 0 ? row.Outgoing.ToString("N2") : "")</td>
+                                <td>@row.Balance.ToString("N2")</td>
                             </tr>
-                        }
-                        else
-                        {
-                            @foreach (var row in Model.Rows)
-                            {
-                                <tr>
-                                    <td dir="ltr" class="text-center">
-                                        @PersianDate.Format(row.Date)
-                                    </td>
-
-                                    <td>
-                                        @row.DocumentNumber
-                                    </td>
-
-                                    <td>
-                                        @row.Description
-                                    </td>
-
-                                    <td class="text-center text-success">
-                                        @if (row.Incoming != 0)
-                                        {
-                                            @row.Incoming.ToString("N2")
-                                        }
-                                        else
-                                        {
-                                            <span>-</span>
-                                        }
-                                    </td>
-
-                                    <td class="text-center text-danger">
-                                        @if (row.Outgoing != 0)
-                                        {
-                                            @row.Outgoing.ToString("N2")
-                                        }
-                                        else
-                                        {
-                                            <span>-</span>
-                                        }
-                                    </td>
-
-                                    <td class="text-center font-weight-bold">
-                                        @row.Balance.ToString("N2")
-                                    </td>
-                                </tr>
-                            }
                         }
                     </tbody>
-
-                    @if (Model.Rows.Count > 0)
-                    {
-                        <tfoot>
-                            <tr class="font-weight-bold">
-                                <td colspan="3" class="text-left">
-                                    جمع گردش دوره
-                                </td>
-
-                                <td class="text-center text-success">
-                                    @Model.Rows.Sum(x => x.Incoming).ToString("N2")
-                                </td>
-
-                                <td class="text-center text-danger">
-                                    @Model.Rows.Sum(x => x.Outgoing).ToString("N2")
-                                </td>
-
-                                <td class="text-center">
-                                    @Model.Rows[^1].Balance.ToString("N2")
-                                </td>
-                            </tr>
-                        </tfoot>
-                    }
                 </table>
             </div>
 
+            <!-- موبایل: کارت‌ها -->
+            <div id="mobileKardex" class="d-md-none"></div>
+
             <div class="text-muted mt-2">
-                تعداد ردیف‌ها: @Model.Rows.Count
+                <i class="fa fa-info-circle"></i>
+                تعداد ردیف‌ها: <strong class="persian-number">@Model.Rows.Count</strong>
             </div>
         }
 
@@ -236,8 +210,13 @@
 
 @section Scripts {
     <partial name="_CsvExportScripts" />
+
     <script>
         $(function () {
+
+            // ============================================
+            // select2 + datepicker
+            // ============================================
             $('.select2').select2({
                 width: '100%',
                 dir: 'rtl',
@@ -248,23 +227,246 @@
 
             $('.datepicker').persianDatepicker({
                 format: 'YYYY/MM/DD',
-                initialValue: true,               // 🆕
-                initialValueType: 'persian',      // 🆕
+                initialValue: true,
+                initialValueType: 'persian',
                 autoClose: true,
                 observer: true,
-                calendar: {
-                    persian: {
-                        locale: 'fa',
-                        showHint: true,
-                        leapYearMode: 'algorithmic'
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+
+            // ============================================
+            // داده‌ها
+            // ============================================
+            var kardexData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Rows.Select(r => new {
+                    date = r.Date.ToString("yyyy/MM/dd"),
+                    dateDisplay = PersianDate.Format(r.Date),
+                    documentNumber = r.DocumentNumber,
+                    description = r.Description,
+                    incoming = r.Incoming,
+                    outgoing = r.Outgoing,
+                    balance = r.Balance
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            var showGrid = @(Model.ProductId.HasValue && Model.WarehouseId.HasValue && Model.Rows.Count > 0 ? "true" : "false");
+
+            var gridApi = null;
+
+            // ============================================
+            // ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function formatNumber(n) {
+                if (n == null) return '';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }));
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'dateDisplay',
+                    headerName: 'تاریخ',
+                    width: 120,
+                    cellStyle: { textAlign: 'center' }
+                },
+                {
+                    field: 'documentNumber',
+                    headerName: 'شماره سند',
+                    width: 130,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' }
+                },
+                {
+                    field: 'description',
+                    headerName: 'شرح',
+                    minWidth: 200,
+                    flex: 2,
+                    tooltipValueGetter: function (p) { return p.value; }
+                },
+                {
+                    field: 'incoming',
+                    headerName: 'وارده',
+                    width: 110,
+                    cellStyle: { textAlign: 'center', color: '#28a745', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        return p.value && p.value !== 0 ? formatNumber(p.value) : '-';
                     }
                 },
-                toolbox: {
-                    calendarSwitch: {
-                        enabled: false
+                {
+                    field: 'outgoing',
+                    headerName: 'صادره',
+                    width: 110,
+                    cellStyle: { textAlign: 'center', color: '#dc3545', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        return p.value && p.value !== 0 ? formatNumber(p.value) : '-';
+                    }
+                },
+                {
+                    field: 'balance',
+                    headerName: 'موجودی',
+                    width: 130,
+                    cellStyle: { textAlign: 'center', fontWeight: 'bold', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        return formatNumber(p.value);
                     }
                 }
-            });
+            ];
+
+            // ============================================
+            // ساخت Grid
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: kardexData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'در بازه انتخاب‌شده گردش کالایی یافت نشد.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('kardexGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileKardex');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>' +
+                        'در بازه انتخاب‌شده گردش کالایی یافت نشد.</div>';
+                    return;
+                }
+
+                var sumIncoming = 0;
+                var sumOutgoing = 0;
+
+                rows.forEach(function (r, index) {
+                    sumIncoming += Number(r.incoming || 0);
+                    sumOutgoing += Number(r.outgoing || 0);
+
+                    var incomingHtml = (r.incoming && r.incoming !== 0)
+                        ? '<div class="row-line">وارده: <span class="incoming" dir="ltr">' + formatNumber(r.incoming) + '</span></div>'
+                        : '';
+                    var outgoingHtml = (r.outgoing && r.outgoing !== 0)
+                        ? '<div class="row-line">صادره: <span class="outgoing" dir="ltr">' + formatNumber(r.outgoing) + '</span></div>'
+                        : '';
+
+                    html += '<div class="kardex-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="title">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-list text-muted ml-1"></i>' +
+                                toPersianDigits(r.dateDisplay || r.date) +
+                            '</div>' +
+                            (r.documentNumber
+                                ? '<span class="badge badge-info">سند ' + toPersianDigits(r.documentNumber) + '</span>'
+                                : '') +
+                        '</div>' +
+                        (r.description ? '<div class="row-line">' + r.description + '</div>' : '') +
+                        incomingHtml +
+                        outgoingHtml +
+                        '<div class="row-line">موجودی: <span class="balance" dir="ltr">' + formatNumber(r.balance) + '</span></div>' +
+                    '</div>';
+                });
+
+                // جمع کل
+                var lastBalance = rows[rows.length - 1] ? rows[rows.length - 1].balance : 0;
+                html += '<div class="kardex-footer-summary">' +
+                    '<div class="d-flex justify-content-between">' +
+                        '<strong>جمع گردش دوره</strong>' +
+                    '</div>' +
+                    '<div class="row-line">وارده: <span class="incoming" dir="ltr">' + formatNumber(sumIncoming) + '</span></div>' +
+                    '<div class="row-line">صادره: <span class="outgoing" dir="ltr">' + formatNumber(sumOutgoing) + '</span></div>' +
+                    '<div class="row-line">موجودی نهایی: <span class="balance" dir="ltr">' + formatNumber(lastBalance) + '</span></div>' +
+                '</div>';
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('kardexGrid');
+                var mobileDiv = document.getElementById('mobileKardex');
+
+                if (!gridDiv || !mobileDiv) return;
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(kardexData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // شروع (فقط اگر فیلتر انتخاب شده و داده هست)
+            // ============================================
+            if (showGrid) {
+                applyLayout();
+                var mql = window.matchMedia('(max-width: 767.98px)');
+                mql.addEventListener('change', applyLayout);
+            }
+
         });
     </script>
 }

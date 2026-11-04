@@ -2,6 +2,60 @@
     ViewData["Title"] = "شرکت‌ها";
 }
 
+<style>
+    #tenantsGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #tenantsGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+        .action-buttons .btn {
+            padding: 3px 6px;
+            line-height: 1;
+        }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    /* کارت‌های موبایل */
+    .tenant-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+        .tenant-card .name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .tenant-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+            word-break: break-all;
+        }
+
+        .tenant-card .actions {
+            margin-top: 8px;
+        }
+</style>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
@@ -9,6 +63,7 @@
         <i class="fa fa-check"></i> @TempData["Success"]
     </div>
 }
+
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger alert-dismissible">
@@ -30,6 +85,7 @@
             </a>
         </div>
     </div>
+
     <div class="card-body">
 
         <div class="row mb-3">
@@ -47,9 +103,13 @@
             </div>
         </div>
 
-        <div id="tenantsGrid" class="ag-theme-alpine"
+        <!-- دسکتاپ: AG Grid -->
+        <div id="tenantsGrid" class="ag-theme-alpine d-none d-md-block"
              style="height: 600px; width: 100%;">
         </div>
+
+        <!-- موبایل: کارت‌های عمودی -->
+        <div id="mobileTenants" class="d-md-none"></div>
 
     </div>
 </div>
@@ -57,13 +117,18 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-
+                console.log('=== ready start ===');        // ← ۱
+            // ============================================================
+            // ۱) ستون‌های دسکتاپ
+            // ============================================================
             const columnDefs = [
                 AgGridHelper.rowNumberColumn(),
                 { field: 'name', headerName: 'نام شرکت', flex: 2, minWidth: 200 },
                 { field: 'legalName', headerName: 'نام حقوقی', width: 180 },
-                { field: 'nationalId', headerName: 'شناسه ملی', width: 130 },
-                { field: 'phone', headerName: 'تلفن', width: 130 },
+                { field: 'nationalId', headerName: 'شناسه ملی', width: 130,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                { field: 'phone', headerName: 'تلفن', width: 130,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
                 AgGridHelper.statusColumn('isActive'),
                 {
                     headerName: 'عملیات',
@@ -97,13 +162,286 @@
                 }
             ];
 
-            AgGridHelper.create(
-                'tenantsGrid',
-                columnDefs,
-                '/Tenancy/Tenant/GetData',
-                'txtSearch',
-                'lblCount'
-            );
+            // ============================================================
+            // ۲) ساخت Grid (فقط دسکتاپ)
+            // ============================================================
+            let gridApi = null;
+            let allRows = [];       // نگهداری داده‌ها برای موبایل
+
+                    function buildGrid() {
+                                console.log('=== buildGrid called ===');   // ← ۲
+            if (gridApi) return;
+
+            var columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                { field: 'name', headerName: 'نام شرکت', flex: 2, minWidth: 200 },
+                { field: 'legalName', headerName: 'نام حقوقی', width: 180 },
+                { field: 'nationalId', headerName: 'شناسه ملی', width: 130,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                { field: 'phone', headerName: 'تلفن', width: 130,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                {
+                    field: 'isActive',
+                    headerName: 'وضعیت',
+                    width: 100,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">فعال</span>'
+                            : '<span class="badge badge-danger">غیرفعال</span>';
+                    }
+                },
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 140,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        const div = document.createElement('div');
+                        div.className = 'action-buttons';
+
+                        const selectBtn = document.createElement('a');
+                        selectBtn.href = `/Tenancy/Tenant/SelectById?tenantId=${params.data.id}`;
+                        selectBtn.className = 'btn btn-sm btn-outline-success';
+                        selectBtn.title = 'ورود به شرکت';
+                        selectBtn.innerHTML = '<i class="fa fa-sign-in"></i>';
+
+                        const editBtn = document.createElement('a');
+                        editBtn.href = `/Tenancy/Tenant/Edit/${params.data.id}`;
+                        editBtn.className = 'btn btn-sm btn-outline-primary';
+                        editBtn.title = 'ویرایش';
+                        editBtn.innerHTML = '<i class="fa fa-edit"></i>';
+
+                        div.appendChild(selectBtn);
+                        div.appendChild(editBtn);
+                        return div;
+                    }
+                }
+            ];
+
+            var gridOptions = {
+                columnDefs: columnDefs,
+                enableRtl: true,
+                defaultColDef: {
+                    sortable: true,
+                    filter: false,
+                    resizable: true,
+                    cellStyle: { textAlign: 'right', direction: 'rtl' },
+                    headerClass: 'ag-right-aligned-header'
+                },
+                pagination: true,
+                paginationPageSize: 20,
+                paginationPageSizeSelector: [10, 20, 50, 100],
+                localeText: {
+                    page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                    first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                    noRowsToShow: 'داده‌ای برای نمایش نیست',
+                    pageSizeSelectorLabel: 'تعداد در صفحه:'
+                },
+                onPaginationChanged: function () {
+                    if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                }
+
+                // ❌ این‌ها را حذف کن:
+                // rowModelType: 'infinite',
+                // datasource: { ... },
+                // cacheBlockSize: 20
+            };
+
+            var gridDiv = document.getElementById('tenantsGrid');
+            gridApi = agGrid.createGrid(gridDiv, gridOptions);
+                    console.log('=== gridApi created ===', gridApi);   // ← ۳
+
+            // 🆕 بارگذاری داده
+            loadData();
+        }
+
+            // ============================================================
+            // ۳) بارگذاری داده‌ها از سرور
+            // ============================================================
+                            function loadData() {
+            console.log('=== loadData called ===');
+
+            var request = {
+                startRow: 0,
+                endRow: 10000,
+                search: ($('#txtSearch').val() || '').trim(),
+                sortBy: null,
+                sortDir: null
+            };
+
+            // 🆕 sort با API جدید AG Grid
+            if (gridApi) {
+                try {
+                    var state = gridApi.getColumnState() || [];
+                    var sorted = state.filter(function (c) { return c.sort; });
+                    if (sorted.length) {
+                        request.sortBy = sorted[0].colId;
+                        request.sortDir = sorted[0].sort;   // 'asc' یا 'desc'
+                    }
+                } catch (e) {
+                    console.warn('sort read failed:', e);
+                }
+            }
+
+            console.log('=== sending:', request);
+
+            $.ajax({
+                url: '/Tenancy/Tenant/GetData',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function (result) {
+                    console.log('=== GetData success:', result);
+
+                    if (!result || !result.success) {
+                        console.warn('GetData returned success=false:', result);
+                        $('#lblCount').text('خطا در بارگذاری');
+                        return;
+                    }
+
+                    allRows = result.rows || [];
+
+                    if (gridApi) {
+                        // 🆕 API جدید: setGridOption
+                        gridApi.setGridOption('rowData', allRows);
+                        setTimeout(function () {
+                            gridApi.refreshCells({ columns: ['#'], force: true });
+                        }, 50);
+                    }
+
+                    $('#lblCount').text('تعداد: ' + toPersianDigits(result.lastRow || allRows.length));
+
+                    if (isMobile()) {
+                        renderMobileList(allRows);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('=== GetData error:', xhr.status, xhr.responseText);
+                    $('#lblCount').text('خطا در بارگذاری (کد ' + xhr.status + ')');
+                }
+            });
+        }
+                console.log('=== calling applyLayout ===');   // ← ۸
+        applyLayout();
+            // ============================================================
+            // ۴) جستجو
+            // ============================================================
+            let searchTimer = null;
+            $('#txtSearch').on('input', function () {
+                const term = $(this).val();
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    loadData(term);
+                }, 300);
+            });
+
+            // ============================================================
+            // ۵) موبایل — کارت‌ها
+            // ============================================================
+            function renderMobileList(rows) {
+                const container = document.getElementById('mobileTenants');
+                let html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>داده‌ای برای نمایش نیست</div>';
+                    return;
+                }
+
+                rows.forEach(function (t, index) {
+                    html += '<div class="tenant-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="name">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-building text-muted ml-1"></i>' +
+                                (t.name || '') +
+                            '</div>' +
+                            (t.isActive
+                                ? '<span class="badge badge-success">فعال</span>'
+                                : '<span class="badge badge-danger">غیرفعال</span>') +
+                        '</div>' +
+                        (t.legalName
+                            ? '<div class="row-line">نام حقوقی: ' + t.legalName + '</div>'
+                            : '') +
+                        (t.nationalId
+                            ? '<div class="row-line">شناسه ملی: <span dir="ltr">' + t.nationalId + '</span></div>'
+                            : '') +
+                        (t.phone
+                            ? '<div class="row-line">تلفن: <span dir="ltr">' + t.phone + '</span></div>'
+                            : '') +
+                        '<div class="actions action-buttons">' +
+                            '<a href="/Tenancy/Tenant/SelectById?tenantId=' + t.id + '" ' +
+                               'class="btn btn-sm btn-outline-success" title="ورود به شرکت">' +
+                               '<i class="fa fa-sign-in"></i></a>' +
+                            '<a href="/Tenancy/Tenant/Edit/' + t.id + '" ' +
+                               'class="btn btn-sm btn-outline-primary" title="ویرایش">' +
+                               '<i class="fa fa-edit"></i></a>' +
+                        '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================================
+            // ۶) ابزار
+            // ============================================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================================
+            // ۷) سوئیچ موبایل/دسکتاپ
+            // ============================================================
+        function applyLayout() {
+            const gridDiv = document.getElementById('tenantsGrid');
+            const mobileDiv = document.getElementById('mobileTenants');
+
+            if (isMobile()) {
+                gridDiv.classList.add('d-none');
+                mobileDiv.classList.remove('d-md-none');
+                // برای موبایل، loadData که allRows را پر می‌کند، renderMobileList را هم صدا می‌زند
+                if (!allRows.length) {
+                    loadData();
+                } else {
+                    renderMobileList(allRows);
+                }
+            } else {
+                gridDiv.classList.remove('d-none');
+                mobileDiv.classList.add('d-md-none');
+                if (!gridApi) buildGrid();
+            }
+        }
+
+            // ============================================================
+            // ۸) شروع
+            // ============================================================
+            applyLayout();
+
+            const mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
 
         });
     </script>

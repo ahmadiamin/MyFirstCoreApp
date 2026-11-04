@@ -6,6 +6,11 @@
         ۴) بدهکاران برتر (طرف حساب‌های دارای مانده‌ی مثبت)
         ۵) بستانکاران برتر (مانده‌ی منفی؛ مقدار منفی برمی‌گردد)
         ۶) جریان روزانه‌ی سال مالی: فروش، خرید، دریافت، پرداخت (تقسیم به ماه شمسی در C# انجام می‌شود)
+        ۷) فاکتورهای فروشِ معوق یا نزدیک به سررسید (تا @DueUntil)
+        ۸) فاکتورهای خریدِ معوق یا نزدیک به سررسید
+
+    @Today: برای تعیین «معوق» (سررسید قبل از امروز). اگر NULL باشد، KPIهای معوق صفر می‌شوند.
+    فاکتور بدون سررسید هیچ‌وقت در ۷ و ۸ یا معوق‌ها نمی‌آید.
 
     مقدارهای enum از C# پاس داده می‌شوند تا عدد جادویی در SQL نباشد.
 
@@ -18,6 +23,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_Dashboard_Summary
     @ToDate                   DATE,
     @DueUntil                 DATE,
     @TopN                     INT = 5,
+    @Today                    DATE = NULL,
 
     @InvoiceTypeSale          INT,
     @InvoiceTypePurchase      INT,
@@ -122,7 +128,32 @@ BEGIN
         (SELECT ISNULL(SUM(c.Amount), 0) FROM dbo.Cheques AS c
           WHERE c.TenantId = @TenantId AND c.IsDeleted = 0
             AND c.Direction = @ChequeDirectionIssued
-            AND c.[Status] IN (@ChequeStatusInProgress, @ChequeStatusRePresented))   AS PendingIssuedChequeAmount;
+            AND c.[Status] IN (@ChequeStatusInProgress, @ChequeStatusRePresented))   AS PendingIssuedChequeAmount,
+
+        -- فاکتورهای معوق (قطعی، باقی‌مانده‌ی مثبت، سررسید قبل از امروز)
+        (SELECT COUNT(*) FROM dbo.Invoices AS i
+          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
+            AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
+            AND i.DueDate IS NOT NULL AND i.DueDate < @Today
+            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OverdueSaleCount,
+
+        (SELECT ISNULL(SUM(i.TotalAmount - i.PaidAmount - i.SettlementDiscount), 0) FROM dbo.Invoices AS i
+          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
+            AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
+            AND i.DueDate IS NOT NULL AND i.DueDate < @Today
+            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OverdueSaleRemaining,
+
+        (SELECT COUNT(*) FROM dbo.Invoices AS i
+          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
+            AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
+            AND i.DueDate IS NOT NULL AND i.DueDate < @Today
+            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OverduePurchaseCount,
+
+        (SELECT ISNULL(SUM(i.TotalAmount - i.PaidAmount - i.SettlementDiscount), 0) FROM dbo.Invoices AS i
+          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
+            AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
+            AND i.DueDate IS NOT NULL AND i.DueDate < @Today
+            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OverduePurchaseRemaining;
 
     -- ۲) چک‌های دریافتنیِ سررسیدشده/نزدیک ------------------------------------------
     SELECT TOP (@TopN)
@@ -200,4 +231,30 @@ BEGIN
     ) AS d
     GROUP BY d.[Date]
     ORDER BY d.[Date];
+
+    -- ۷) فاکتورهای فروشِ معوق/نزدیک سررسید ----------------------------------------
+    SELECT TOP (@TopN)
+        i.Id AS Id, i.Number AS Number, ct.Name AS ContactName,
+        i.TotalAmount - i.PaidAmount - i.SettlementDiscount AS Remaining,
+        i.DueDate AS DueDate
+    FROM dbo.Invoices AS i
+    LEFT JOIN dbo.Contacts AS ct ON ct.Id = i.ContactId
+    WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
+      AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
+      AND i.DueDate IS NOT NULL AND i.DueDate <= @DueUntil
+      AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
+    ORDER BY i.DueDate, i.Id;
+
+    -- ۸) فاکتورهای خریدِ معوق/نزدیک سررسید ---------------------------------------
+    SELECT TOP (@TopN)
+        i.Id AS Id, i.Number AS Number, ct.Name AS ContactName,
+        i.TotalAmount - i.PaidAmount - i.SettlementDiscount AS Remaining,
+        i.DueDate AS DueDate
+    FROM dbo.Invoices AS i
+    LEFT JOIN dbo.Contacts AS ct ON ct.Id = i.ContactId
+    WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
+      AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
+      AND i.DueDate IS NOT NULL AND i.DueDate <= @DueUntil
+      AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
+    ORDER BY i.DueDate, i.Id;
 END

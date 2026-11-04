@@ -11,6 +11,7 @@ public class InvoiceReportViewModel
     public string? FromDate { get; set; }
     public string? ToDate { get; set; }
     public bool OnlyOpen { get; set; }
+    public bool OnlyOverdue { get; set; }
 
     // صفحه‌بندی
     public int Page { get; set; } = 1;
@@ -23,6 +24,10 @@ public class InvoiceReportViewModel
     public decimal TotalPaid { get; set; }
     public decimal TotalSettlementDiscount { get; set; }
     public decimal TotalRemaining { get; set; }
+
+    /// <summary>فاکتورهای معوق در میان ردیف‌های فیلترشده.</summary>
+    public int OverdueCount { get; set; }
+    public decimal TotalOverdueRemaining { get; set; }
 
     // ردیف‌های صفحه‌ی جاری
     public List<InvoiceReportRowViewModel> Rows { get; set; } = new();
@@ -45,4 +50,8 @@ public class InvoiceReportRowViewModel
     public decimal PaidAmount { get; set; }
     public decimal SettlementDiscount { get; set; }
     public decimal RemainingAmount { get; set; }
+
+    /// <summary>سررسید (شمسی)؛ خالی = بدون سررسید.</summary>
+    public string DueDateShamsi { get; set; } = string.Empty;
+    public bool IsOverdue { get; set; }
 }

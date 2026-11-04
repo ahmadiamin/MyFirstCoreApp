@@ -1,4 +1,5 @@
-﻿using MyFirstCoreApp.Application.Dashboard;
+﻿using MyFirstCoreApp.Application.CustomerPortal;
+using MyFirstCoreApp.Application.Dashboard;
 
 namespace MyFirstCoreApp.Models.ViewModels
 {
@@ -37,5 +38,12 @@ namespace MyFirstCoreApp.Models.ViewModels
 
         public string FiscalRangeText { get; set; } = string.Empty;
         public string TodayText { get; set; } = string.Empty;
+
+        // ---------- اعتبار پیامک ----------
+        public bool ShowSystemSmsBalance { get; set; }
+        public SmsBalanceResult? SystemSmsBalance { get; set; }
+
+        public bool ShowTenantSmsBalance { get; set; }
+        public SmsBalanceResult? TenantSmsBalance { get; set; }
     }
 }

@@ -2,6 +2,67 @@
     ViewData["Title"] = "طرف حساب‌ها";
 }
 
+<style>
+    #contactsGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #contactsGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+        .action-buttons .btn {
+            padding: 3px 6px;
+            line-height: 1;
+        }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .contact-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+        .contact-card .name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .contact-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+            word-break: break-all;
+        }
+
+        .contact-card .balance {
+            font-weight: 600;
+            color: #0d6efd;
+            margin-top: 4px;
+            font-size: 13px;
+        }
+
+        .contact-card .actions {
+            margin-top: 8px;
+        }
+</style>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
@@ -16,6 +77,8 @@
         <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
     </div>
 }
+
+@Html.AntiForgeryToken()
 
 <div class="card">
     <div class="card-header">
@@ -32,17 +95,13 @@
     </div>
     <div class="card-body">
 
-        <!-- 🆕 جستجو -->
         <div class="row mb-3">
             <div class="col-md-5">
                 <div class="input-group">
                     <div class="input-group-prepend">
-                        <span class="input-group-text">
-                            <i class="fa fa-search"></i>
-                        </span>
+                        <span class="input-group-text"><i class="fa fa-search"></i></span>
                     </div>
-                    <input type="text" id="txtSearch"
-                           class="form-control"
+                    <input type="text" id="txtSearch" class="form-control"
                            placeholder="جستجو در نام، کد، موبایل، تلفن، کد ملی..." />
                 </div>
             </div>
@@ -51,65 +110,82 @@
             </div>
         </div>
 
-        <!-- 🆕 AG Grid -->
-        <div id="contactsGrid" class="ag-theme-alpine"
+        <!-- دسکتاپ: AG Grid -->
+        <div id="contactsGrid" class="ag-theme-alpine d-none d-md-block"
              style="height: 600px; width: 100%;">
         </div>
 
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobileContacts" class="d-md-none"></div>
+
     </div>
 </div>
-@Html.AntiForgeryToken()
+
 @section Scripts {
     <script>
-        // ============================================
-        // 🆕 متغیر global برای Grid API
-        // ============================================
-        let contactsGridApi = null;
-
         $(document).ready(function () {
 
+            var gridApi = null;
+            var allRows = [];
+
             // ============================================
-            // ۱. تعریف ستون‌ها
+            // ۱. ستون‌ها
             // ============================================
             const columnDefs = [
-                AgGridHelper.rowNumberColumn(),
                 {
-                    field: 'name',
-                    headerName: 'نام',
-                    flex: 2,
-                    minWidth: 200
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
                 },
-                {
-                    field: 'code',
-                    headerName: 'کد',
-                    width: 100
-                },
+                { field: 'name', headerName: 'نام', flex: 2, minWidth: 200 },
+                { field: 'code', headerName: 'کد', width: 100,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
                 {
                     field: 'contactTypeName',
                     headerName: 'نوع',
                     width: 130,
-                    cellRenderer: function (params) {
-                        if (!params.data) return '';
-                        const span = document.createElement('span');
-                        if (params.data.contactType === 1) span.className = 'badge badge-info';
-                        else if (params.data.contactType === 2) span.className = 'badge badge-warning';
-                        else span.className = 'badge badge-success';
-                        span.textContent = params.value;
-                        return span;
+                    cellRenderer: function (p) {
+                        var cls = 'badge-success';
+                        if (p.data.contactType === 1) cls = 'badge-info';
+                        else if (p.data.contactType === 2) cls = 'badge-warning';
+                        return '<span class="badge ' + cls + '">' + (p.value || '') + '</span>';
+                    }
+                },
+                { field: 'mobile', headerName: 'موبایل', width: 140,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                { field: 'phone', headerName: 'تلفن', width: 130,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                {
+                    field: 'currentBalance',
+                    headerName: 'مانده',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        if (p.value == null) return '';
+                        var n = Number(p.value);
+                        if (isNaN(n)) return p.value;
+                        return toPersianDigits(n.toLocaleString('en-US'));
                     }
                 },
                 {
-                    field: 'mobile',
-                    headerName: 'موبایل',
-                    width: 140
+                    field: 'isActive',
+                    headerName: 'وضعیت',
+                    width: 100,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">فعال</span>'
+                            : '<span class="badge badge-danger">غیرفعال</span>';
+                    }
                 },
-                {
-                    field: 'phone',
-                    headerName: 'تلفن',
-                    width: 130
-                },
-                AgGridHelper.moneyColumn('currentBalance', 'مانده', 130),
-                AgGridHelper.statusColumn('isActive'),
                 {
                     headerName: 'عملیات',
                     colId: 'actions',
@@ -119,93 +195,282 @@
                     pinned: 'left',
                     cellRenderer: function (params) {
                         if (!params.data) return '';
-                        const div = document.createElement('div');
-                        div.className = 'action-buttons';
-                        const d = params.data;
-
-                        // ✏ ویرایش
-                        const editBtn = document.createElement('a');
-                        editBtn.href = `/Contacts/Contacts/Edit/${d.id}`;
-                        editBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn';
-                        editBtn.title = 'ویرایش';
-                        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
-                        div.appendChild(editBtn);
-
-                        if (d.contactType === 1 || d.contactType === 3) {
-                            const portalBtn = document.createElement('a');
-                            portalBtn.href = `/Contacts/CustomerPortalLinks?contactId=${encodeURIComponent(d.id)}`;
-                            portalBtn.className = 'btn btn-sm btn-outline-info action-icon-btn';
-                            portalBtn.title = 'لینک پرتال مشتری';
-                            portalBtn.innerHTML = '<i class="fa-solid fa-link"></i>';
-                            div.appendChild(portalBtn);
-                        }
-
-                        // 🗑 حذف
-                        const deleteBtn = document.createElement('a');
-                        deleteBtn.href = 'javascript:void(0)';
-                        deleteBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn delete-btn';
-                        deleteBtn.dataset.id = d.id;
-                        deleteBtn.dataset.title = d.name || '';
-                        deleteBtn.dataset.code = d.code || '';
-                        deleteBtn.dataset.mobile = d.mobile || '';
-                        deleteBtn.title = 'حذف';
-                        deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                        div.appendChild(deleteBtn);
-
-                        return div;
+                        return '<div class="action-buttons">' + buildActionButtons(params.data) + '</div>';
                     }
                 }
             ];
 
             // ============================================
-            // ۲. ساخت Grid
+            // ۲. دکمه‌های عملیات (مشترک دسکتاپ/موبایل)
             // ============================================
-            contactsGridApi = AgGridHelper.create(
-                'contactsGrid',
-                columnDefs,
-                '/Contacts/Contacts/GetData',
-                'txtSearch',
-                'lblCount'
-            );
+            function buildActionButtons(d) {
+                var html = '';
 
-        });
+                // ویرایش
+                html += '<a href="/Contacts/Contacts/Edit/' + d.id + '" ' +
+                        'class="btn btn-sm btn-outline-primary action-icon-btn" title="ویرایش">' +
+                        '<i class="fa-solid fa-pen-to-square"></i></a>';
 
-        // ============================================
-        // ۳. رویداد حذف
-        // ============================================
-        $(document).on('click', '.delete-btn', function () {
-            const $btn = $(this);
-            const id = $btn.data('id');
-            const title = $btn.data('title');
-            const code = $btn.data('code');
-            const mobile = $btn.data('mobile');
-
-            // 🆕 ساخت items
-            const items = [];
-            if (title) items.push({ label: 'نام', value: title });
-            if (code) items.push({ label: 'کد', value: code });
-            if (mobile) items.push({ label: 'موبایل', value: mobile });
-
-            // 🆕 نمایش Modal
-            ModalHelper.confirmDelete({
-                url: '/Contacts/Contacts/Delete',
-                data: {
-                    id: id,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                title: 'حذف طرف حساب: ' + title,
-                message: 'آیا از حذف این طرف حساب مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
-                items: items,
-                onSuccess: function () {
-                    // 🆕 رفرش Grid
-                    if (contactsGridApi) {
-                        const ds = contactsGridApi.getGridOption('datasource');
-                        contactsGridApi.setGridOption('datasource', ds);
-                    } else {
-                        location.reload();
-                    }
+                // لینک پرتال مشتری (فقط نوع ۱ و ۳)
+                if (d.contactType === 1 || d.contactType === 3) {
+                    html += '<a href="/Contacts/CustomerPortalLinks?contactId=' +
+                            encodeURIComponent(d.id) + '" ' +
+                            'class="btn btn-sm btn-outline-info action-icon-btn" title="لینک پرتال مشتری">' +
+                            '<i class="fa-solid fa-link"></i></a>';
                 }
+
+                // حذف
+                html += '<a href="javascript:void(0)" ' +
+                        'class="btn btn-sm btn-outline-danger action-icon-btn delete-btn" ' +
+                        'data-id="' + d.id + '" ' +
+                        'data-title="' + escapeAttr(d.name) + '" ' +
+                        'data-code="' + escapeAttr(d.code) + '" ' +
+                        'data-mobile="' + escapeAttr(d.mobile) + '" ' +
+                        'title="حذف">' +
+                        '<i class="fa-solid fa-trash"></i></a>';
+
+                return html;
+            }
+
+            function escapeAttr(s) {
+                return (s == null ? '' : String(s))
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            // ============================================
+            // ۳. ساخت Grid (دسکتاپ)
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'داده‌ای برای نمایش نیست',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('contactsGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+                loadData();
+            }
+
+            // ============================================
+            // ۴. بارگذاری داده
+            // ============================================
+            function loadData() {
+                var request = {
+                    startRow: 0,
+                    endRow: 10000,
+                    search: ($('#txtSearch').val() || '').trim(),
+                    sortBy: null,
+                    sortDir: null
+                };
+
+                if (gridApi) {
+                    try {
+                        var state = gridApi.getColumnState() || [];
+                        var sorted = state.filter(function (c) { return c.sort; });
+                        if (sorted.length) {
+                            request.sortBy = sorted[0].colId;
+                            request.sortDir = sorted[0].sort;
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+
+                $.ajax({
+                    url: '/Contacts/Contacts/GetData',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(request),
+                    success: function (result) {
+                        var rows = [];
+                        var total = 0;
+                        if (Array.isArray(result)) {
+                            rows = result;
+                            total = result.length;
+                        } else if (result && Array.isArray(result.rows)) {
+                            rows = result.rows;
+                            total = result.lastRow || rows.length;
+                        } else if (result && Array.isArray(result.data)) {
+                            rows = result.data;
+                            total = result.total || rows.length;
+                        }
+
+                        allRows = rows;
+
+                        if (gridApi) {
+                            gridApi.setGridOption('rowData', allRows);
+                            setTimeout(function () {
+                                gridApi.refreshCells({ columns: ['#'], force: true });
+                            }, 50);
+                        }
+
+                        $('#lblCount').text('تعداد: ' + toPersianDigits(total));
+
+                        if (isMobile()) {
+                            renderMobileList(allRows);
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('GetData error:', xhr.status, xhr.responseText);
+                        $('#lblCount').text('خطا در بارگذاری (کد ' + xhr.status + ')');
+                    }
+                });
+            }
+
+            // ============================================
+            // ۵. جستجو
+            // ============================================
+            var searchTimer = null;
+            $('#txtSearch').on('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    loadData();
+                }, 300);
             });
+
+            // ============================================
+            // ۶. موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileContacts');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>داده‌ای برای نمایش نیست</div>';
+                    return;
+                }
+
+                rows.forEach(function (d, index) {
+                    var typeCls = 'badge-success';
+                    if (d.contactType === 1) typeCls = 'badge-info';
+                    else if (d.contactType === 2) typeCls = 'badge-warning';
+
+                    var balanceHtml = '';
+                    if (d.currentBalance != null) {
+                        var n = Number(d.currentBalance);
+                        var formatted = isNaN(n) ? d.currentBalance : n.toLocaleString('en-US');
+                        balanceHtml = '<div class="balance">مانده: ' + toPersianDigits(formatted) + '</div>';
+                    }
+
+                    html += '<div class="contact-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="name">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-address-book text-muted ml-1"></i>' +
+                                (d.name || '') +
+                            '</div>' +
+                            '<div>' +
+                                (d.contactTypeName
+                                    ? '<span class="badge ' + typeCls + ' ml-1">' + d.contactTypeName + '</span>'
+                                    : '') +
+                                (d.isActive
+                                    ? '<span class="badge badge-success">فعال</span>'
+                                    : '<span class="badge badge-danger">غیرفعال</span>') +
+                            '</div>' +
+                        '</div>' +
+                        (d.code ? '<div class="row-line">کد: <span dir="ltr">' + d.code + '</span></div>' : '') +
+                        (d.mobile ? '<div class="row-line">موبایل: <span dir="ltr">' + d.mobile + '</span></div>' : '') +
+                        (d.phone ? '<div class="row-line">تلفن: <span dir="ltr">' + d.phone + '</span></div>' : '') +
+                        balanceHtml +
+                        '<div class="actions">' + buildActionButtons(d) + '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // ۷. ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ۸. سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('contactsGrid');
+                var mobileDiv = document.getElementById('mobileContacts');
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    if (!allRows.length) loadData();
+                    else renderMobileList(allRows);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // ۹. حذف با Modal
+            // ============================================
+            $(document).on('click', '.delete-btn', function () {
+                var $btn = $(this);
+                var id = $btn.data('id');
+                var title = $btn.data('title');
+                var code = $btn.data('code');
+                var mobile = $btn.data('mobile');
+
+                var items = [];
+                if (title) items.push({ label: 'نام', value: title });
+                if (code) items.push({ label: 'کد', value: code });
+                if (mobile) items.push({ label: 'موبایل', value: mobile });
+
+                ModalHelper.confirmDelete({
+                    url: '/Contacts/Contacts/Delete',
+                    data: {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    title: 'حذف طرف حساب: ' + title,
+                    message: 'آیا از حذف این طرف حساب مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
+                    items: items,
+                    onSuccess: function () {
+                        loadData();
+                    }
+                });
+            });
+
+            // ============================================
+            // ۱۰. شروع
+            // ============================================
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+
         });
     </script>
 }

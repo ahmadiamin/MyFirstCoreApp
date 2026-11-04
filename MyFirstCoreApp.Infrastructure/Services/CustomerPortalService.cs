@@ -34,9 +34,9 @@ public sealed class CustomerPortalService : ICustomerPortalService
     {
         await EnsureCustomerAsync(tenantId, contactId);
         var shares = await _context.CustomerPortalShares.IgnoreQueryFilters().AsNoTracking()
-            .Where(x => x.TenantId == tenantId 
-                && !x.IsDeleted && x.ContactId == contactId 
-                && x.Contact.TenantId == tenantId 
+            .Where(x => x.TenantId == tenantId
+                && !x.IsDeleted && x.ContactId == contactId
+                && x.Contact.TenantId == tenantId
                 && !x.Contact.IsDeleted)
             .OrderByDescending(x => x.CreatedAt)
             .Select(x => new CustomerPortalShareListItem
@@ -64,11 +64,12 @@ public sealed class CustomerPortalService : ICustomerPortalService
     {
         if (!canViewLedger && !canViewSalesInvoices)
             throw new InvalidOperationException("حداقل یک نوع دسترسی برای لینک انتخاب کنید.");
+
         if (expiresAtUtc.HasValue && expiresAtUtc.Value <= _timeProvider.GetUtcNow().UtcDateTime)
             throw new InvalidOperationException("تاریخ انقضای لینک باید در آینده باشد.");
 
         await EnsureCustomerAsync(tenantId, contactId);
-        var token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        var token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(16));
         var entity = new CustomerPortalShare
         {
             TenantId = tenantId,
@@ -231,7 +232,9 @@ public sealed class CustomerPortalService : ICustomerPortalService
 
     private async Task<AccessInfo?> ResolveAsync(string token, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(token) || token.Length is < 40 or > 64) return null;
+        if (string.IsNullOrWhiteSpace(token) || (token.Length != 22 && token.Length != 43))
+            return null;
+
         var hash = HashToken(token);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var share = await _context.CustomerPortalShares.IgnoreQueryFilters().AsNoTracking()

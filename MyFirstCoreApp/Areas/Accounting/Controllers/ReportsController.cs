@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
@@ -306,6 +305,7 @@ public class ReportsController : Controller
         string? fromDate = null,
         string? toDate = null,
         bool onlyOpen = false,
+        bool onlyOverdue = false,
         int page = 1)
     {
         var tenantId = _currentTenant.TenantId;
@@ -321,6 +321,7 @@ public class ReportsController : Controller
             FromDate = DefaultOrGiven(fromDate, yearStart),
             ToDate = DefaultOrGiven(toDate, yearEnd),
             OnlyOpen = onlyOpen,
+            OnlyOverdue = onlyOverdue,
             Page = Math.Max(page, 1),
             ContactOptions = await GetContactOptionsAsync(),
             InvoiceTypeOptions = GetInvoiceTypeOptions(),
@@ -340,6 +341,8 @@ public class ReportsController : Controller
                 From = from,
                 To = to,
                 OnlyOpen = onlyOpen,
+                OnlyOverdue = onlyOverdue,
+                Today = _timeProvider.Today(),
                 PageNumber = model.Page,
                 PageSize = model.PageSize
             });
@@ -349,6 +352,8 @@ public class ReportsController : Controller
             model.TotalPaid = report.TotalPaid;
             model.TotalSettlementDiscount = report.TotalSettlementDiscount;
             model.TotalRemaining = report.TotalRemaining;
+            model.OverdueCount = report.OverdueCount;
+            model.TotalOverdueRemaining = report.TotalOverdueRemaining;
             model.TotalPages = report.TotalPages;
             model.Rows = report.Rows.Select(r => new InvoiceReportRowViewModel
             {
@@ -361,7 +366,9 @@ public class ReportsController : Controller
                 TotalAmount = r.TotalAmount,
                 PaidAmount = r.PaidAmount,
                 SettlementDiscount = r.SettlementDiscount,
-                RemainingAmount = r.RemainingAmount
+                RemainingAmount = r.RemainingAmount,
+                DueDateShamsi = PersianDate.Format(r.DueDate),
+                IsOverdue = r.IsOverdue
             }).ToList();
         }
         catch (InvalidOperationException ex)

@@ -5,7 +5,77 @@
     ViewData["Title"] = $"مشاهده سند شماره {Model.Number}";
 }
 
-<div class="card card-info">
+<style>
+    .tx-details .info-box {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #fafafa;
+        height: 100%;
+    }
+
+        .tx-details .info-box .label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+
+        .tx-details .info-box .value {
+            font-weight: 600;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+    .tx-details table.lines-table {
+        font-size: 13px;
+    }
+
+        .tx-details table.lines-table th,
+        .tx-details table.lines-table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+            .tx-details table.lines-table td.desc {
+                white-space: normal;
+                min-width: 150px;
+            }
+
+    .tx-details .money {
+        direction: ltr;
+        text-align: left;
+        font-family: inherit;
+    }
+
+    .tx-details .mobile-lines .line-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #fff;
+    }
+
+        .tx-details .mobile-lines .line-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+
+        .tx-details .mobile-lines .line-card .amount {
+            font-weight: 600;
+            color: #0d6efd;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+    @@media (max-width: 767.98px) {
+        .tx-details .card-body {
+            padding: 10px;
+        }
+    }
+</style>
+
+<div class="card card-info tx-details">
     <div class="card-header">
         <h3 class="card-title">
             <i class="fa fa-file-text"></i>
@@ -28,81 +98,142 @@
     </div>
 
     <div class="card-body">
+
         <!-- اطلاعات سند -->
         <div class="row">
-            <div class="col-md-3">
-                <strong>شماره سند:</strong>
-                <span class="persian-number">@Model.Number</span>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">شماره سند</div>
+                    <div class="value persian-number">@Model.Number</div>
+                </div>
             </div>
-            <div class="col-md-3">
-                <strong>تاریخ:</strong>
-                <span>@PersianDate.Format(Model.Date)</span>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">تاریخ</div>
+                    <div class="value">@PersianDate.Format(Model.Date)</div>
+                </div>
             </div>
-            <div class="col-md-3">
-                <strong>گروه:</strong>
-                <span>@Model.TransactionGroup?.Name</span>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">گروه</div>
+                    <div class="value">@Model.TransactionGroup?.Name</div>
+                </div>
             </div>
-            <div class="col-md-3">
-                <strong>مرجع:</strong>
-                <span>@Model.Reference</span>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
+                    <div class="label">مرجع</div>
+                    <div class="value" dir="ltr" style="text-align:right;">@Model.Reference</div>
+                </div>
             </div>
         </div>
 
         @if (!string.IsNullOrEmpty(Model.Description))
         {
-            <div class="row mt-2">
-                <div class="col-md-12">
-                    <strong>شرح:</strong>
-                    <span>@Model.Description</span>
+            <div class="row mt-1">
+                <div class="col-12">
+                    <div class="info-box">
+                        <div class="label">شرح</div>
+                        <div class="value">@Model.Description</div>
+                    </div>
                 </div>
             </div>
         }
 
         <hr />
 
-        <!-- خطوط سند -->
-        <h5>
+        <!-- خطوط سند — عنوان -->
+        <h5 class="mb-3">
             <i class="fa fa-list"></i>
             خطوط سند
         </h5>
 
-        <table class="table table-bordered table-striped">
-            <thead>
-                <tr>
-                    <th style="width: 40px;">#</th>
-                    <th>حساب</th>
-                    <th>طرف حساب</th>
-                    <th>بدهکار</th>
-                    <th>بستانکار</th>
-                    <th>شرح</th>
-                </tr>
-            </thead>
-            <tbody>
-                @{
-                    var i = 1;
-                }
-                @foreach (var line in Model.Lines.OrderBy(l => l.LineNumber))
-                {
+        <!-- دسکتاپ: جدول -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table table-bordered table-striped lines-table mb-0">
+                <thead>
                     <tr>
-                        <td class="persian-number">@i</td>
-                        <td>@line.Account?.Name</td>
-                        <td>@line.Contact?.Name</td>
-                        <td class="persian-number-comma">@line.Debit.ToString("N0")</td>
-                        <td class="persian-number-comma">@line.Credit.ToString("N0")</td>
-                        <td>@line.Description</td>
+                        <th style="width: 40px;" class="text-center">#</th>
+                        <th>حساب</th>
+                        <th>طرف حساب</th>
+                        <th class="text-center">بدهکار</th>
+                        <th class="text-center">بستانکار</th>
+                        <th>شرح</th>
                     </tr>
-                    i++;
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="3" class="text-left">مجموع:</th>
-                    <th class="persian-number-comma">@Model.Lines.Sum(l => l.Debit).ToString("N0")</th>
-                    <th class="persian-number-comma">@Model.Lines.Sum(l => l.Credit).ToString("N0")</th>
-                    <th></th>
-                </tr>
-            </tfoot>
-        </table>
+                </thead>
+                <tbody>
+                    @{
+                        var i = 1;
+                    }
+                    @foreach (var line in Model.Lines.OrderBy(l => l.LineNumber))
+                    {
+                        <tr>
+                            <td class="text-center persian-number">@i</td>
+                            <td>@line.Account?.Name</td>
+                            <td>@line.Contact?.Name</td>
+                            <td class="money persian-number-comma">@line.Debit.ToString("N0")</td>
+                            <td class="money persian-number-comma">@line.Credit.ToString("N0")</td>
+                            <td class="desc">@line.Description</td>
+                        </tr>
+                        i++;
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="font-weight-bold">
+                        <th colspan="3" class="text-left">مجموع:</th>
+                        <th class="money persian-number-comma">@Model.Lines.Sum(l => l.Debit).ToString("N0")</th>
+                        <th class="money persian-number-comma">@Model.Lines.Sum(l => l.Credit).ToString("N0")</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- موبایل: کارت‌ها -->
+        <div class="mobile-lines d-md-none">
+            @{
+                var m = 1;
+            }
+            @foreach (var line in Model.Lines.OrderBy(l => l.LineNumber))
+            {
+                <div class="line-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <strong>
+                            <span class="badge badge-secondary ml-1">@m</span>
+                            @line.Account?.Name
+                        </strong>
+                    </div>
+                    @if (line.Contact != null)
+                    {
+                        <div class="row-line">طرف حساب: @line.Contact.Name</div>
+                    }
+                    <div class="row-line">
+                        بدهکار: <span class="amount persian-number-comma" dir="ltr">@line.Debit.ToString("N0")</span>
+                    </div>
+                    <div class="row-line">
+                        بستانکار: <span class="amount persian-number-comma" dir="ltr">@line.Credit.ToString("N0")</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(line.Description))
+                    {
+                        <div class="row-line">@line.Description</div>
+                    }
+                </div>
+                m++;
+            }
+
+            <!-- مجموع موبایل -->
+            <div class="line-card" style="background:#f1f8ff;">
+                <div class="d-flex justify-content-between">
+                    <strong>مجموع</strong>
+                </div>
+                <div class="row-line">
+                    بدهکار: <span class="amount persian-number-comma" dir="ltr">@Model.Lines.Sum(l => l.Debit).ToString("N0")</span>
+                </div>
+                <div class="row-line">
+                    بستانکار: <span class="amount persian-number-comma" dir="ltr">@Model.Lines.Sum(l => l.Credit).ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div class="card-footer">

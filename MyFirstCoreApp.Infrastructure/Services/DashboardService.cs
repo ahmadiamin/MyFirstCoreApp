@@ -49,6 +49,7 @@ public class DashboardService : IDashboardService
         parameters.Add("FromDate", from.ToDateTime(TimeOnly.MinValue), DbType.Date);
         parameters.Add("ToDate", to.ToDateTime(TimeOnly.MinValue), DbType.Date);
         parameters.Add("DueUntil", dueUntil.ToDateTime(TimeOnly.MinValue), DbType.Date);
+        parameters.Add("Today", today.ToDateTime(TimeOnly.MinValue), DbType.Date);
         parameters.Add("TopN", Math.Clamp(topN, 1, 50), DbType.Int32);
 
         // مقدارهای enum از C# می‌آیند؛ SQL عدد جادویی ندارد
@@ -91,6 +92,8 @@ public class DashboardService : IDashboardService
             var debtors = (await multi.ReadAsync<BalanceRow>()).ToList();
             var creditors = (await multi.ReadAsync<BalanceRow>()).ToList();
             var flow = (await multi.ReadAsync<FlowRow>()).ToList();
+            var dueSale = (await multi.ReadAsync<DueInvoiceRow>()).ToList();
+            var duePurchase = (await multi.ReadAsync<DueInvoiceRow>()).ToList();
 
             var months = DashboardMonthBuckets.Build(from, to);
             DashboardMonthBuckets.Fill(months, flow.Select(f => new DailyFlow(
@@ -116,6 +119,13 @@ public class DashboardService : IDashboardService
                 PendingReceivedChequeAmount = kpi.PendingReceivedChequeAmount,
                 PendingIssuedChequeCount = kpi.PendingIssuedChequeCount,
                 PendingIssuedChequeAmount = kpi.PendingIssuedChequeAmount,
+
+                OverdueSaleCount = kpi.OverdueSaleCount,
+                OverdueSaleRemaining = kpi.OverdueSaleRemaining,
+                OverduePurchaseCount = kpi.OverduePurchaseCount,
+                OverduePurchaseRemaining = kpi.OverduePurchaseRemaining,
+                DueSaleInvoices = dueSale.Select(i => ToDto(i, today)).ToList(),
+                DuePurchaseInvoices = duePurchase.Select(i => ToDto(i, today)).ToList(),
 
                 DueReceivedCheques = dueReceived.Select(c => ToDto(c, today)).ToList(),
                 DueIssuedCheques = dueIssued.Select(c => ToDto(c, today)).ToList(),
@@ -145,6 +155,20 @@ public class DashboardService : IDashboardService
             DaysLeft = due.DayNumber - today.DayNumber
         };
     }
+    private static DueInvoiceDto ToDto(DueInvoiceRow row, DateOnly today)
+    {
+        var due = DateOnly.FromDateTime(row.DueDate);
+
+        return new DueInvoiceDto
+        {
+            Id = row.Id,
+            Number = row.Number,
+            ContactName = row.ContactName,
+            Remaining = row.Remaining,
+            DueDate = due,
+            DaysLeft = due.DayNumber - today.DayNumber
+        };
+    }
 
     private static ContactBalanceDto ToDto(BalanceRow row)
         => new() { ContactId = row.ContactId, Name = row.Name, Balance = row.Balance };
@@ -165,6 +189,10 @@ public class DashboardService : IDashboardService
         public decimal PendingReceivedChequeAmount { get; set; }
         public int PendingIssuedChequeCount { get; set; }
         public decimal PendingIssuedChequeAmount { get; set; }
+        public int OverdueSaleCount { get; set; }
+        public decimal OverdueSaleRemaining { get; set; }
+        public int OverduePurchaseCount { get; set; }
+        public decimal OverduePurchaseRemaining { get; set; }
     }
 
     private sealed class DueChequeRow
@@ -175,6 +203,15 @@ public class DashboardService : IDashboardService
         public decimal Amount { get; set; }
         public DateTime DueDate { get; set; }
     }
+    private sealed class DueInvoiceRow
+    {
+        public int Id { get; set; }
+        public int Number { get; set; }
+        public string? ContactName { get; set; }
+        public decimal Remaining { get; set; }
+        public DateTime DueDate { get; set; }
+    }
+
 
     private sealed class BalanceRow
     {

@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddHttpClient<ISystemSmsService, SystemSmsService>(client =>
             client.Timeout = TimeSpan.FromSeconds(20));
         services.AddHostedService<ChequeReminderHostedService>();
+        services.AddHttpClient<IFarazSmsBalanceService, FarazSmsBalanceService>();
 
         // Audit + TenantId + حذف نرم در یک نقطه.
         // Scoped است چون به ICurrentUser و ICurrentTenant (وابسته به درخواست) نیاز دارد؛
@@ -76,6 +77,7 @@ public static class DependencyInjection
         services.AddScoped<IInventoryAnalyticsService, InventoryAnalyticsService>();
         services.AddScoped<ICustomerPortalService, CustomerPortalService>();
         services.AddScoped<IWarehouseService, WarehouseService>();
+        services.AddScoped<IPasswordResetOtpService, PasswordResetOtpService>();
 
         return services;
     }

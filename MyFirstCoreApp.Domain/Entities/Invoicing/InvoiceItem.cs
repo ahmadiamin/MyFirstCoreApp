@@ -62,4 +62,10 @@ public class InvoiceItem : TenantEntity
     /// جمع خط (Quantity * UnitPrice - Discount + Tax)
     /// </summary>
     public decimal LineTotal { get; set; }
+
+    /// <summary>
+    /// آیا این قلم از خرید، دارایی ثابت شرکت محسوب می‌شود؟
+    /// فقط برای اقلام فاکتور خرید کاربرد دارد.
+    /// </summary>
+    public bool IsCapitalAsset { get; set; } = false;
 }

@@ -2,6 +2,67 @@
     ViewData["Title"] = "کالاها";
 }
 
+<style>
+    #productsGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #productsGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+        .action-buttons .btn {
+            padding: 3px 6px;
+            line-height: 1;
+        }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .product-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+        .product-card .name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .product-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+            word-break: break-all;
+        }
+
+        .product-card .price {
+            font-weight: 600;
+            color: #0d6efd;
+            margin-top: 4px;
+            font-size: 13px;
+        }
+
+        .product-card .actions {
+            margin-top: 8px;
+        }
+</style>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
@@ -16,6 +77,8 @@
         <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
     </div>
 }
+
+@Html.AntiForgeryToken()
 
 <div class="card">
     <div class="card-header">
@@ -47,50 +110,70 @@
             </div>
         </div>
 
-        <div id="productsGrid" class="ag-theme-alpine"
+        <!-- دسکتاپ: AG Grid -->
+        <div id="productsGrid" class="ag-theme-alpine d-none d-md-block"
              style="height: 600px; width: 100%;">
         </div>
 
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobileProducts" class="d-md-none"></div>
+
     </div>
 </div>
-@Html.AntiForgeryToken()
+
 @section Scripts {
     <script>
-        // ============================================
-        // 🆕 متغیر global برای Grid API
-        // ============================================
-        let productsGridApi = null;
-
         $(document).ready(function () {
 
+            var gridApi = null;
+            var allRows = [];
+
             // ============================================
-            // ۱. تعریف ستون‌ها
+            // ۱. ستون‌ها
             // ============================================
             const columnDefs = [
-                AgGridHelper.rowNumberColumn(),
                 {
-                    field: 'name',
-                    headerName: 'نام کالا',
-                    flex: 2,
-                    minWidth: 200
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                { field: 'name', headerName: 'نام کالا', flex: 2, minWidth: 200 },
+                { field: 'code', headerName: 'کد', width: 120,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                { field: 'categoryName', headerName: 'دسته‌بندی', width: 150 },
+                { field: 'unitName', headerName: 'واحد', width: 100,
+                    cellStyle: { textAlign: 'center' } },
+                {
+                    field: 'salePrice',
+                    headerName: 'قیمت فروش',
+                    width: 140,
+                    cellStyle: { textAlign: 'left', direction: 'ltr' },
+                    valueFormatter: function (p) {
+                        if (p.value == null) return '';
+                        var n = Number(p.value);
+                        if (isNaN(n)) return p.value;
+                        return toPersianDigits(n.toLocaleString('en-US'));
+                    }
                 },
                 {
-                    field: 'code',
-                    headerName: 'کد',
-                    width: 120
+                    field: 'isActive',
+                    headerName: 'وضعیت',
+                    width: 100,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">فعال</span>'
+                            : '<span class="badge badge-danger">غیرفعال</span>';
+                    }
                 },
-                {
-                    field: 'categoryName',
-                    headerName: 'دسته‌بندی',
-                    width: 150
-                },
-                {
-                    field: 'unitName',
-                    headerName: 'واحد',
-                    width: 100
-                },
-                AgGridHelper.moneyColumn('salePrice', 'قیمت فروش', 140),
-                AgGridHelper.statusColumn('isActive'),
                 {
                     headerName: 'عملیات',
                     colId: 'actions',
@@ -100,84 +183,266 @@
                     pinned: 'left',
                     cellRenderer: function (params) {
                         if (!params.data) return '';
-                        const div = document.createElement('div');
-                        div.className = 'action-buttons';
-                        const d = params.data;
-
-                        // ✏ ویرایش
-                        const editBtn = document.createElement('a');
-                        editBtn.href = `/Inventory/Products/Edit/${d.id}`;
-                        editBtn.className = 'btn btn-sm btn-outline-primary action-icon-btn';
-                        editBtn.title = 'ویرایش';
-                        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
-                        div.appendChild(editBtn);
-
-                        // 🗑 حذف
-                        const deleteBtn = document.createElement('a');
-                        deleteBtn.href = 'javascript:void(0)';
-                        deleteBtn.className = 'btn btn-sm btn-outline-danger action-icon-btn delete-btn';
-                        deleteBtn.dataset.id = d.id;
-                        deleteBtn.dataset.title = d.name || '';
-                        deleteBtn.dataset.code = d.code || '';
-                        deleteBtn.dataset.price = d.salePrice || 0;
-                        deleteBtn.title = 'حذف';
-                        deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                        div.appendChild(deleteBtn);
-
-                        return div;
+                        return '<div class="action-buttons">' + buildActionButtons(params.data) + '</div>';
                     }
                 }
             ];
 
             // ============================================
-            // ۲. ساخت Grid
+            // ۲. دکمه‌های عملیات (مشترک دسکتاپ/موبایل)
             // ============================================
-            productsGridApi = AgGridHelper.create(
-                'productsGrid',
-                columnDefs,
-                '/Inventory/Products/GetData',
-                'txtSearch',
-                'lblCount'
-            );
+            function buildActionButtons(d) {
+                var html = '';
 
-        });
+                html += '<a href="/Inventory/Products/Edit/' + d.id + '" ' +
+                        'class="btn btn-sm btn-outline-primary action-icon-btn" title="ویرایش">' +
+                        '<i class="fa-solid fa-pen-to-square"></i></a>';
 
-        // ============================================
-        // ۳. رویداد حذف
-        // ============================================
-        $(document).on('click', '.delete-btn', function () {
-            const $btn = $(this);
-            const id = $btn.data('id');
-            const title = $btn.data('title');
-            const code = $btn.data('code');
-            const price = $btn.data('price');
+                html += '<a href="javascript:void(0)" ' +
+                        'class="btn btn-sm btn-outline-danger action-icon-btn delete-btn" ' +
+                        'data-id="' + d.id + '" ' +
+                        'data-title="' + escapeAttr(d.name) + '" ' +
+                        'data-code="' + escapeAttr(d.code) + '" ' +
+                        'data-price="' + (d.salePrice || 0) + '" ' +
+                        'title="حذف">' +
+                        '<i class="fa-solid fa-trash"></i></a>';
 
-            // 🆕 ساخت items
-            const items = [];
-            if (title) items.push({ label: 'نام', value: title });
-            if (code) items.push({ label: 'کد', value: code });
-            if (price) items.push({ label: 'قیمت فروش', value: Number(price).toLocaleString('en-US') + ' ریال' });
+                return html;
+            }
 
-            // 🆕 نمایش Modal
-            ModalHelper.confirmDelete({
-                url: '/Inventory/Products/Delete',
-                data: {
-                    id: id,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                title: 'حذف کالا: ' + title,
-                message: 'آیا از حذف این کالا مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
-                items: items,
-                onSuccess: function () {
-                    // 🆕 رفرش Grid
-                    if (productsGridApi) {
-                        const ds = productsGridApi.getGridOption('datasource');
-                        productsGridApi.setGridOption('datasource', ds);
-                    } else {
-                        location.reload();
+            function escapeAttr(s) {
+                return (s == null ? '' : String(s))
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            // ============================================
+            // ۳. ساخت Grid (دسکتاپ)
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'داده‌ای برای نمایش نیست',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
                     }
+                };
+
+                var gridDiv = document.getElementById('productsGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+                loadData();
+            }
+
+            // ============================================
+            // ۴. بارگذاری داده
+            // ============================================
+            function loadData() {
+                var request = {
+                    startRow: 0,
+                    endRow: 10000,
+                    search: ($('#txtSearch').val() || '').trim(),
+                    sortBy: null,
+                    sortDir: null
+                };
+
+                if (gridApi) {
+                    try {
+                        var state = gridApi.getColumnState() || [];
+                        var sorted = state.filter(function (c) { return c.sort; });
+                        if (sorted.length) {
+                            request.sortBy = sorted[0].colId;
+                            request.sortDir = sorted[0].sort;
+                        }
+                    } catch (e) { /* ignore */ }
                 }
+
+                $.ajax({
+                    url: '/Inventory/Products/GetData',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(request),
+                    success: function (result) {
+                        var rows = [];
+                        var total = 0;
+                        if (Array.isArray(result)) {
+                            rows = result;
+                            total = result.length;
+                        } else if (result && Array.isArray(result.rows)) {
+                            rows = result.rows;
+                            total = result.lastRow || rows.length;
+                        } else if (result && Array.isArray(result.data)) {
+                            rows = result.data;
+                            total = result.total || rows.length;
+                        }
+
+                        allRows = rows;
+
+                        if (gridApi) {
+                            gridApi.setGridOption('rowData', allRows);
+                            setTimeout(function () {
+                                gridApi.refreshCells({ columns: ['#'], force: true });
+                            }, 50);
+                        }
+
+                        $('#lblCount').text('تعداد: ' + toPersianDigits(total));
+
+                        if (isMobile()) {
+                            renderMobileList(allRows);
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('GetData error:', xhr.status, xhr.responseText);
+                        $('#lblCount').text('خطا در بارگذاری (کد ' + xhr.status + ')');
+                    }
+                });
+            }
+
+            // ============================================
+            // ۵. جستجو
+            // ============================================
+            var searchTimer = null;
+            $('#txtSearch').on('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    loadData();
+                }, 300);
             });
+
+            // ============================================
+            // ۶. موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileProducts');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>داده‌ای برای نمایش نیست</div>';
+                    return;
+                }
+
+                rows.forEach(function (d, index) {
+                    var priceHtml = '';
+                    if (d.salePrice != null) {
+                        var n = Number(d.salePrice);
+                        var formatted = isNaN(n) ? d.salePrice : n.toLocaleString('en-US');
+                        priceHtml = '<div class="price">قیمت فروش: ' + toPersianDigits(formatted) + ' ریال</div>';
+                    }
+
+                    html += '<div class="product-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="name">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-cube text-muted ml-1"></i>' +
+                                (d.name || '') +
+                            '</div>' +
+                            (d.isActive
+                                ? '<span class="badge badge-success">فعال</span>'
+                                : '<span class="badge badge-danger">غیرفعال</span>') +
+                        '</div>' +
+                        (d.code ? '<div class="row-line">کد: <span dir="ltr">' + d.code + '</span></div>' : '') +
+                        (d.categoryName ? '<div class="row-line">دسته‌بندی: ' + d.categoryName + '</div>' : '') +
+                        (d.unitName ? '<div class="row-line">واحد: ' + d.unitName + '</div>' : '') +
+                        priceHtml +
+                        '<div class="actions">' + buildActionButtons(d) + '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // ۷. ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ۸. سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('productsGrid');
+                var mobileDiv = document.getElementById('mobileProducts');
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    if (!allRows.length) loadData();
+                    else renderMobileList(allRows);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // ۹. حذف با Modal
+            // ============================================
+            $(document).on('click', '.delete-btn', function () {
+                var $btn = $(this);
+                var id = $btn.data('id');
+                var title = $btn.data('title');
+                var code = $btn.data('code');
+                var price = $btn.data('price');
+
+                var items = [];
+                if (title) items.push({ label: 'نام', value: title });
+                if (code) items.push({ label: 'کد', value: code });
+                if (price) {
+                    var n = Number(price);
+                    items.push({ label: 'قیمت فروش', value: (isNaN(n) ? price : n.toLocaleString('en-US')) + ' ریال' });
+                }
+
+                ModalHelper.confirmDelete({
+                    url: '/Inventory/Products/Delete',
+                    data: {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    title: 'حذف کالا: ' + title,
+                    message: 'آیا از حذف این کالا مطمئن هستید؟ این عملیات قابل بازگشت نیست.',
+                    items: items,
+                    onSuccess: function () {
+                        loadData();
+                    }
+                });
+            });
+
+            // ============================================
+            // ۱۰. شروع
+            // ============================================
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+
         });
     </script>
 }

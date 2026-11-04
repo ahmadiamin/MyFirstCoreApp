@@ -4,6 +4,11 @@ public sealed record SystemSmsSettingsSummary(
     bool ApiKeyConfigured,
     string LineNumber,
     bool RegistrationSmsEnabled,
-    string? RegistrationSmsPatternCode);
+    string? RegistrationSmsPatternCode,
+    bool PasswordRecoverySmsEnabled,
+    string? PasswordRecoverySmsPatternCode);
 
-public sealed record SystemSmsSendResult(bool IsAccepted, string? RequestId, string Message);
+public sealed record SystemSmsSendResult(
+    bool IsAccepted,
+    string? RequestId,
+    string Message);

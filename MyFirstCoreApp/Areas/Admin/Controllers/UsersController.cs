@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Domain.Entities.Identity;
 using MyFirstCoreApp.Models.ViewModels;
 using MyFirstCoreApp.Services;
@@ -17,14 +18,17 @@ namespace MyFirstCoreApp.Areas.Admin.Controllers
         private readonly IUserService _userService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailSender _emailSender;
+        private readonly IPasswordResetOtpService _passwordResetOtpService;
         public UsersController(
             IUserService userService,
             UserManager<ApplicationUser> userManager,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            IPasswordResetOtpService passwordResetOtpService)
         {
             _userService = userService;
             _userManager = userManager;
             _emailSender = emailSender;
+            _passwordResetOtpService = passwordResetOtpService;
         }
 
         [Authorize(Policy = "User.View")]
@@ -443,6 +447,56 @@ namespace MyFirstCoreApp.Areas.Admin.Controllers
             {
                 TempData["ErrorMessage"] =
                     $"خطا در ارسال ایمیل: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "User.Edit")]
+        public async Task<IActionResult> SendPasswordRecoveryCode(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return NotFound();
+
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "کاربر پیدا نشد.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!user.IsActive)
+            {
+                TempData["ErrorMessage"] =
+                    "برای کاربر غیرفعال امکان ارسال کد بازیابی وجود ندارد.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(user.PhoneNumber) ||
+                !user.PhoneNumberConfirmed)
+            {
+                TempData["ErrorMessage"] =
+                    "شماره موبایل کاربر ثبت یا تأیید نشده است.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var result = await _passwordResetOtpService.RequestCodeAsync(
+                user.PhoneNumber);
+
+            if (result.IsAccepted)
+            {
+                TempData["SuccessMessage"] =
+                    $"درخواست ارسال کد بازیابی برای {user.FullName} ثبت شد.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] =
+                    "ارسال کد بازیابی انجام نشد. ممکن است محدودیت ارسال فعال باشد یا تنظیمات پیامک کامل نباشد.";
             }
 
             return RedirectToAction(nameof(Index));

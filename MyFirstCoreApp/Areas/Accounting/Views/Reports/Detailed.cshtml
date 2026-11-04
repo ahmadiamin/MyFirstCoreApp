@@ -3,62 +3,131 @@
     ViewData["Title"] = "گزارش تفصیلی";
 }
 
+<style>
+    #detailedGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #detailedGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .ledger-summary {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #fafafa;
+        margin-bottom: 10px;
+    }
+
+    .ledger-summary .label {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 2px;
+    }
+
+    .ledger-summary .value {
+        font-weight: 700;
+        font-size: 15px;
+    }
+
+    .ledger-summary.opening .value { color: #17a2b8; }
+    .ledger-summary.closing .value { color: #28a745; }
+
+    .ledger-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .ledger-card .title {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .ledger-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .ledger-card .money {
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .ledger-card .debit { color: #28a745; font-weight: 600; }
+    .ledger-card .credit { color: #dc3545; font-weight: 600; }
+    .ledger-card .balance { color: #0d6efd; font-weight: 600; }
+
+    .ledger-footer-summary {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px;
+        background: #f1f8ff;
+        margin-top: 8px;
+    }
+</style>
+
 <div class="card card-outline card-primary">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fa-solid fa-list-ul"></i>
-            گزارش تفصیلی
+            <i class="fa-solid fa-list-ul"></i> گزارش تفصیلی
         </h3>
     </div>
     <div class="card-body">
+
+        <!-- ==========================================
+             فرم فیلتر
+             ========================================== -->
         <form asp-action="Detailed" method="get">
             <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label asp-for="AccountId">حساب</label>
-                        <select asp-for="AccountId" class="form-control select2" asp-items="Model.AccountOptions">
-                            <option value="">-- انتخاب حساب --</option>
-                        </select>
+                <div class="col-md-3 col-12 mb-2">
+                    <label asp-for="AccountId">حساب</label>
+                    <select asp-for="AccountId" class="form-control select2"
+                            asp-items="Model.AccountOptions">
+                        <option value="">-- انتخاب حساب --</option>
+                    </select>
+                </div>
+                <div class="col-md-2 col-12 mb-2">
+                    <label asp-for="ContactId">طرف حساب</label>
+                    <select asp-for="ContactId" class="form-control select2"
+                            asp-items="Model.ContactOptions">
+                        <option value="">-- همه --</option>
+                    </select>
+                </div>
+                <div class="col-md-2 col-6 mb-2">
+                    <label asp-for="FromDate">از تاریخ</label>
+                    <input asp-for="FromDate" class="form-control datepicker"
+                           autocomplete="off" dir="ltr" />
+                </div>
+                <div class="col-md-2 col-6 mb-2">
+                    <label asp-for="ToDate">تا تاریخ</label>
+                    <input asp-for="ToDate" class="form-control datepicker"
+                           autocomplete="off" dir="ltr" />
+                </div>
+                <div class="col-md-2 col-12 mb-2 d-flex align-items-end">
+                    <div class="custom-control custom-checkbox">
+                        <input asp-for="OnlyPosted" class="custom-control-input" id="OnlyPosted" />
+                        <label asp-for="OnlyPosted" class="custom-control-label" for="OnlyPosted">
+                            فقط قطعی
+                        </label>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label asp-for="ContactId">طرف حساب</label>
-                        <select asp-for="ContactId" class="form-control select2" asp-items="Model.ContactOptions">
-                            <option value="">-- همه --</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label asp-for="FromDate">از تاریخ</label>
-                        <input asp-for="FromDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label asp-for="ToDate">تا تاریخ</label>
-                        <input asp-for="ToDate" class="form-control datepicker" autocomplete="off" dir="ltr" />
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label>&nbsp;</label>
-                        <div class="custom-control custom-checkbox mt-2">
-                            <input asp-for="OnlyPosted" class="custom-control-input" id="OnlyPosted" />
-                            <label asp-for="OnlyPosted" class="custom-control-label" for="OnlyPosted">
-                                فقط قطعی
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-1">
-                    <div class="form-group">
-                        <label>&nbsp;</label>
-                        <button type="submit" class="btn btn-primary btn-block">
-                            <i class="fa-solid fa-search"></i>
-                        </button>
-                    </div>
+                <div class="col-md-1 col-12 mb-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-search"></i>
+                    </button>
                 </div>
             </div>
         </form>
@@ -78,111 +147,51 @@
                 }
                 @if (!string.IsNullOrEmpty(Model.AccountTypeName))
                 {
-                    <span class="badge badge-info">@Model.AccountTypeName</span>
+                    <span class="badge badge-info ml-1">@Model.AccountTypeName</span>
                 }
             </h3>
         </div>
         <div class="card-body">
 
-            <div class="alert alert-info">
-                <strong>مانده اول دوره:</strong>
-                <span class="persian-number-comma">@Model.OpeningBalance.ToString("N0")</span>
+            <!-- خلاصه مانده اول/آخر دوره -->
+            <div class="row mb-2">
+                <div class="col-md-6 col-12 mb-2">
+                    <div class="ledger-summary opening">
+                        <div class="label">مانده اول دوره</div>
+                        <div class="value persian-number-comma">
+                            @Model.OpeningBalance.ToString("N0") <small class="text-muted">ریال</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-12 mb-2">
+                    <div class="ledger-summary closing">
+                        <div class="label">مانده آخر دوره</div>
+                        <div class="value persian-number-comma">
+                            @Model.ClosingBalance.ToString("N0") <small class="text-muted">ریال</small>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             @if (Model.Lines.Any())
             {
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">#</th>
-                                <th style="width: 90px;">شماره سند</th>
-                                <th style="width: 100px;">تاریخ</th>
-                                <th>شرح</th>
-                                <th style="width: 150px;">طرف حساب</th>
-                                <th style="width: 130px;">مرجع</th>
-                                <th style="width: 130px;">بدهکار</th>
-                                <th style="width: 130px;">بستانکار</th>
-                                <th style="width: 130px;">مانده</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @{
-                                var i = 1;
-                            }
-                            @foreach (var line in Model.Lines)
-                            {
-                                <tr>
-                                    <td class="persian-number">@i</td>
-                                    <td>
-                                        <a asp-controller="Transactions" asp-action="Details"
-                                           asp-route-id="@line.TransactionId">
-                                            @line.TransactionNumber
-                                        </a>
-                                    </td>
-                                    <td>@line.DateShamsi</td>
-                                    <td>@line.Description</td>
-                                    <td>@line.ContactName</td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(line.Reference))
-                                        {
-                                            @if (line.ReferenceType == "Invoice" && line.ReferenceId.HasValue)
-                                            {
-                                                <a asp-area="Invoicing" asp-controller="Invoices" asp-action="Details"
-                                                   asp-route-id="@line.ReferenceId" title="مشاهده فاکتور">
-                                                    <i class="fa-solid fa-file-invoice"></i> @line.Reference
-                                                </a>
-                                            }
-                                            else if (line.ReferenceType == "Cheque" && line.ReferenceId.HasValue)
-                                            {
-                                                <a asp-area="Banking" asp-controller="Cheques" asp-action="Details"
-                                                   asp-route-id="@line.ReferenceId" title="مشاهده چک">
-                                                    <i class="fa-solid fa-money-check"></i> @line.Reference
-                                                </a>
-                                            }
-                                            else if (line.ReferenceType == "Payment" && line.ReferenceId.HasValue)
-                                            {
-                                                <a asp-area="Banking" asp-controller="Payments" asp-action="Details"
-                                                   asp-route-id="@line.ReferenceId" title="مشاهده پرداخت">
-                                                    <i class="fa-solid fa-money-bill-transfer"></i> @line.Reference
-                                                </a>
-                                            }
-                                            else
-                                            {
-                                                @line.Reference
-                                            }
-                                        }
-                                    </td>
-                                    <td class="persian-number-comma">@(line.Debit > 0 ? line.Debit.ToString("N0") : "")</td>
-                                    <td class="persian-number-comma">@(line.Credit > 0 ? line.Credit.ToString("N0") : "")</td>
-                                    <td class="persian-number-comma">@line.RunningBalance.ToString("N0")</td>
-                                </tr>
-                                i++;
-                            }
-                        </tbody>
-                        <tfoot>
-                            <tr class="bg-light">
-                                <th colspan="6" class="text-left">جمع:</th>
-                                <th class="persian-number-comma">@Model.TotalDebit.ToString("N0")</th>
-                                <th class="persian-number-comma">@Model.TotalCredit.ToString("N0")</th>
-                                <th class="persian-number-comma">@Model.ClosingBalance.ToString("N0")</th>
-                            </tr>
-                        </tfoot>
-                    </table>
+                <!-- دسکتاپ: AG Grid -->
+                <div id="detailedGrid" class="ag-theme-alpine d-none d-md-block"
+                     style="height: 550px; width: 100%;">
                 </div>
+
+                <!-- موبایل: کارت‌ها -->
+                <div id="mobileDetailed" class="d-md-none"></div>
+
+                <!-- جمع کل موبایل -->
+                <div id="mobileDetailedFooter" class="d-md-none"></div>
             }
             else
             {
                 <div class="alert alert-warning">
-                    <i class="fa-solid fa-info-circle"></i>
-                    تراکنشی در این بازه یافت نشد.
+                    <i class="fa-solid fa-info-circle"></i> تراکنشی در این بازه یافت نشد.
                 </div>
             }
-
-            <div class="alert alert-success">
-                <strong>مانده آخر دوره:</strong>
-                <span class="persian-number-comma">@Model.ClosingBalance.ToString("N0")</span>
-            </div>
         </div>
     </div>
 }
@@ -190,7 +199,10 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // 🆕 Select2
+
+            // ============================================
+            // select2 + datepicker
+            // ============================================
             $('.select2').select2({
                 dir: 'rtl',
                 placeholder: '-- انتخاب --',
@@ -199,23 +211,296 @@
                 language: 'fa'
             });
 
-            // 🆕 DatePicker
             $('.datepicker').each(function () {
                 var $input = $(this);
                 var val = $input.val();
 
                 $input.persianDatepicker({
                     format: 'YYYY/MM/DD',
-                    initialValue: !!val,           // 🆕 اگه مقدار داره، true
-                    initialValueType: 'persian',    // 🆕 مقدار شمسیه
+                    initialValue: !!val,
+                    initialValueType: 'persian',
                     autoClose: true,
                     observer: true,
-                    calendar: {
-                        persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' }
-                    },
+                    calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
                     toolbox: { calendarSwitch: { enabled: false } }
                 });
             });
+
+            // ============================================
+            // داده‌ها
+            // ============================================
+            var detailedData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Lines.Select(l => new {
+                    transactionId = l.TransactionId,
+                    transactionNumber = l.TransactionNumber,
+                    dateShamsi = l.DateShamsi,
+                    description = l.Description,
+                    contactName = l.ContactName,
+                    reference = l.Reference,
+                    referenceType = l.ReferenceType,
+                    referenceId = l.ReferenceId,
+                    debit = l.Debit,
+                    credit = l.Credit,
+                    runningBalance = l.RunningBalance
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            var totalDebit = @Model.TotalDebit.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var totalCredit = @Model.TotalCredit.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var closingBalance = @Model.ClosingBalance.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            var showGrid = @(Model.AccountId.HasValue && Model.Lines.Any() ? "true" : "false");
+
+            var gridApi = null;
+
+            // ============================================
+            // ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function formatMoney(n) {
+                if (n == null) return '';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }));
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ساخت HTML ارجاع (Invoice/Cheque/Payment/سایر)
+            function buildReferenceHtml(refType, refId, refText) {
+                if (!refText) return '';
+                if (refType === 'Invoice' && refId != null) {
+                    return '<a href="/Invoicing/Invoices/Details/' + refId + '" title="مشاهده فاکتور">' +
+                           '<i class="fa-solid fa-file-invoice"></i> ' + refText + '</a>';
+                }
+                if (refType === 'Cheque' && refId != null) {
+                    return '<a href="/Banking/Cheques/Details/' + refId + '" title="مشاهده چک">' +
+                           '<i class="fa-solid fa-money-check"></i> ' + refText + '</a>';
+                }
+                if (refType === 'Payment' && refId != null) {
+                    return '<a href="/Banking/Payments/Details/' + refId + '" title="مشاهده پرداخت">' +
+                           '<i class="fa-solid fa-money-bill-transfer"></i> ' + refText + '</a>';
+                }
+                return refText;
+            }
+
+            // ============================================
+            // ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'transactionNumber',
+                    headerName: 'شماره سند',
+                    width: 100,
+                    cellStyle: { textAlign: 'center', direction: 'ltr' },
+                    cellRenderer: function (p) {
+                        if (!p.value) return '';
+                        return '<a href="/Accounting/Transactions/Details/' + p.data.transactionId + '">' +
+                               toPersianDigits(p.value) + '</a>';
+                    }
+                },
+                {
+                    field: 'dateShamsi',
+                    headerName: 'تاریخ',
+                    width: 110,
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    field: 'description',
+                    headerName: 'شرح',
+                    minWidth: 200,
+                    flex: 2,
+                    tooltipValueGetter: function (p) { return p.value; }
+                },
+                { field: 'contactName', headerName: 'طرف حساب', width: 150 },
+                {
+                    field: 'reference',
+                    headerName: 'مرجع',
+                    width: 160,
+                    cellRenderer: function (p) {
+                        return buildReferenceHtml(p.data.referenceType, p.data.referenceId, p.value);
+                    }
+                },
+                {
+                    field: 'debit',
+                    headerName: 'بدهکار',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr', color: '#28a745' },
+                    valueFormatter: function (p) {
+                        return p.value && p.value > 0 ? formatMoney(p.value) : '';
+                    }
+                },
+                {
+                    field: 'credit',
+                    headerName: 'بستانکار',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr', color: '#dc3545' },
+                    valueFormatter: function (p) {
+                        return p.value && p.value > 0 ? formatMoney(p.value) : '';
+                    }
+                },
+                {
+                    field: 'runningBalance',
+                    headerName: 'مانده',
+                    width: 130,
+                    cellStyle: { textAlign: 'left', direction: 'ltr', fontWeight: 'bold' },
+                    valueFormatter: function (p) {
+                        return formatMoney(p.value);
+                    }
+                }
+            ];
+
+            // ============================================
+            // ساخت Grid
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: detailedData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'تراکنشی در این بازه یافت نشد.',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('detailedGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileDetailed');
+                var footerContainer = document.getElementById('mobileDetailedFooter');
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>' +
+                        'تراکنشی در این بازه یافت نشد.</div>';
+                    footerContainer.innerHTML = '';
+                    return;
+                }
+
+                var html = '';
+                rows.forEach(function (r, index) {
+                    var debitHtml = (r.debit && r.debit > 0)
+                        ? '<div class="money debit" dir="ltr">بدهکار: ' + formatMoney(r.debit) + '</div>'
+                        : '';
+                    var creditHtml = (r.credit && r.credit > 0)
+                        ? '<div class="money credit" dir="ltr">بستانکار: ' + formatMoney(r.credit) + '</div>'
+                        : '';
+                    var refHtml = r.reference
+                        ? '<div class="row-line">مرجع: ' + buildReferenceHtml(r.referenceType, r.referenceId, r.reference) + '</div>'
+                        : '';
+
+                    html += '<div class="ledger-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="title">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-file-text text-muted ml-1"></i>' +
+                                'سند <a href="/Accounting/Transactions/Details/' + r.transactionId + '">' +
+                                toPersianDigits(r.transactionNumber || '') + '</a>' +
+                            '</div>' +
+                            (r.dateShamsi
+                                ? '<span class="badge badge-info" dir="ltr">' + r.dateShamsi + '</span>'
+                                : '') +
+                        '</div>' +
+                        (r.description ? '<div class="row-line">' + r.description + '</div>' : '') +
+                        (r.contactName ? '<div class="row-line">طرف حساب: ' + r.contactName + '</div>' : '') +
+                        refHtml +
+                        debitHtml +
+                        creditHtml +
+                        '<div class="money balance" dir="ltr">مانده: ' + formatMoney(r.runningBalance) + '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+
+                footerContainer.innerHTML = '<div class="ledger-footer-summary">' +
+                    '<div class="d-flex justify-content-between mb-1">' +
+                        '<strong>جمع دوره</strong>' +
+                    '</div>' +
+                    '<div class="row-line">جمع بدهکار: <span class="debit" dir="ltr">' + formatMoney(totalDebit) + '</span></div>' +
+                    '<div class="row-line">جمع بستانکار: <span class="credit" dir="ltr">' + formatMoney(totalCredit) + '</span></div>' +
+                    '<div class="row-line">مانده آخر دوره: <span class="balance" dir="ltr">' + formatMoney(closingBalance) + '</span></div>' +
+                '</div>';
+            }
+
+            // ============================================
+            // سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('detailedGrid');
+                var mobileDiv = document.getElementById('mobileDetailed');
+                var footerDiv = document.getElementById('mobileDetailedFooter');
+
+                if (!gridDiv || !mobileDiv) return;
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    if (footerDiv) footerDiv.classList.remove('d-md-none');
+                    renderMobileList(detailedData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (footerDiv) footerDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // شروع
+            // ============================================
+            if (showGrid) {
+                applyLayout();
+                var mql = window.matchMedia('(max-width: 767.98px)');
+                mql.addEventListener('change', applyLayout);
+            }
+
         });
     </script>
 }

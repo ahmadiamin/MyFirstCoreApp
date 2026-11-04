@@ -18,4 +18,8 @@ public sealed class SystemSmsSettingsViewModel
 
     [StringLength(100)]
     public string? RegistrationSmsPatternCode { get; set; }
+
+    public bool PasswordRecoverySmsEnabled { get; set; }
+
+    public string? PasswordRecoverySmsPatternCode { get; set; }
 }

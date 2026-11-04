@@ -3,6 +3,65 @@
     ViewData["Title"] = "سال‌های مالی";
 }
 
+<style>
+    #fiscalYearsGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        #fiscalYearsGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .action-buttons .btn {
+        padding: 3px 6px;
+        line-height: 1;
+    }
+
+    .action-buttons form {
+        display: inline-block;
+        margin: 0;
+    }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .fy-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .fy-card .title {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .fy-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        word-break: break-all;
+    }
+
+    .fy-card .actions {
+        margin-top: 8px;
+    }
+</style>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
@@ -31,96 +90,280 @@
             </a>
         </div>
     </div>
+
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>نام</th>
-                    <th>شروع</th>
-                    <th>پایان</th>
-                    <th>تعداد سند</th>
-                    <th>وضعیت</th>
-                    <th style="width: 260px">عملیات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var year in Model)
-                {
-                    <tr>
-                        <td>
-                            @year.Name
-                            @if (year.IsCurrent)
-                            {
-                                <span class="badge badge-info mr-1">جاری</span>
-                            }
-                        </td>
-                        <td dir="ltr" class="text-right">@year.StartDate</td>
-                        <td dir="ltr" class="text-right">@year.EndDate</td>
-                        <td>@year.TransactionCount</td>
-                        <td>
-                            @if (year.IsClosed)
-                            {
-                                <span class="badge badge-secondary" title="بسته‌شده در @year.ClosedAt">
-                                    <i class="fa fa-lock"></i> بسته
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge badge-success">
-                                    <i class="fa fa-unlock"></i> باز
-                                </span>
-                            }
-                        </td>
-                        <td>
-                            @if (!year.IsClosed)
-                            {
-                                <a asp-action="Edit" asp-route-id="@year.Id" class="btn btn-sm btn-outline-primary">
-                                    <i class="fa fa-edit"></i> ویرایش
-                                </a>
+        <!-- دسکتاپ: AG Grid -->
+        <div id="fiscalYearsGrid" class="ag-theme-alpine d-none d-md-block"
+             style="height: 500px; width: 100%;">
+        </div>
 
-                                <form asp-action="Close" asp-route-id="@year.Id" method="post" class="d-inline"
-                                      onsubmit="return confirm('بعد از بستن، ثبت یا تغییر سند در این سال ممکن نیست. ادامه می‌دهید؟');">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">
-                                        <i class="fa fa-lock"></i> بستن
-                                    </button>
-                                </form>
-
-                                @if (year.TransactionCount == 0)
-                                {
-                                    <form asp-action="Delete" asp-route-id="@year.Id" method="post" class="d-inline"
-                                          onsubmit="return confirm('این سال مالی حذف شود؟');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="fa fa-trash"></i> حذف
-                                        </button>
-                                    </form>
-                                }
-                            }
-                            else
-                            {
-                                <form asp-action="Reopen" asp-route-id="@year.Id" method="post" class="d-inline"
-                                      onsubmit="return confirm('این سال مالی دوباره باز شود؟');">
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                        <i class="fa fa-unlock"></i> باز کردن
-                                    </button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="6" class="text-center text-muted p-4">
-                            هنوز سال مالی تعریف نشده است. با ثبت اولین سند، سال مالی همان تاریخ خودکار ساخته می‌شود،
-                            یا همین حالا یکی تعریف کنید.
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <!-- موبایل: کارت‌ها -->
+        <div id="mobileFiscalYears" class="d-md-none p-2"></div>
     </div>
+
     <div class="card-footer text-muted">
         <i class="fa fa-info-circle"></i>
         هر سند در سالی قرار می‌گیرد که تاریخ سند در بازه‌ی آن است. در سال بسته ثبت، ویرایش، قطعی‌کردن و حذف سند ممکن نیست.
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            var gridApi = null;
+
+            // ============================================
+            // ۱. داده‌ها از سرور
+            // ============================================
+            var yearsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Select(y => new {
+                    id = y.Id,
+                    name = y.Name,
+                    startDate = y.StartDate,
+                    endDate = y.EndDate,
+                    transactionCount = y.TransactionCount,
+                    isCurrent = y.IsCurrent,
+                    isClosed = y.IsClosed,
+                    closedAt = y.ClosedAt
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            // ============================================
+            // ۲. توکن CSRF (برای فرم‌های داخل Grid)
+            // ============================================
+            function getCsrfToken() {
+                // توکن از فرم مخفی که در Layout/صفحه هست
+                var input = document.querySelector('input[name="__RequestVerificationToken"]');
+                return input ? input.value : '';
+            }
+
+            // ============================================
+            // ۳. ستون‌ها
+            // ============================================
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: '#',
+                    width: 60,
+                    sortable: false,
+                    filter: false,
+                    resizable: false,
+                    valueGetter: function (params) {
+                        var page = gridApi ? gridApi.paginationGetCurrentPage() : 0;
+                        var size = gridApi ? gridApi.paginationGetPageSize() : 20;
+                        return toPersianDigits(page * size + params.node.rowIndex + 1);
+                    },
+                    cellStyle: { textAlign: 'center', direction: 'ltr' }
+                },
+                {
+                    headerName: 'نام',
+                    field: 'name',
+                    flex: 2,
+                    minWidth: 150,
+                    cellRenderer: function (p) {
+                        var html = p.value || '';
+                        if (p.data.isCurrent) {
+                            html += ' <span class="badge badge-info">جاری</span>';
+                        }
+                        return html;
+                    }
+                },
+                { field: 'startDate', headerName: 'شروع', width: 120,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                { field: 'endDate', headerName: 'پایان', width: 120,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                {
+                    field: 'transactionCount',
+                    headerName: 'تعداد سند',
+                    width: 110,
+                    cellStyle: { textAlign: 'center' },
+                    valueFormatter: function (p) {
+                        return p.value != null ? toPersianDigits(p.value) : '';
+                    }
+                },
+                {
+                    headerName: 'وضعیت',
+                    field: 'isClosed',
+                    width: 110,
+                    cellRenderer: function (p) {
+                        if (p.value) {
+                            var title = p.data.closedAt ? ' title="بسته‌شده در ' + p.data.closedAt + '"' : '';
+                            return '<span class="badge badge-secondary"' + title + '>' +
+                                   '<i class="fa fa-lock"></i> بسته</span>';
+                        }
+                        return '<span class="badge badge-success">' +
+                               '<i class="fa fa-unlock"></i> باز</span>';
+                    }
+                },
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 260,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (params) {
+                        if (!params.data) return '';
+                        return '<div class="action-buttons">' + buildActionButtons(params.data) + '</div>';
+                    }
+                }
+            ];
+
+            // ============================================
+            // ۴. دکمه‌های عملیات (مشترک دسکتاپ/موبایل)
+            // ============================================
+            function buildActionButtons(y) {
+                var html = '';
+                var token = getCsrfToken();
+
+                if (!y.isClosed) {
+                    // ویرایش
+                    html += '<a href="/Accounting/FiscalYears/Edit/' + y.id + '" ' +
+                            'class="btn btn-sm btn-outline-primary" title="ویرایش">' +
+                            '<i class="fa fa-edit"></i></a>';
+
+                    // بستن
+                    html += '<form action="/Accounting/FiscalYears/Close/' + y.id + '" method="post" ' +
+                            'onsubmit="return confirm(\'بعد از بستن، ثبت یا تغییر سند در این سال ممکن نیست. ادامه می‌دهید؟\');">' +
+                            '<input type="hidden" name="__RequestVerificationToken" value="' + token + '">' +
+                            '<button type="submit" class="btn btn-sm btn-outline-warning" title="بستن">' +
+                            '<i class="fa fa-lock"></i></button></form>';
+
+                    // حذف (فقط اگر سند ندارد)
+                    if (y.transactionCount === 0) {
+                        html += '<form action="/Accounting/FiscalYears/Delete/' + y.id + '" method="post" ' +
+                                'onsubmit="return confirm(\'این سال مالی حذف شود؟\');">' +
+                                '<input type="hidden" name="__RequestVerificationToken" value="' + token + '">' +
+                                '<button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">' +
+                                '<i class="fa fa-trash"></i></button></form>';
+                    }
+                } else {
+                    // باز کردن
+                    html += '<form action="/Accounting/FiscalYears/Reopen/' + y.id + '" method="post" ' +
+                            'onsubmit="return confirm(\'این سال مالی دوباره باز شود؟\');">' +
+                            '<input type="hidden" name="__RequestVerificationToken" value="' + token + '">' +
+                            '<button type="submit" class="btn btn-sm btn-outline-secondary" title="باز کردن">' +
+                            '<i class="fa fa-unlock"></i></button></form>';
+                }
+
+                return html;
+            }
+
+            // ============================================
+            // ۵. ساخت Grid (دسکتاپ)
+            // ============================================
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: yearsData,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از', next: 'بعدی', last: 'آخر',
+                        first: 'اول', previous: 'قبلی', loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'داده‌ای برای نمایش نیست',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    },
+                    onPaginationChanged: function () {
+                        if (gridApi) gridApi.refreshCells({ columns: ['#'], force: true });
+                    }
+                };
+
+                var gridDiv = document.getElementById('fiscalYearsGrid');
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+            }
+
+            // ============================================
+            // ۶. موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileFiscalYears');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        'هنوز سال مالی تعریف نشده است. با ثبت اولین سند، سال مالی همان تاریخ خودکار ساخته می‌شود، ' +
+                        'یا همین حالا یکی تعریف کنید.</div>';
+                    return;
+                }
+
+                rows.forEach(function (y, index) {
+                    html += '<div class="fy-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="title">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-calendar text-muted ml-1"></i>' +
+                                (y.name || '') +
+                                (y.isCurrent ? ' <span class="badge badge-info">جاری</span>' : '') +
+                            '</div>' +
+                            (y.isClosed
+                                ? '<span class="badge badge-secondary"><i class="fa fa-lock"></i> بسته</span>'
+                                : '<span class="badge badge-success"><i class="fa fa-unlock"></i> باز</span>') +
+                        '</div>' +
+                        '<div class="row-line">شروع: <span dir="ltr">' + (y.startDate || '') + '</span></div>' +
+                        '<div class="row-line">پایان: <span dir="ltr">' + (y.endDate || '') + '</span></div>' +
+                        '<div class="row-line">تعداد سند: ' + toPersianDigits(y.transactionCount || 0) + '</div>' +
+                        (y.isClosed && y.closedAt
+                            ? '<div class="row-line">بسته‌شده در: ' + y.closedAt + '</div>'
+                            : '') +
+                        '<div class="actions">' + buildActionButtons(y) + '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // ۷. ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            // ============================================
+            // ۸. سوئیچ دسکتاپ/موبایل
+            // ============================================
+            function applyLayout() {
+                var gridDiv = document.getElementById('fiscalYearsGrid');
+                var mobileDiv = document.getElementById('mobileFiscalYears');
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+                    renderMobileList(yearsData);
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+                    if (!gridApi) buildGrid();
+                }
+            }
+
+            // ============================================
+            // ۹. شروع
+            // ============================================
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', applyLayout);
+
+        });
+    </script>
+}

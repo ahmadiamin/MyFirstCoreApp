@@ -1,145 +1,303 @@
 ﻿@model MyFirstCoreApp.Areas.Banking.ViewModels.Payment.PaymentFormViewModel
 
-<div class="row">
-    <div class="col-md-2">
-        <div class="form-group">
-            <label asp-for="Number"></label>
-            <input asp-for="Number" class="form-control" readonly />
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="form-group">
-            <label asp-for="Date"></label>
-            <input asp-for="Date" class="form-control datepicker" autocomplete="off" dir="ltr" />
-            <span asp-validation-for="Date" class="text-danger"></span>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="form-group">
-            <label asp-for="PaymentType"></label>
-            <select asp-for="PaymentType" class="form-control" id="PaymentType">
-                <option value="1">دریافت از مشتری</option>
-                <option value="2">پرداخت به فروشنده</option>
-            </select>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label asp-for="ContactId"></label>
-            <select asp-for="ContactId" id="ContactId" class="form-control select2" asp-items="Model.ContactOptions">
-                <option value="">-- انتخاب طرف حساب --</option>
-            </select>
-            <span asp-validation-for="ContactId" class="text-danger"></span>
-        </div>
-    </div>
-</div>
+<style>
+    .payment-form-partial .allocations-table {
+        font-size: 13px;
+    }
 
-<div class="row">
-    <div class="col-md-3" id="bankAccountGroup">
-        <div class="form-group">
-            <label asp-for="BankAccountId"></label>
-            <select asp-for="BankAccountId" class="form-control select2" asp-items="Model.BankAccountOptions">
-                <option value="">-- انتخاب حساب --</option>
-            </select>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="form-group">
-            <label asp-for="PaymentMethod"></label>
-            <select asp-for="PaymentMethod" class="form-control select2">
-                <option value="1">نقد</option>
-                <option value="2">انتقال بانکی</option>
-                <option value="3">کارت به کارت</option>
-                <option value="4">چک</option>
-                <option value="5">کارتخوان</option>
-                <option value="6">اینترنت</option>
-                <option value="99">سایر</option>
-            </select>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="form-group">
-            <label asp-for="Amount"></label>
+        .payment-form-partial .allocations-table th,
+        .payment-form-partial .allocations-table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
 
-            <input type="text" id="Amount_Display"
-                   class="form-control ltr persian-number persian-number-comma"
-                   data-target="Amount_Hidden"
-                   value="@Model.Amount" autocomplete="off" />
-
-            <input asp-for="Amount" type="hidden" id="Amount_Hidden" /> 
-
-            <span asp-validation-for="Amount" class="text-danger"></span>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="form-group">
-            <label asp-for="Reference"></label>
-            <input asp-for="Reference" class="form-control" />
-        </div>
-    </div>
-</div>
-<partial name="_ChequePicker" model="Model" />
-<hr />
-<h5><i class="fa-solid fa-list"></i> تخصیص به فاکتورها</h5>
-
-<div class="table-responsive">
-    <table class="table table-bordered table-striped" id="allocationsTable">
-        <thead>
-            <tr>
-                <th style="width: 40px;">#</th>
-                <th>فاکتور</th>
-                <th style="width: 110px;">تاریخ</th>
-                <th style="width: 130px;">مبلغ کل</th>
-                <th style="width: 130px;">باقی‌مانده</th>
-                <th style="width: 160px;">مبلغ تخصیص</th>
-                <th style="width: 160px;">مانده فاکتور پس از تخصیص</th>
-            </tr>
-        </thead>
-        <tbody id="allocationsBody">
-            @for (int i = 0; i < Model.Allocations.Count; i++)
-            {
-                <tr class="allocation-row" data-invoice-id="@Model.Allocations[i].InvoiceId">
-                    <td class="text-center">@(i + 1)</td>
-                    <td>
-                        فاکتور شماره @Model.Allocations[i].InvoiceNumber
-                        <input type="hidden" name="Allocations[@i].InvoiceId" value="@Model.Allocations[i].InvoiceId" />
-                        <input type="hidden" name="Allocations[@i].Id" value="@Model.Allocations[i].Id" />
-                    </td>
-                    <td>@Model.Allocations[i].InvoiceDate</td>
-                    <td class="persian-number-comma">@Model.Allocations[i].InvoiceTotal.ToString("N0")</td>
-                    <td class="persian-number-comma text-warning">@Model.Allocations[i].InvoiceRemaining.ToString("N0")</td>
-                    <td>
-                        <input type="text" name="Allocations[@i].Amount"
-                               class="form-control form-control-sm allocation-amount persian-number persian-number-comma"
-                               data-remaining="@Model.Allocations[i].InvoiceRemaining"
-                               value="@Model.Allocations[i].Amount" />
-                    </td>
-                    <td class="invoice-remaining-after persian-number-comma text-success">@(Model.Allocations[i].InvoiceRemaining - Model.Allocations[i].Amount)</td>
-                </tr>
+            .payment-form-partial .allocations-table td.invoice-cell {
+                white-space: normal;
+                min-width: 150px;
             }
-        </tbody>
-        <tfoot>
-            <tr class="bg-light">
-                <th colspan="6" class="text-left">مبلغ کل پرداخت:</th>
-                <th id="totalAmount" class="persian-number-comma">۰</th>
-            </tr>
-            <tr class="bg-light">
-                <th colspan="6" class="text-left">مجموع تخصیص:</th>
-                <th id="totalAllocated" class="persian-number-comma">۰</th>
-            </tr>
-            <tr class="bg-info">
-                <th colspan="6" class="text-left">مانده مبلغ پرداخت (تخصیص‌نیافته):</th>
-                <th id="remainingAmount" class="persian-number-comma">۰</th>
-            </tr>
-        </tfoot>
-    </table>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="form-group">
-            <label asp-for="Description"></label>
-            <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+    .payment-form-partial .allocation-amount {
+        direction: ltr;
+        text-align: right;
+        min-width: 100px;
+    }
+
+    .payment-form-partial .alloc-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #fff;
+    }
+
+        .payment-form-partial .alloc-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+
+        .payment-form-partial .alloc-card .amount-input {
+            margin-top: 6px;
+        }
+
+        .payment-form-partial .alloc-card .remaining-after {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+    .payment-form-partial .totals-summary {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #fafafa;
+        margin-top: 10px;
+    }
+
+        .payment-form-partial .totals-summary .row-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .payment-form-partial .totals-summary .amount {
+            font-weight: 600;
+            direction: ltr;
+        }
+
+        .payment-form-partial .totals-summary .remaining {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+    @@media (min-width: 768px) {
+        .payment-form-partial .totals-summary {
+            display: none;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .payment-form-partial .desktop-totals {
+            display: none;
+        }
+    }
+</style>
+
+<div class="payment-form-partial">
+
+    <!-- ==========================================
+         اطلاعات اصلی
+         ========================================== -->
+    <div class="row">
+        <div class="col-md-2 col-6">
+            <div class="form-group">
+                <label asp-for="Number"></label>
+                <input asp-for="Number" class="form-control" readonly />
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="form-group">
+                <label asp-for="Date"></label>
+                <input asp-for="Date" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                <span asp-validation-for="Date" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-3 col-12">
+            <div class="form-group">
+                <label asp-for="PaymentType"></label>
+                <select asp-for="PaymentType" class="form-control" id="PaymentType">
+                    <option value="1">دریافت از مشتری</option>
+                    <option value="2">پرداخت به فروشنده</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4 col-12">
+            <div class="form-group">
+                <label asp-for="ContactId"></label>
+                <select asp-for="ContactId" id="ContactId" class="form-control select2"
+                        asp-items="Model.ContactOptions">
+                    <option value="">-- انتخاب طرف حساب --</option>
+                </select>
+                <span asp-validation-for="ContactId" class="text-danger"></span>
+            </div>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-md-3 col-6" id="bankAccountGroup">
+            <div class="form-group">
+                <label asp-for="BankAccountId"></label>
+                <select asp-for="BankAccountId" class="form-control select2"
+                        asp-items="Model.BankAccountOptions">
+                    <option value="">-- انتخاب حساب --</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="form-group">
+                <label asp-for="PaymentMethod"></label>
+                <select asp-for="PaymentMethod" class="form-control select2">
+                    <option value="1">نقد</option>
+                    <option value="2">انتقال بانکی</option>
+                    <option value="3">کارت به کارت</option>
+                    <option value="4">چک</option>
+                    <option value="5">کارتخوان</option>
+                    <option value="6">اینترنت</option>
+                    <option value="99">سایر</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="form-group">
+                <label asp-for="Amount"></label>
+
+                <input type="text" id="Amount_Display"
+                       class="form-control ltr persian-number persian-number-comma"
+                       data-target="Amount_Hidden"
+                       value="@Model.Amount" autocomplete="off" />
+
+                <input asp-for="Amount" type="hidden" id="Amount_Hidden" />
+
+                <span asp-validation-for="Amount" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="form-group">
+                <label asp-for="Reference"></label>
+                <input asp-for="Reference" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         انتخاب چک
+         ========================================== -->
+    <partial name="_ChequePicker" model="Model" />
+
+    <hr />
+
+    <!-- ==========================================
+         تخصیص به فاکتورها
+         ========================================== -->
+    <h5 class="mb-3">
+        <i class="fa-solid fa-list"></i> تخصیص به فاکتورها
+    </h5>
+
+    <!-- دسکتاپ: جدول -->
+    <div class="table-responsive d-none d-md-block">
+        <table class="table table-bordered table-striped allocations-table" id="allocationsTable">
+            <thead>
+                <tr>
+                    <th style="width: 40px;" class="text-center">#</th>
+                    <th>فاکتور</th>
+                    <th style="width: 110px;">تاریخ</th>
+                    <th style="width: 130px;" class="text-left">مبلغ کل</th>
+                    <th style="width: 130px;" class="text-left">باقی‌مانده</th>
+                    <th style="width: 160px;">مبلغ تخصیص</th>
+                    <th style="width: 160px;" class="text-left">مانده فاکتور پس از تخصیص</th>
+                </tr>
+            </thead>
+            <tbody id="allocationsBody">
+                @for (int i = 0; i < Model.Allocations.Count; i++)
+                {
+                    var row = Model.Allocations[i];
+                    <tr class="allocation-row" data-invoice-id="@row.InvoiceId">
+                        <td class="text-center">@(i + 1)</td>
+                        <td class="invoice-cell">
+                            فاکتور شماره @row.InvoiceNumber
+                            <input type="hidden" name="Allocations[@i].InvoiceId" value="@row.InvoiceId" />
+                            <input type="hidden" name="Allocations[@i].Id" value="@row.Id" />
+                        </td>
+                        <td dir="ltr" class="text-right">@row.InvoiceDate</td>
+                        <td class="persian-number-comma text-left">@row.InvoiceTotal.ToString("N0")</td>
+                        <td class="persian-number-comma text-warning text-left">@row.InvoiceRemaining.ToString("N0")</td>
+                        <td>
+                            <input type="text" name="Allocations[@i].Amount"
+                                   class="form-control form-control-sm allocation-amount persian-number persian-number-comma"
+                                   data-remaining="@row.InvoiceRemaining"
+                                   value="@row.Amount" />
+                        </td>
+                        <td class="invoice-remaining-after persian-number-comma text-success text-left">
+                            @((row.InvoiceRemaining - row.Amount).ToString("N0"))
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot class="desktop-totals">
+                <tr class="bg-light">
+                    <th colspan="6" class="text-left">مبلغ کل پرداخت:</th>
+                    <th id="totalAmount" class="persian-number-comma text-left">۰</th>
+                </tr>
+                <tr class="bg-light">
+                    <th colspan="6" class="text-left">مجموع تخصیص:</th>
+                    <th id="totalAllocated" class="persian-number-comma text-left">۰</th>
+                </tr>
+                <tr class="bg-info">
+                    <th colspan="6" class="text-left">مانده مبلغ پرداخت (تخصیص‌نیافته):</th>
+                    <th id="remainingAmount" class="persian-number-comma text-left">۰</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- موبایل: کارت‌ها -->
+    <div id="allocationsMobile" class="d-md-none">
+        @for (int i = 0; i < Model.Allocations.Count; i++)
+        {
+            var row = Model.Allocations[i];
+            <div class="alloc-card allocation-row-mobile" data-invoice-id="@row.InvoiceId">
+                <div class="d-flex justify-content-between align-items-start">
+                    <strong>
+                        <span class="badge badge-secondary ml-1">@(i + 1)</span>
+                        فاکتور شماره @row.InvoiceNumber
+                    </strong>
+                </div>
+                <input type="hidden" name="Allocations[@i].InvoiceId" value="@row.InvoiceId" />
+                <input type="hidden" name="Allocations[@i].Id" value="@row.Id" />
+                <div class="row-line">تاریخ: <span dir="ltr">@row.InvoiceDate</span></div>
+                <div class="row-line">مبلغ کل: <span class="persian-number-comma" dir="ltr">@row.InvoiceTotal.ToString("N0")</span></div>
+                <div class="row-line">باقی‌مانده: <span class="persian-number-comma text-warning" dir="ltr">@row.InvoiceRemaining.ToString("N0")</span></div>
+                <div class="amount-input">
+                    <label class="small text-muted">مبلغ تخصیص</label>
+                    <input type="text" name="Allocations[@i].Amount"
+                           class="form-control form-control-sm mobile-allocation-amount allocation-amount persian-number persian-number-comma"
+                           data-remaining="@row.InvoiceRemaining"
+                           value="@row.Amount" />
+                </div>
+                <div class="remaining-after">
+                    باقی‌مانده پس از تخصیص:
+                    <span class="invoice-remaining-after-mobile persian-number-comma text-success" dir="ltr">
+                        @((row.InvoiceRemaining - row.Amount).ToString("N0"))
+                    </span>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- خلاصه جمع در موبایل -->
+    <div class="totals-summary d-md-none">
+        <div class="row-line">
+            <span>مبلغ کل پرداخت:</span>
+            <span id="totalAmountMobile" class="amount">۰</span>
+        </div>
+        <div class="row-line">
+            <span>مجموع تخصیص:</span>
+            <span id="totalAllocatedMobile" class="amount">۰</span>
+        </div>
+        <div class="row-line">
+            <span>مانده تخصیص‌نیافته:</span>
+            <span id="remainingAmountMobile" class="amount remaining">۰</span>
+        </div>
+    </div>
+
+    <!-- توضیحات -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="form-group">
+                <label asp-for="Description"></label>
+                <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+
 </div>
