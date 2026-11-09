@@ -200,6 +200,87 @@
             }
         </div>
 
+        @* ارتباط فاکتور برگشتی با فاکتور اصلی *@
+        @if (Model.ReferenceInvoice != null)
+        {
+            <div class="alert alert-info mt-3">
+                <i class="fa fa-link"></i>
+                این فاکتور برگشتی مربوط به فاکتور
+                <a asp-action="Details" asp-route-id="@Model.ReferenceInvoice.Id" class="font-weight-bold">
+                    شماره @Model.ReferenceInvoice.Number
+                </a>
+                (@(Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.SalesReturn
+                    ? "فروش"
+                    : "خرید"))
+                است.
+            </div>
+        }
+
+        @* فهرست برگشت‌های ثبت‌شده برای فاکتور اصلی *@
+        @{
+            var relatedReturnInvoices = ViewBag.ReturnInvoices as IEnumerable<MyFirstCoreApp.Domain.Entities.Invoicing.Invoice>
+                ?? Enumerable.Empty<MyFirstCoreApp.Domain.Entities.Invoicing.Invoice>();
+        }
+        @if (relatedReturnInvoices.Any())
+        {
+            <div class="card card-outline card-warning mt-3 mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fa fa-rotate-left"></i>
+                        برگشت‌های ثبت‌شده
+                        <span class="badge badge-secondary mr-1">@relatedReturnInvoices.Count()</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>شماره</th>
+                                    <th>نوع</th>
+                                    <th>تاریخ</th>
+                                    <th>وضعیت</th>
+                                    <th class="text-left">مبلغ نهایی</th>
+                                    <th class="text-center">عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var returnInvoice in relatedReturnInvoices)
+                                {
+                                    <tr>
+                                        <td class="persian-number">@returnInvoice.Number</td>
+                                        <td>
+                                            @(returnInvoice.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.SalesReturn
+                                                ? "برگشت از فروش"
+                                                : "برگشت از خرید")
+                                        </td>
+                                        <td>@PersianDate.Format(returnInvoice.Date)</td>
+                                        <td>
+                                            @if (returnInvoice.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted)
+                                            {
+                                                <span class="badge badge-success">قطعی</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-warning">@GetStatusName(returnInvoice.Status)</span>
+                                            }
+                                        </td>
+                                        <td class="text-left persian-number-comma">@returnInvoice.TotalAmount.ToString("N0")</td>
+                                        <td class="text-center">
+                                            <a asp-action="Details" asp-route-id="@returnInvoice.Id"
+                                               class="btn btn-xs btn-outline-info">
+                                                <i class="fa fa-eye"></i> مشاهده
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
         <hr />
 
         <!-- ==========================================
