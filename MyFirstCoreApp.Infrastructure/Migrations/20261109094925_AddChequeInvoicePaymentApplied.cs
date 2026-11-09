@@ -1,26 +1,29 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace MyFirstCoreApp.Infrastructure.Migrations
 {
-    public partial class AllowNegativeStockOnPurchaseReturns : Migration
+    /// <inheritdoc />
+    public partial class AddChequeInvoicePaymentApplied : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
-                name: "AllowNegativeStockOnPurchaseReturns",
-                table: "InvoiceBehaviorSettings",
+                name: "InvoicePaymentApplied",
+                table: "Cheques",
                 type: "bit",
                 nullable: false,
                 defaultValue: false);
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "AllowNegativeStockOnPurchaseReturns",
-                table: "InvoiceBehaviorSettings");
+                name: "InvoicePaymentApplied",
+                table: "Cheques");
         }
     }
 }

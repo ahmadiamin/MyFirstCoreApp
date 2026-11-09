@@ -12,9 +12,10 @@ using MyFirstCoreApp.Infrastructure.Persistence;
 namespace MyFirstCoreApp.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261109070000_AllowNegativeStockOnPurchaseReturns")]
-    partial class AllowNegativeStockOnPurchaseReturns
+    [Migration("20261109094925_AddChequeInvoicePaymentApplied")]
+    partial class AddChequeInvoicePaymentApplied
     {
+        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
@@ -764,6 +765,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.Property<int?>("InvoiceId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("InvoicePaymentApplied")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -2363,10 +2367,13 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("AllowNegativeStockOnSales")
+                    b.Property<bool>("AllowNegativeStockOnPurchaseReturns")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("AllowNegativeStockOnPurchaseReturns")
+                    b.Property<bool>("AllowNegativeStockOnPurchaseReversal")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AllowNegativeStockOnSales")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("CreatedAt")
