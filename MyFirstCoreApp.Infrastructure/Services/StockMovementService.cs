@@ -113,7 +113,8 @@ public class StockMovementService : IStockMovementService
     private async Task PostInternalAsync(
         int id,
         int tenantId,
-        bool allowNegativeStockForSale)
+        bool allowNegativeStockForSale,
+        bool allowNegativeStockForPurchaseReturn = false)
     {
         await _context.ExecuteInTransactionAsync(
             IsolationLevel.Serializable,
@@ -156,10 +157,15 @@ public class StockMovementService : IStockMovementService
                 await ValidateWarehousesAsync(request, tenantId);
                 await ValidateProductsAsync(request.Items, tenantId);
                 await ValidateReferenceInvoiceAsync(request.ReferenceInvoiceId, tenantId);
-                var canAllowNegativeStock = await CanAllowNegativeStockForSaleAsync(
-                    movement,
-                    tenantId,
-                    allowNegativeStockForSale);
+                var canAllowNegativeStock =
+                    await CanAllowNegativeStockForSaleAsync(
+                        movement,
+                        tenantId,
+                        allowNegativeStockForSale)
+                    || await CanAllowNegativeStockForPurchaseReturnAsync(
+                        movement,
+                        tenantId,
+                        allowNegativeStockForPurchaseReturn);
                 // حواله و انتقال نباید باعث منفی‌شدن موجودی انبار مبدأ شوند.
                 if (!canAllowNegativeStock && movement.MovementType is StockMovementType.Issue or StockMovementType.Transfer)
                 {
@@ -432,6 +438,36 @@ public class StockMovementService : IStockMovementService
             x.AllowNegativeStockOnSales);
     }
 
+    private async Task<bool> CanAllowNegativeStockForPurchaseReturnAsync(
+        StockMovement movement,
+        int tenantId,
+        bool allowNegativeStockForPurchaseReturn)
+    {
+        // این قابلیت فقط از مسیر داخلی ثبت فاکتور قابل فعال‌شدن است.
+        if (!allowNegativeStockForPurchaseReturn)
+            return false;
+
+        // فقط حواله خروج مستقیم و غیرمعکوس مربوط به برگشت از خرید
+        if (movement.MovementType != StockMovementType.Issue ||
+            !movement.ReferenceInvoiceId.HasValue ||
+            movement.ReversesMovementId.HasValue)
+        {
+            return false;
+        }
+
+        var isPurchaseReturnInvoice = await _context.Invoices.AnyAsync(x =>
+            x.Id == movement.ReferenceInvoiceId.Value &&
+            x.TenantId == tenantId &&
+            x.InvoiceType == InvoiceType.PurchaseReturn);
+
+        if (!isPurchaseReturnInvoice)
+            return false;
+
+        return await _context.InvoiceBehaviorSettings.AnyAsync(x =>
+            x.TenantId == tenantId &&
+            x.AllowNegativeStockOnPurchaseReturns);
+    }
+
     private async Task<decimal> GetBalanceInternalAsync(
         int productId,
         int warehouseId,
@@ -671,7 +707,9 @@ public class StockMovementService : IStockMovementService
             await PostInternalAsync(
                 movementId,
                 tenantId,
-                allowNegativeStockForSale: true);
+                allowNegativeStockForSale: true,
+                allowNegativeStockForPurchaseReturn:
+                    invoice.InvoiceType == InvoiceType.PurchaseReturn);
         }
 
     }
