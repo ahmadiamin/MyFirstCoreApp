@@ -344,6 +344,14 @@ public class InvoicesController : Controller
 
         if (entity == null) return NotFound();
 
+        // فاکتورهای برگشتی مرتبط با فاکتور اصلی (محدود به همان مستأجر)
+        ViewBag.ReturnInvoices = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.TenantId == tenantId.Value && i.ReferenceInvoiceId == entity.Id)
+            .OrderByDescending(i => i.Date)
+            .ThenByDescending(i => i.Number)
+            .ToListAsync();
+
         return View(entity);
     }
 
