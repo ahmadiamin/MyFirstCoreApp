@@ -1,0 +1,91 @@
+@model MyFirstCoreApp.Areas.Inventory.ViewModels.StockBalances.StockAdjustmentViewModel
+
+@{
+    ViewData["Title"] = "اصلاح موجودی کالا";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa fa-balance-scale"></i> اصلاح موجودی کالا</h3>
+        <div class="card-tools">
+            <a asp-area="Inventory" asp-controller="Products" asp-action="Index"
+               class="btn btn-sm btn-outline-secondary">
+                <i class="fa fa-arrow-right"></i> بازگشت به کالاها
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <strong>@Model.ProductName</strong>
+            @if (!string.IsNullOrWhiteSpace(Model.ProductCode))
+            {
+                <span class="mr-2">کد: @Model.ProductCode</span>
+            }
+            <span class="mr-2">واحد: @Model.UnitName</span>
+            <hr />
+            مقدار واقعی موجودی را وارد کنید. سیستم اختلاف آن با موجودی فعلی را به‌صورت رسید یا حواله اصلاحی ثبت می‌کند؛ فاکتورهای قبلی تغییر نمی‌کنند.
+        </div>
+
+        <form asp-area="Inventory" asp-controller="StockAdjustments" asp-action="Edit"
+              method="post" id="stockAdjustmentForm">
+            @Html.AntiForgeryToken()
+            <input asp-for="ProductId" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label asp-for="WarehouseId"></label>
+                    <select asp-for="WarehouseId" asp-items="Model.Warehouses"
+                            class="form-control" id="warehouseSelect"></select>
+                    <span asp-validation-for="WarehouseId" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="CurrentQuantity"></label>
+                    <input asp-for="CurrentQuantity" class="form-control" readonly />
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="TargetQuantity"></label>
+                    <input asp-for="TargetQuantity" class="form-control"
+                           type="number" min="0" step="any" required />
+                    <span asp-validation-for="TargetQuantity" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="UnitCost"></label>
+                    <input asp-for="UnitCost" class="form-control" type="number" min="0" step="any" />
+                    <span asp-validation-for="UnitCost" class="text-danger"></span>
+                    <small class="form-text text-muted">فقط برای افزایش موجودی استفاده می‌شود.</small>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i>
+                اگر مقدار جدید بیشتر باشد، رسید اصلاحی و اگر کمتر باشد، حواله اصلاحی ثبت می‌شود.
+                کاهش موجودی همچنان مشمول کنترل موجودی و جلوگیری از منفی‌شدن آن است.
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> ثبت اصلاح موجودی
+            </button>
+            <a asp-area="Inventory" asp-controller="Products" asp-action="Index"
+               class="btn btn-secondary">انصراف</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('warehouseSelect').addEventListener('change', function () {
+            var url = '@Url.Action("Edit", "StockAdjustments", new { area = "Inventory", id = Model.ProductId })';
+            window.location.href = url + '&warehouseId=' + encodeURIComponent(this.value);
+        });
+    </script>
+}
