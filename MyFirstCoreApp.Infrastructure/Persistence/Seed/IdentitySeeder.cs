@@ -319,18 +319,18 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "Invoice.Delete", DisplayName = "حذف فاکتور",      GroupName = "Invoicing", IsActive = true },
                 new Permission { Name = "Invoice.Post",   DisplayName = "قطعی کردن فاکتور", GroupName = "Invoicing", IsActive = true },
 
-                // Invoice Print Settings
+                // Invoice Settings
                 new Permission
                 {
-                    Name = "InvoicePrintSetting.View",
-                    DisplayName = "مشاهده تنظیمات چاپ فاکتور",
+                    Name = "InvoiceSetting.View",
+                    DisplayName = "مشاهده تنظیمات فاکتور",
                     GroupName = "Invoicing",
                     IsActive = true
                 },
                 new Permission
                 {
-                    Name = "InvoicePrintSetting.Edit",
-                    DisplayName = "ویرایش تنظیمات چاپ فاکتور",
+                    Name = "InvoiceSetting.Edit",
+                    DisplayName = "ویرایش تنظیمات فاکتور",
                     GroupName = "Invoicing",
                     IsActive = true
                 },
@@ -636,10 +636,10 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "برگشت از فروش", Url = "/Invoicing/Invoices?invoiceType=4", Icon = "fa-solid fa-rotate-left", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 4, IsActive = true },
                 new Menu { Title = "برگشت از خرید", Url = "/Invoicing/Invoices?invoiceType=5", Icon = "fa-solid fa-rotate-right", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 5, IsActive = true },
 
-                //تنظیمات چاپ فاکتور
+                //تنظیمات فاکتور
                 new Menu
                 {
-                    Title = "تنظیمات چاپ فاکتور",
+                    Title = "تنظیمات فاکتور",
                     Url = "/Invoicing/InvoicePrintSettings/Edit",
                     Icon = "fa fa-print",
                     Permission = "InvoicePrintSetting.View",
