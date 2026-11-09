@@ -154,6 +154,7 @@
               <ClientRectangle>6.4,2.4,14.2,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,14,Bold</Font>
+              <GrowToHeight>True</GrowToHeight>
               <Guid>b54b384378514a3bbbdb8db7f9267ed2</Guid>
               <Margins>0,0,0,0</Margins>
               <Name>txtFullName</Name>
@@ -172,6 +173,7 @@
               <ClientRectangle>0.4,3.2,20.2,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,12,Bold</Font>
+              <GrowToHeight>True</GrowToHeight>
               <Guid>86f2d6213f92487c88a4965c6b5f932b</Guid>
               <Margins>0,0,0,0</Margins>
               <Name>txtAddress</Name>
@@ -190,6 +192,7 @@
               <ClientRectangle>0.4,2.4,6,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,14,Bold</Font>
+              <GrowToHeight>True</GrowToHeight>
               <Guid>85d9717f11574987985e1ce0c20bd576</Guid>
               <HorAlignment>Center</HorAlignment>
               <Margins>0,0,0,0</Margins>
@@ -904,10 +907,10 @@
     <value>Stimulsoft.Report.Dll</value>
   </ReferencedAssemblies>
   <ReportAlias>Report</ReportAlias>
-  <ReportChanged>10/20/2026 10:57:53 AM</ReportChanged>
+  <ReportChanged>11/9/2026 5:49:33 PM</ReportChanged>
   <ReportCreated>1/12/2016 6:02:05 PM</ReportCreated>
   <ReportFile>D:\Amin\Projects\MyFirstCoreApp\MyFirstCoreApp\Reports\Invoice.mrt</ReportFile>
-  <ReportGuid>e28cf94b93074c01ac220fe207e2c054</ReportGuid>
+  <ReportGuid>0a692bf474714fe290a0cb5ae20d2a10</ReportGuid>
   <ReportName>Report</ReportName>
   <ReportUnit>Centimeters</ReportUnit>
   <ReportVersion>2018.2.1.0</ReportVersion>
@@ -935,5 +938,13 @@ namespace Reports
 }
 </Script>
   <ScriptLanguage>CSharp</ScriptLanguage>
-  <Styles isList="true" count="0" />
+  <Styles isList="true" count="1">
+    <Style1 Ref="87" type="Stimulsoft.Report.StiStyle" isKey="true">
+      <Brush>ControlLight</Brush>
+      <Conditions isList="true" count="0" />
+      <Font>Arial,8</Font>
+      <Name>Style1</Name>
+      <TextBrush>Black</TextBrush>
+    </Style1>
+  </Styles>
 </StiSerializer>
