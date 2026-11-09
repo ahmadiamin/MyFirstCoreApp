@@ -2364,6 +2364,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<bool>("AllowNegativeStockOnSales")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("AllowNegativeStockOnPurchaseReturns")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
