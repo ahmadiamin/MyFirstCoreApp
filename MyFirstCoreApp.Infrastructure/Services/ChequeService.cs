@@ -381,6 +381,9 @@ public class ChequeService : IChequeService
             if (cheque.Status != expected)
                 throw new InvalidOperationException(notAllowedMessage);
 
+            // تا وقتی پرداخت قطعی به این چک وابسته است، برگشت از پاس/نقد باعث ناسازگاری دفتر و فاکتور می‌شود.
+            await EnsureNoPostedPaymentAsync(cheque.Id, "برگشت از پاس/نقد ممکن نیست.");
+
             // فقط اگر این سرویس قبلاً مبلغ را مستقیماً به فاکتور اضافه کرده باشد، آن را برمی‌گردانیم.
             // چک‌های قدیمی مقدار این نشانگر را ندارند؛ پس برگشت از پاس آن‌ها مبلغی را کم نمی‌کند.
             await RevertInvoicePaymentAsync(cheque);
@@ -426,6 +429,12 @@ public class ChequeService : IChequeService
 
         if (linkedPayments.Count > 0)
         {
+            if (linkedPayments.Any(p => p.Status != PaymentStatus.Posted))
+            {
+                throw new InvalidOperationException(
+                    "برای این چک یک پرداخت پیش‌نویس وجود دارد؛ ابتدا پرداخت را قطعی یا لغو کنید.");
+            }
+
             if (linkedPayments.Any(p => p.Allocations.Any(a => a.InvoiceId == invoiceId)))
                 return;
 
