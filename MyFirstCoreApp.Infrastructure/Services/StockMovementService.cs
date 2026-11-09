@@ -114,7 +114,8 @@ public class StockMovementService : IStockMovementService
         int id,
         int tenantId,
         bool allowNegativeStockForSale,
-        bool allowNegativeStockForPurchaseReturn = false)
+        bool allowNegativeStockForPurchaseReturn = false,
+        bool allowNegativeStockForPurchaseReversal = false)
     {
         await _context.ExecuteInTransactionAsync(
             IsolationLevel.Serializable,
@@ -165,7 +166,11 @@ public class StockMovementService : IStockMovementService
                     || await CanAllowNegativeStockForPurchaseReturnAsync(
                         movement,
                         tenantId,
-                        allowNegativeStockForPurchaseReturn);
+                        allowNegativeStockForPurchaseReturn)
+                    || await CanAllowNegativeStockForPurchaseReversalAsync(
+                        movement,
+                        tenantId,
+                        allowNegativeStockForPurchaseReversal);
                 // حواله و انتقال نباید باعث منفی‌شدن موجودی انبار مبدأ شوند.
                 if (!canAllowNegativeStock && movement.MovementType is StockMovementType.Issue or StockMovementType.Transfer)
                 {
@@ -466,6 +471,42 @@ public class StockMovementService : IStockMovementService
         return await _context.InvoiceBehaviorSettings.AnyAsync(x =>
             x.TenantId == tenantId &&
             x.AllowNegativeStockOnPurchaseReturns);
+    }
+
+    private async Task<bool> CanAllowNegativeStockForPurchaseReversalAsync(
+        StockMovement movement,
+        int tenantId,
+        bool allowNegativeStockForPurchaseReversal)
+    {
+        // این مجوز فقط هنگام برگشت گردش انبار فاکتور خرید به پیش‌نویس فعال می‌شود.
+        if (!allowNegativeStockForPurchaseReversal ||
+            movement.MovementType != StockMovementType.Issue ||
+            !movement.ReferenceInvoiceId.HasValue ||
+            !movement.ReversesMovementId.HasValue)
+        {
+            return false;
+        }
+
+        var isPurchaseInvoiceReversal = await (
+            from invoice in _context.Invoices
+            join originalMovement in _context.StockMovements
+                on invoice.Id equals originalMovement.ReferenceInvoiceId
+            where invoice.Id == movement.ReferenceInvoiceId.Value
+                  && invoice.TenantId == tenantId
+                  && invoice.InvoiceType == InvoiceType.Purchase
+                  && originalMovement.Id == movement.ReversesMovementId.Value
+                  && originalMovement.TenantId == tenantId
+                  && originalMovement.MovementType == StockMovementType.Receipt
+                  && originalMovement.ReversesMovementId == null
+            select invoice.Id
+        ).AnyAsync();
+
+        if (!isPurchaseInvoiceReversal)
+            return false;
+
+        return await _context.InvoiceBehaviorSettings.AnyAsync(x =>
+            x.TenantId == tenantId &&
+            x.AllowNegativeStockOnPurchaseReversal);
     }
 
     private async Task<decimal> GetBalanceInternalAsync(
@@ -831,7 +872,12 @@ public class StockMovementService : IStockMovementService
                     _context.StockMovements.Add(reversal);
                     await _context.SaveChangesAsync();
 
-                    await PostAsync(reversal.Id, tenantId);
+                    await PostInternalAsync(
+                        reversal.Id,
+                        tenantId,
+                        allowNegativeStockForSale: false,
+                        allowNegativeStockForPurchaseReversal:
+                            invoice.InvoiceType == InvoiceType.Purchase);
                 }
             });
     }
