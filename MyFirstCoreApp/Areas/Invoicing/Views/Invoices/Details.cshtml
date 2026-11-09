@@ -5,6 +5,9 @@
 @{
     ViewData["Title"] = $"مشاهده فاکتور شماره {Model.Number}";
     var isPreInvoice = Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.PreInvoice;
+    var canCreateReturn = Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted
+        && (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale
+            || Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase);
     var remaining = Model.TotalAmount - Model.PaidAmount - Model.SettlementDiscount;
 }
 
@@ -137,6 +140,14 @@
                         else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase)
                         {
                             <span>خرید</span>
+                        }
+                        else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.SalesReturn)
+                        {
+                            <span>برگشت از فروش</span>
+                        }
+                        else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.PurchaseReturn)
+                        {
+                            <span>برگشت از خرید</span>
                         }
                         else
                         {
@@ -407,6 +418,18 @@
            class="btn btn-secondary">
             <i class="fa-solid fa-arrow-right"></i> بازگشت
         </a>
+
+        @if (canCreateReturn)
+        {
+            <a asp-action="Return"
+               asp-route-id="@Model.Id"
+               class="btn btn-outline-danger">
+                <i class="fa fa-rotate-left"></i>
+                @(Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale
+                    ? "برگشت از فروش"
+                    : "برگشت از خرید")
+            </a>
+        }
 
         @if (Model.Status == InvoiceStatus.Posted && Model.RemainingAmount > 0 && !isPreInvoice)
         {
