@@ -376,6 +376,17 @@ public class PaymentService : IPaymentService
             .FirstOrDefaultAsync(c => c.Id == chequeId)
             ?? throw new InvalidOperationException("چک انتخاب‌شده معتبر نیست.");
 
+        if (cheque.InvoicePaymentApplied)
+            throw new InvalidOperationException(
+                "مبلغ این چک قبلاً مستقیماً در پرداختی فاکتور مرتبط اعمال شده است؛ ثبت پرداخت جداگانه باعث دوباره‌شماری می‌شود.");
+
+        if (cheque.InvoiceId.HasValue &&
+            !payment.Allocations.Any(a => a.InvoiceId == cheque.InvoiceId.Value))
+        {
+            throw new InvalidOperationException(
+                "فاکتور تخصیص‌یافته در پرداخت با فاکتور مرتبط چک یکسان نیست.");
+        }
+
         var expectedDirection = payment.PaymentType == PaymentType.Received
             ? ChequeDirection.Received
             : ChequeDirection.Issued;
