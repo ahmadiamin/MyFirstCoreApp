@@ -351,6 +351,10 @@ public class ChequeService : IChequeService
         // چک‌های قدیمی (قبل از این مدل) سند ثبت ندارند؛ برای یکدست شدن دفتر همین‌جا ثبت می‌شوند
         await EnsureRegisteredAsync(cheque, cheque.IssueDate);
 
+        // اگر چک مستقیماً به فاکتور وصل باشد، مبلغ در همین لحظه به PaidAmount اضافه می‌شود.
+        // در صورت وجود پرداختی که همین چک را مصرف کرده، تخصیص Payment مرجع است تا دوباره‌شماری نشود.
+        await ApplyInvoicePaymentAsync(cheque);
+
         var document = await BuildClearingDocumentAsync(cheque, settleDate);
         await _transactionService.CreateAsync(document);
 
@@ -377,6 +381,10 @@ public class ChequeService : IChequeService
             if (cheque.Status != expected)
                 throw new InvalidOperationException(notAllowedMessage);
 
+            // فقط اگر این سرویس قبلاً مبلغ را مستقیماً به فاکتور اضافه کرده باشد، آن را برمی‌گردانیم.
+            // چک‌های قدیمی مقدار این نشانگر را ندارند؛ پس برگشت از پاس آن‌ها مبلغی را کم نمی‌کند.
+            await RevertInvoicePaymentAsync(cheque);
+
             if (cheque.TransactionId.HasValue)
             {
                 var documentId = cheque.TransactionId.Value;
@@ -399,6 +407,84 @@ public class ChequeService : IChequeService
             AddHistory(cheque, oldStatus, ChequeStatus.InProgress, ChequeHistoryAction.StatusChanged, description);
             await _context.SaveChangesAsync();
         });
+    }
+
+    /// <summary>
+    /// ثبت مبلغ چک در پرداختی فاکتور مرتبط. اگر یک Payment همین چک را به همان فاکتور تخصیص داده
+    /// باشد، آن Payment مالک ثبت PaidAmount است و این مسیر نباید مبلغ را دوباره اضافه کند.
+    /// </summary>
+    private async Task ApplyInvoicePaymentAsync(Cheque cheque)
+    {
+        if (!cheque.InvoiceId.HasValue)
+            return;
+
+        var invoiceId = cheque.InvoiceId.Value;
+        var linkedPayments = await _context.Payments
+            .Include(p => p.Allocations)
+            .Where(p => p.ChequeId == cheque.Id && p.Status != PaymentStatus.Cancelled)
+            .ToListAsync();
+
+        if (linkedPayments.Count > 0)
+        {
+            if (linkedPayments.Any(p => p.Allocations.Any(a => a.InvoiceId == invoiceId)))
+                return;
+
+            throw new InvalidOperationException(
+                "این چک در یک پرداخت استفاده شده، اما فاکتور تخصیص‌یافته با فاکتور مرتبط چک یکسان نیست.");
+        }
+
+        if (cheque.InvoicePaymentApplied)
+            throw new InvalidOperationException("مبلغ این چک قبلاً در پرداختی فاکتور اعمال شده است.");
+
+        var invoice = await _context.Invoices
+            .FirstOrDefaultAsync(i => i.Id == invoiceId && i.TenantId == cheque.TenantId)
+            ?? throw new InvalidOperationException("فاکتور مرتبط با چک پیدا نشد.");
+
+        var expectedType = cheque.Direction == ChequeDirection.Received
+            ? InvoiceType.Sale
+            : InvoiceType.Purchase;
+
+        if (invoice.InvoiceType != expectedType)
+            throw new InvalidOperationException("نوع فاکتور مرتبط با جهت چک سازگار نیست.");
+
+        if (invoice.Status != InvoiceStatus.Posted)
+            throw new InvalidOperationException("فاکتور مرتبط با چک باید قطعی شده باشد.");
+
+        if (invoice.ContactId != cheque.ContactId)
+            throw new InvalidOperationException("طرف حساب فاکتور مرتبط با چک با طرف حساب چک یکسان نیست.");
+
+        var remaining = InvoiceBalance.Remaining(invoice);
+        if (cheque.Amount > remaining)
+        {
+            throw new InvalidOperationException(
+                $"مبلغ چک ({cheque.Amount:N0}) بیشتر از مانده فاکتور {invoice.Number} ({remaining:N0}) است.");
+        }
+
+        invoice.PaidAmount += cheque.Amount;
+        cheque.InvoicePaymentApplied = true;
+    }
+
+    /// <summary>برگرداندن اثر پرداخت مستقیم چک از فاکتور هنگام برگشت از پاس/نقد.</summary>
+    private async Task RevertInvoicePaymentAsync(Cheque cheque)
+    {
+        if (!cheque.InvoicePaymentApplied)
+            return;
+
+        if (!cheque.InvoiceId.HasValue)
+            throw new InvalidOperationException("نشانگر پرداخت مستقیم چک ثبت شده، اما فاکتور مرتبط مشخص نیست.");
+
+        var invoice = await _context.Invoices
+            .FirstOrDefaultAsync(i => i.Id == cheque.InvoiceId.Value && i.TenantId == cheque.TenantId)
+            ?? throw new InvalidOperationException("فاکتور مرتبط با چک پیدا نشد؛ برگشت از پاس ممکن نیست.");
+
+        if (invoice.PaidAmount < cheque.Amount)
+        {
+            throw new InvalidOperationException(
+                $"مبلغ پرداخت‌شده فاکتور {invoice.Number} از مبلغ این چک کمتر است؛ برگشت از پاس ممکن نیست.");
+        }
+
+        invoice.PaidAmount -= cheque.Amount;
+        cheque.InvoicePaymentApplied = false;
     }
 
     private Task ChangeStatusWithoutLedgerAsync(
