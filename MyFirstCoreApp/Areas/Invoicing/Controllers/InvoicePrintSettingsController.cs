@@ -41,19 +41,17 @@ public class InvoicePrintSettingsController : Controller
                 x.TenantId == tenantId.Value &&
                 !x.IsDeleted);
 
-        var model = setting == null
-            ? new InvoicePrintSettingViewModel()
-            : new InvoicePrintSettingViewModel
-            {
-                ShowBalance = setting.ShowBalance,
-                PoemSelectionMode = setting.PoemSelectionMode,
-                SelectedInvoicePoemId = setting.SelectedInvoicePoemId,
-                Description = setting.Description,
-                AllowNegativeStockOnSales = behaviorSetting?.AllowNegativeStockOnSales ?? false,
-                AllowNegativeStockOnPurchaseReturns = behaviorSetting?.AllowNegativeStockOnPurchaseReturns ?? false,
-                AllowNegativeStockOnPurchaseReversal = behaviorSetting?.AllowNegativeStockOnPurchaseReversal ?? false,
-                ShowStockInInvoice = behaviorSetting?.ShowStockInInvoice ?? true,
-            };
+        var model = new InvoicePrintSettingViewModel
+        {
+            ShowBalance = setting?.ShowBalance ?? true,
+            PoemSelectionMode = setting?.PoemSelectionMode ?? InvoicePoemSelectionMode.Random,
+            SelectedInvoicePoemId = setting?.SelectedInvoicePoemId,
+            Description = setting?.Description ?? string.Empty,
+            AllowNegativeStockOnSales = behaviorSetting?.AllowNegativeStockOnSales ?? false,
+            AllowNegativeStockOnPurchaseReturns = behaviorSetting?.AllowNegativeStockOnPurchaseReturns ?? false,
+            AllowNegativeStockOnPurchaseReversal = behaviorSetting?.AllowNegativeStockOnPurchaseReversal ?? false,
+            ShowStockInInvoice = behaviorSetting?.ShowStockInInvoice ?? true,
+        };
 
         await LoadPoemsAsync(model, tenantId.Value);
 
