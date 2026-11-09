@@ -1293,6 +1293,81 @@ public sealed class StockMovementServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ReverseInvoice_Purchase_WhenStockIsInsufficient_AllowsNegativeStockWhenSettingEnabled()
+    {
+        var previousTenant = _db.Tenant.TenantId;
+        _db.Tenant.TenantId = TenantA;
+
+        try
+        {
+            var (productId, warehouseId) = await CreateInventoryDataAsync();
+
+            var invoiceId = await CreateInvoiceAsync(
+                productId,
+                InvoiceType.Purchase,
+                quantity: 5m);
+
+            await using (var context = _db.NewContext())
+            {
+                context.InvoiceBehaviorSettings.Add(new InvoiceBehaviorSetting
+                {
+                    TenantId = TenantA,
+                    AllowNegativeStockOnPurchaseReversal = true
+                });
+
+                await context.SaveChangesAsync();
+
+                await NewService(context).CreateFromInvoiceAsync(
+                    invoiceId,
+                    TenantA);
+            }
+
+            // تمام موجودی خرید مصرف می‌شود؛ برگشت فاکتور باید موجودی را منفی کند.
+            await CreateAndPostAsync(
+                productId,
+                warehouseId,
+                StockMovementType.Issue,
+                5m);
+
+            await using (var context = _db.NewContext())
+            {
+                await NewService(context).ReverseInvoiceAsync(
+                    invoiceId,
+                    TenantA);
+            }
+
+            await using var verifyContext = _db.NewContext();
+
+            var movements = await verifyContext.StockMovements
+                .IgnoreQueryFilters()
+                .Where(x =>
+                    x.TenantId == TenantA &&
+                    x.ReferenceInvoiceId == invoiceId)
+                .OrderBy(x => x.Id)
+                .ToListAsync();
+
+            Assert.Equal(2, movements.Count);
+            Assert.Equal(StockMovementType.Receipt, movements[0].MovementType);
+            Assert.Equal(StockMovementType.Issue, movements[1].MovementType);
+            Assert.Equal(movements[0].Id, movements[1].ReversesMovementId);
+            Assert.Equal(StockMovementStatus.Posted, movements[1].Status);
+
+            var kardex = await NewService(verifyContext).GetKardexAsync(
+                productId,
+                warehouseId,
+                null,
+                null,
+                TenantA);
+
+            Assert.Equal(-5m, kardex[^1].Balance);
+        }
+        finally
+        {
+            _db.Tenant.TenantId = previousTenant;
+        }
+    }
+
+    [Fact]
     public async Task ReverseInvoice_Purchase_WhenStockIsInsufficient_ThrowsAndRollsBack()
     {
         var previousTenant = _db.Tenant.TenantId;
