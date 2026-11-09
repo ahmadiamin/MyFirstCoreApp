@@ -913,6 +913,8 @@ public class InvoicesController : Controller
             InvoiceType.PreInvoice => "پیش‌فاکتور",
             InvoiceType.Sale => "فاکتور فروش",
             InvoiceType.Purchase => "فاکتور خرید",
+            InvoiceType.SalesReturn => "برگشت از فروش",
+            InvoiceType.PurchaseReturn => "برگشت از خرید",
             _ => "فاکتور"
         };
 
@@ -1186,6 +1188,8 @@ public class InvoicesController : Controller
     {
         InvoiceType.Sale => "فروش",
         InvoiceType.Purchase => "خرید",
+        InvoiceType.SalesReturn => "برگشت از فروش",
+        InvoiceType.PurchaseReturn => "برگشت از خرید",
         _ => "پیش‌فاکتور"
     };
 
