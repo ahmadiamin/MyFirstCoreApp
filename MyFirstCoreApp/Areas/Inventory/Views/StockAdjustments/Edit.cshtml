@@ -85,7 +85,7 @@
     <script>
         document.getElementById('warehouseSelect').addEventListener('change', function () {
             var url = '@Url.Action("Edit", "StockAdjustments", new { area = "Inventory", id = Model.ProductId })';
-            window.location.href = url + '&warehouseId=' + encodeURIComponent(this.value);
+            window.location.href = url + '?warehouseId=' + encodeURIComponent(this.value);
         });
     </script>
 }
