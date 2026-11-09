@@ -177,7 +177,7 @@
                 {
                     headerName: 'عملیات',
                     colId: 'actions',
-                    width: 150,
+                    width: 180,
                     sortable: false,
                     filter: false,
                     pinned: 'left',
@@ -197,6 +197,10 @@
                 html += '<a href="/Inventory/Products/Edit/' + d.id + '" ' +
                         'class="btn btn-sm btn-outline-primary action-icon-btn" title="ویرایش">' +
                         '<i class="fa-solid fa-pen-to-square"></i></a>';
+
+                html += '<a href="/Inventory/StockAdjustments/Edit/' + d.id + '" ' +
+                        'class="btn btn-sm btn-outline-success action-icon-btn" title="اصلاح موجودی">' +
+                        '<i class="fa fa-balance-scale"></i></a>';
 
                 html += '<a href="javascript:void(0)" ' +
                         'class="btn btn-sm btn-outline-danger action-icon-btn delete-btn" ' +
