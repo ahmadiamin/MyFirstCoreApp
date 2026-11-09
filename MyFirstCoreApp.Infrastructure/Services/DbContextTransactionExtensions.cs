@@ -1,4 +1,3 @@
-
 using System.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,13 +17,9 @@ internal static class DbContextTransactionExtensions
             action);
     }
 
-    public static async Task ExecuteInTransactionAsync(
-        this DbContext context,
-        IsolationLevel isolationLevel,
-        Func<Task> action)
+    public static async Task ExecuteInTransactionAsync(this DbContext context, IsolationLevel isolationLevel, Func<Task> action)
     {
-        await context.ExecuteInTransactionAsync<object?>(
-            isolationLevel,
+        await context.ExecuteInTransactionAsync<object?>(isolationLevel,
             async () =>
             {
                 await action();
@@ -41,30 +36,29 @@ internal static class DbContextTransactionExtensions
             action);
     }
 
-    public static async Task<T> ExecuteInTransactionAsync<T>(
-        this DbContext context,
-        IsolationLevel isolationLevel,
-        Func<Task<T>> action)
+    public static async Task<T> ExecuteInTransactionAsync<T>(this DbContext context, IsolationLevel isolationLevel, Func<Task<T>> action)
     {
+        // تراکنش بیرونی وجود دارد؛ از همان استفاده می‌کنیم.
+        if (context.Database.CurrentTransaction != null)
+            return await action();
+
+        await using var transaction = await context.Database.BeginTransactionAsync(isolationLevel);
+
         try
         {
-            // اگر تراکنش از قبل باز است، به همان می‌پیوندیم.
-            if (context.Database.CurrentTransaction != null)
-                return await action();
-
-            await using var transaction =
-                await context.Database.BeginTransactionAsync(
-                    isolationLevel);
-
             var result = await action();
-
             await transaction.CommitAsync();
-
             return result;
         }
         catch (DbUpdateConcurrencyException)
         {
+            await transaction.RollbackAsync();
             throw new InvalidOperationException(ConcurrencyMessage);
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 }

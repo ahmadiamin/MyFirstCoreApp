@@ -67,11 +67,11 @@ public class Transaction : TenantEntity
     public int? ReferenceId { get; set; }
 
     /// <summary>
-    /// سال مالی سند. هنگام ثبت/ویرایش از روی تاریخ سند تعیین می‌شود (TransactionService).
-    /// برای اسناد قدیمی هنگام راه‌اندازی خودکار پر می‌شود (FiscalYearBackfill).
+    /// سال مالی سند (الزامی). هنگام ثبت/ویرایش از روی تاریخ سند تعیین می‌شود (TransactionService)
+    /// و دیتابیس بدون آن هیچ سندی را نمی‌پذیرد.
     /// </summary>
-    public int? FiscalYearId { get; set; }
-    public FiscalYear? FiscalYear { get; set; }
+    public int FiscalYearId { get; set; }
+    public FiscalYear FiscalYear { get; set; } = null!;
 
     // Navigation
     public ICollection<TransactionLine> Lines { get; set; } = new List<TransactionLine>();

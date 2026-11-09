@@ -29,19 +29,22 @@ public class InvoicesController : Controller
     private readonly IInvoiceService _invoiceService;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<InvoicesController> _logger;
+    private readonly IStockBalanceService _stockBalanceService;
 
     public InvoicesController(
         ApplicationDbContext context,
         ICurrentTenant currentTenant,
         IInvoiceService invoiceService,
         TimeProvider timeProvider,
-        ILogger<InvoicesController> logger)
+        ILogger<InvoicesController> logger,
+        IStockBalanceService stockBalanceService)
     {
         _context = context;
         _currentTenant = currentTenant;
         _invoiceService = invoiceService;
         _timeProvider = timeProvider;
         _logger = logger;
+        _stockBalanceService = stockBalanceService;
     }
 
     // ============================================
@@ -533,10 +536,14 @@ public class InvoicesController : Controller
     // GET: /Invoicing/Invoices/SearchProducts?q=لپ
     [HttpGet]
     [Authorize(Policy = "Invoice.View")]
-    public async Task<IActionResult> SearchProducts(string q = "", InvoiceType? invoiceType = null)
+    public async Task<IActionResult> SearchProducts(
+        string q = "",
+        InvoiceType? invoiceType = null,
+        int? warehouseId = null)
     {
         var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Json(new { success = false });
+        if (!tenantId.HasValue)
+            return Json(new { success = false });
 
         var query = _context.Products
             .Where(p => p.TenantId == tenantId.Value && p.IsActive);
@@ -544,6 +551,7 @@ public class InvoicesController : Controller
         if (!string.IsNullOrWhiteSpace(q))
         {
             q = PersianDate.NormalizeDigits(q.Trim());
+
             query = query.Where(p =>
                 p.Name.Contains(q) ||
                 (p.Code != null && p.Code.Contains(q)) ||
@@ -558,14 +566,63 @@ public class InvoicesController : Controller
                 id = p.Id,
                 name = p.Name,
                 code = p.Code,
-                salePrice = invoiceType == InvoiceType.Purchase ? p.LastPurchasePrice : p.SalePrice,
+                salePrice = invoiceType == InvoiceType.Purchase
+                    ? p.LastPurchasePrice
+                    : p.SalePrice,
                 unitName = p.Unit != null ? p.Unit.Name : "عدد",
                 taxRate = p.TaxRate ?? 0,
                 trackInventory = p.TrackInventory
             })
             .ToListAsync();
 
-        return Json(new { success = true, data = items });
+        var behaviorSetting = await _context.InvoiceBehaviorSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TenantId == tenantId.Value);
+
+        var showStock = behaviorSetting?.ShowStockInInvoice ?? true;
+
+        Dictionary<int, decimal> stockBalances = new();
+        if (showStock)
+        {
+            // اگر انبار مشخص نشده، انبار پیش‌فرض شرکت را پیدا کن.
+            if (!warehouseId.HasValue || warehouseId.Value <= 0)
+            {
+                var warehouseOptions = await GetWarehouseOptionsAsync(tenantId.Value);
+                warehouseId = GetDefaultWarehouseId(warehouseOptions);
+            }
+
+            if (warehouseId.HasValue)
+            {
+                var balances = await _stockBalanceService.GetWarehouseBalancesAsync(
+                    warehouseId.Value,
+                    tenantId.Value);
+
+                stockBalances = balances.ToDictionary(
+                    x => x.ProductId,
+                    x => x.Quantity);
+            }
+        }
+
+        var data = items.Select(p => new
+        {
+            p.id,
+            p.name,
+            p.code,
+            p.salePrice,
+            p.unitName,
+            p.taxRate,
+            p.trackInventory,
+            stock = showStock && p.trackInventory
+                ? stockBalances.GetValueOrDefault(p.id, 0)
+                : (decimal?)null
+        });
+
+        return Json(new
+        {
+            success = true,
+            showStock,
+            data
+        });
     }
 
     // GET: /Invoicing/Invoices/Print/5?showBalance=true

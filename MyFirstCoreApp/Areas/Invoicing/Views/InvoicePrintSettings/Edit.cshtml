@@ -37,6 +37,49 @@
                     </label>
                 </div>
             </div>
+            <hr />
+
+            <h5 class="mb-3">
+                <i class="fa fa-cogs"></i>
+                تنظیمات عملکرد فاکتور
+            </h5>
+
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input asp-for="AllowNegativeStockOnSales"
+                           class="custom-control-input"
+                           id="AllowNegativeStockOnSales" />
+
+                    <label asp-for="AllowNegativeStockOnSales"
+                           class="custom-control-label"
+                           for="AllowNegativeStockOnSales">
+                    </label>
+                </div>
+
+                <small class="form-text text-muted">
+                    در صورت فعال بودن، ثبت فاکتور فروش با موجودی ناکافی مجاز است
+                    و موجودی انبار می‌تواند منفی شود.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input asp-for="ShowStockInInvoice"
+                           class="custom-control-input"
+                           id="ShowStockInInvoice" />
+
+                    <label asp-for="ShowStockInInvoice"
+                           class="custom-control-label"
+                           for="ShowStockInInvoice">
+                    </label>
+                </div>
+
+                <small class="form-text text-muted">
+                    موجودی کالا هنگام انتخاب کالا و در ردیف‌های فاکتور نمایش داده می‌شود.
+                </small>
+            </div>
+
+            <hr />
             <div class="form-group">
                 <label asp-for="Description"></label>
                 <textarea asp-for="Description"

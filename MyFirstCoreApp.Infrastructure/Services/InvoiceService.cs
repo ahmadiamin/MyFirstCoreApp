@@ -9,6 +9,7 @@ using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Domain.Entities.Invoicing;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
+using System.Data;
 
 namespace MyFirstCoreApp.Infrastructure.Services;
 
@@ -31,7 +32,6 @@ public class InvoiceService : IInvoiceService
     private readonly ISystemAccountService _systemAccounts;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
-    private readonly IInvoiceService _invoiceService;
     public InvoiceService(
         IStockMovementService stockMovementService,
         ApplicationDbContext context,
@@ -186,40 +186,47 @@ public class InvoiceService : IInvoiceService
 
     public Task PostAsync(int invoiceId, int tenantId)
     {
-        return _context.ExecuteInTransactionAsync(async () =>
-        {
-            var invoice = await GetInvoiceWithItemsAsync(invoiceId, tenantId);
+        return _context.ExecuteInTransactionAsync(IsolationLevel.Serializable,
+            async () =>
+            {
+                var invoice = await GetInvoiceWithItemsAsync(invoiceId, tenantId);
 
-            if (invoice.InvoiceType == InvoiceType.PreInvoice)
-                throw new InvalidOperationException("پیش‌فاکتور قابل قطعی کردن نیست. ابتدا آن را به فاکتور تبدیل کنید.");
+                if (invoice.InvoiceType == InvoiceType.PreInvoice)
+                    throw new InvalidOperationException("پیش‌فاکتور قابل قطعی کردن نیست. ابتدا آن را به فاکتور تبدیل کنید.");
 
-            if (invoice.Status == InvoiceStatus.Posted)
-                throw new InvalidOperationException("فاکتور قبلاً قطعی شده است.");
+                if (invoice.Status == InvoiceStatus.Posted)
+                    throw new InvalidOperationException("فاکتور قبلاً قطعی شده است.");
 
-            if (invoice.Status != InvoiceStatus.Draft)
-                throw new InvalidOperationException("فقط فاکتور پیش‌نویس قابل قطعی شدن است.");
+                if (invoice.Status != InvoiceStatus.Draft)
+                    throw new InvalidOperationException("فقط فاکتور پیش‌نویس قابل قطعی شدن است.");
 
-            if (!invoice.ContactId.HasValue)
-                throw new InvalidOperationException("برای قطعی کردن، طرف حساب فاکتور الزامی است.");
+                if (!invoice.ContactId.HasValue)
+                    throw new InvalidOperationException("برای قطعی کردن، طرف حساب فاکتور الزامی است.");
 
-            if (invoice.Items.Count == 0)
-                throw new InvalidOperationException("فاکتور بدون قلم قابل قطعی شدن نیست.");
+                if (invoice.Items.Count == 0)
+                    throw new InvalidOperationException("فاکتور بدون قلم قابل قطعی شدن نیست.");
 
-            if (invoice.TotalAmount <= 0)
-                throw new InvalidOperationException("مبلغ فاکتور باید بیشتر از صفر باشد.");
+                if (invoice.TotalAmount <= 0)
+                    throw new InvalidOperationException("مبلغ فاکتور باید بیشتر از صفر باشد.");
 
-            var transaction = await BuildInvoiceTransactionAsync(invoice, tenantId);
-            await _transactionService.CreateAsync(transaction);
+                if (invoice.InvoiceType is InvoiceType.SalesReturn or InvoiceType.PurchaseReturn)
+                {
+                    await ValidateReturnBeforePostingAsync(invoice, tenantId);
+                }
 
-            invoice.TransactionId = transaction.Id;
-            invoice.Status = InvoiceStatus.Posted;
+                var transaction = await BuildInvoiceTransactionAsync(invoice, tenantId);
+                await _transactionService.CreateAsync(transaction);
 
-            AddHistory(invoice, InvoiceStatus.Draft, InvoiceStatus.Posted, "قطعی شد");
+                invoice.TransactionId = transaction.Id;
+                invoice.Status = InvoiceStatus.Posted;
 
-            await _stockMovementService.CreateFromInvoiceAsync(invoice.Id, tenantId);
-            await _context.SaveChangesAsync();
-        });
+                AddHistory(invoice, InvoiceStatus.Draft, InvoiceStatus.Posted, "قطعی شد");
+
+                await _stockMovementService.CreateFromInvoiceAsync(invoice.Id, tenantId);
+                await _context.SaveChangesAsync();
+            });
     }
+
 
     public Task UnpostAsync(int invoiceId, int tenantId)
     {
@@ -230,43 +237,81 @@ public class InvoiceService : IInvoiceService
             if (invoice.Status != InvoiceStatus.Posted)
                 throw new InvalidOperationException("فاکتور قطعی نیست.");
 
-            // قبلاً می‌شد فاکتوری که پرداخت گرفته را به پیش‌نویس برگرداند و دفتر با فاکتور ناهمخوان می‌شد
             if (invoice.PaidAmount > 0)
                 throw new InvalidOperationException(
                     "این فاکتور پرداخت دارد. ابتدا پرداخت‌های مرتبط را به پیش‌نویس برگردانید.");
 
             if (invoice.SettlementDiscount > 0)
-                throw new InvalidOperationException("این فاکتور با تخفیف تسویه شده و قابل برگشت نیست.");
+                throw new InvalidOperationException(
+                    "این فاکتور با تخفیف تسویه شده و قابل برگشت نیست.");
 
-            // سند اصلی (TransactionId) + هر سند خودکار دیگرِ همین فاکتور (مثلاً یتیم‌های داده‌ی قدیمی)
+            // جلوگیری از برگشت فاکتور اصلی در صورت وجود برگشت قطعی
+            if (invoice.InvoiceType is InvoiceType.Sale or InvoiceType.Purchase)
+            {
+                var hasPostedReturns = await _context.Invoices.AnyAsync(x =>
+                    x.TenantId == tenantId &&
+                    x.ReferenceInvoiceId == invoice.Id &&
+                    x.Status == InvoiceStatus.Posted &&
+                    (x.InvoiceType == InvoiceType.SalesReturn ||
+                     x.InvoiceType == InvoiceType.PurchaseReturn));
+
+                if (hasPostedReturns)
+                {
+                    throw new InvalidOperationException(
+                        "برای این فاکتور برگشت قطعی ثبت شده است. " +
+                        "ابتدا فاکتورهای برگشت را به پیش‌نویس برگردانید.");
+                }
+            }
+
+            // پیدا کردن اسناد حسابداری مرتبط با فاکتور
             var documentIds = await _context.Transactions
-                .Where(t => t.ReferenceType == DocumentReferenceType && t.ReferenceId == invoice.Id)
+                .Where(t =>
+                    t.ReferenceType == DocumentReferenceType &&
+                    t.ReferenceId == invoice.Id)
                 .Select(t => t.Id)
                 .ToListAsync();
 
-            if (invoice.TransactionId.HasValue && !documentIds.Contains(invoice.TransactionId.Value))
+            // بررسی سند ثبت‌شده در TransactionId
+            if (invoice.TransactionId.HasValue &&
+                !documentIds.Contains(invoice.TransactionId.Value))
             {
-                var exists = await _context.Transactions.AnyAsync(t => t.Id == invoice.TransactionId.Value);
-                if (exists) documentIds.Add(invoice.TransactionId.Value);
+                var exists = await _context.Transactions.AnyAsync(
+                    t => t.Id == invoice.TransactionId.Value);
+
+                if (exists)
+                    documentIds.Add(invoice.TransactionId.Value);
             }
 
-            if (invoice.InvoiceType is InvoiceType.Sale or InvoiceType.Purchase)
+            // معکوس‌کردن گردش انبار
+            if (invoice.InvoiceType is
+                InvoiceType.Sale or
+                InvoiceType.Purchase or
+                InvoiceType.SalesReturn or
+                InvoiceType.PurchaseReturn)
             {
                 await _stockMovementService.ReverseInvoiceAsync(
                     invoice.Id,
                     tenantId);
             }
 
+            // حذف اسناد حسابداری
             foreach (var documentId in documentIds)
                 await _transactionService.DeleteAsync(documentId, tenantId);
 
             invoice.TransactionId = null;
             invoice.Status = InvoiceStatus.Draft;
 
-            AddHistory(invoice, InvoiceStatus.Posted, InvoiceStatus.Draft, "برگشت به پیش‌نویس");
+            AddHistory(
+                invoice,
+                InvoiceStatus.Posted,
+                InvoiceStatus.Draft,
+                "برگشت به پیش‌نویس");
+
             await _context.SaveChangesAsync();
         });
     }
+
+
     // ============================================
     // سررسید
     // ============================================
@@ -278,9 +323,11 @@ public class InvoiceService : IInvoiceService
         if (invoice.InvoiceType == InvoiceType.PreInvoice)
             throw new InvalidOperationException("پیش‌فاکتور سررسید ندارد.");
 
+        if (invoice.InvoiceType is InvoiceType.SalesReturn or InvoiceType.PurchaseReturn)
+            throw new InvalidOperationException("برای فاکتورهای برگشت امکان تمدید سررسید وجود ندارد.");
+
         if (invoice.Status != InvoiceStatus.Posted)
-            throw new InvalidOperationException(
-                "سررسید فقط برای فاکتور قطعی تمدید می‌شود. فاکتور پیش‌نویس را از صفحه‌ی ویرایش تغییر دهید.");
+            throw new InvalidOperationException("سررسید فقط برای فاکتور قطعی تمدید می‌شود. فاکتور پیش‌نویس را از صفحه‌ی ویرایش تغییر دهید.");
 
         if (InvoiceBalance.Remaining(invoice) <= 0)
             throw new InvalidOperationException("این فاکتور تسویه شده و سررسید ندارد.");
@@ -473,6 +520,11 @@ public class InvoiceService : IInvoiceService
             if (invoice.InvoiceType == InvoiceType.PreInvoice)
                 throw new InvalidOperationException("پیش‌فاکتور قابل تسویه نیست.");
 
+            if (invoice.InvoiceType is InvoiceType.SalesReturn or InvoiceType.PurchaseReturn)
+            {
+                throw new InvalidOperationException("تسویه با تخفیف برای فاکتورهای برگشت مجاز نیست.");
+            }
+
             if (invoice.Status != InvoiceStatus.Posted)
                 throw new InvalidOperationException("فقط فاکتور قطعی قابل تسویه است.");
 
@@ -513,6 +565,12 @@ public class InvoiceService : IInvoiceService
 
         if (!Enum.IsDefined(request.InvoiceType))
             throw new InvalidOperationException("نوع فاکتور نامعتبر است.");
+
+        if (request.InvoiceType is InvoiceType.SalesReturn or InvoiceType.PurchaseReturn)
+        {
+            throw new InvalidOperationException(
+                "برای ایجاد فاکتور برگشت باید از متد CreateReturnAsync استفاده کنید.");
+        }
 
         if (request.InvoiceType != InvoiceType.PreInvoice && request.DueDate.HasValue)
         {
@@ -761,16 +819,39 @@ public class InvoiceService : IInvoiceService
     // سندهای حسابداری
     // ============================================
 
-    private async Task<Transaction> BuildInvoiceTransactionAsync(Invoice invoice, int tenantId)
+
+    private async Task<Transaction> BuildInvoiceTransactionAsync(
+        Invoice invoice,
+        int tenantId)
     {
-        var typeName = invoice.InvoiceType == InvoiceType.Sale ? "فروش" : "خرید";
+        var isSale = invoice.InvoiceType == InvoiceType.Sale;
+        var isPurchase = invoice.InvoiceType == InvoiceType.Purchase;
+        var isSalesReturn = invoice.InvoiceType == InvoiceType.SalesReturn;
+        var isPurchaseReturn = invoice.InvoiceType == InvoiceType.PurchaseReturn;
+
+        if (!isSale && !isPurchase && !isSalesReturn && !isPurchaseReturn)
+            throw new InvalidOperationException(
+                "نوع فاکتور برای ثبت سند حسابداری معتبر نیست.");
+
+        var typeName = invoice.InvoiceType switch
+        {
+            InvoiceType.Sale => "فروش",
+            InvoiceType.Purchase => "خرید",
+            InvoiceType.SalesReturn => "برگشت از فروش",
+            InvoiceType.PurchaseReturn => "برگشت از خرید",
+            _ => throw new InvalidOperationException("نوع فاکتور نامعتبر است.")
+        };
+
+        var partyLabel = isSale || isSalesReturn ? "مشتری" : "فروشنده";
         var contactName = await GetContactNameAsync(invoice.ContactId);
-        var partyLabel = invoice.InvoiceType == InvoiceType.Sale ? "مشتری" : "فروشنده";
 
-        var description = $"سند خودکار فاکتور {typeName} شماره {invoice.Number}";
-        var lineDescription = $"فاکتور {typeName} شماره {invoice.Number}";
+        var description =
+            $"سند خودکار فاکتور {typeName} شماره {invoice.Number}";
 
-        if (!string.IsNullOrEmpty(contactName))
+        var lineDescription =
+            $"فاکتور {typeName} شماره {invoice.Number}";
+
+        if (!string.IsNullOrWhiteSpace(contactName))
         {
             description += $" - {partyLabel}: {contactName}";
             lineDescription += $" - {partyLabel}: {contactName}";
@@ -778,10 +859,13 @@ public class InvoiceService : IInvoiceService
 
         var lines = new List<TransactionLine>();
 
-        if (invoice.InvoiceType == InvoiceType.Sale)
+        if (isSale)
         {
-            var receivable = await _systemAccounts.GetOrCreateAsync(tenantId, "دریافتنی", AccountType.Receivable);
-            var sales = await _systemAccounts.GetOrCreateAsync(tenantId, "درآمد فروش", AccountType.Income);
+            var receivable = await _systemAccounts.GetOrCreateAsync(
+                tenantId, "دریافتنی", AccountType.Receivable);
+
+            var sales = await _systemAccounts.GetOrCreateAsync(
+                tenantId, "درآمد فروش", AccountType.Income);
 
             lines.Add(new TransactionLine
             {
@@ -790,6 +874,7 @@ public class InvoiceService : IInvoiceService
                 Debit = invoice.TotalAmount,
                 Description = lineDescription
             });
+
             lines.Add(new TransactionLine
             {
                 AccountId = sales.Id,
@@ -797,10 +882,13 @@ public class InvoiceService : IInvoiceService
                 Description = lineDescription
             });
         }
-        else
+        else if (isPurchase)
         {
-            var purchases = await _systemAccounts.GetOrCreateAsync(tenantId, "خرید کالا", AccountType.Expense);
-            var payable = await _systemAccounts.GetOrCreateAsync(tenantId, "پرداختنی", AccountType.Payable);
+            var purchases = await _systemAccounts.GetOrCreateAsync(
+                tenantId, "خرید کالا", AccountType.Expense);
+
+            var payable = await _systemAccounts.GetOrCreateAsync(
+                tenantId, "پرداختنی", AccountType.Payable);
 
             lines.Add(new TransactionLine
             {
@@ -808,6 +896,7 @@ public class InvoiceService : IInvoiceService
                 Debit = invoice.TotalAmount,
                 Description = lineDescription
             });
+
             lines.Add(new TransactionLine
             {
                 AccountId = payable.Id,
@@ -816,11 +905,57 @@ public class InvoiceService : IInvoiceService
                 Description = lineDescription
             });
         }
+        else if (isSalesReturn)
+        {
+            var salesReturn = await _systemAccounts.GetOrCreateAsync(
+                tenantId, "برگشت از فروش", AccountType.Expense);
+
+            var receivable = await _systemAccounts.GetOrCreateAsync(
+                tenantId, "دریافتنی", AccountType.Receivable);
+
+            lines.Add(new TransactionLine
+            {
+                AccountId = salesReturn.Id,
+                Debit = invoice.TotalAmount,
+                Description = lineDescription
+            });
+
+            lines.Add(new TransactionLine
+            {
+                AccountId = receivable.Id,
+                ContactId = invoice.ContactId,
+                Credit = invoice.TotalAmount,
+                Description = lineDescription
+            });
+        }
+        else // PurchaseReturn
+        {
+            var payable = await _systemAccounts.GetOrCreateAsync(
+                tenantId, "پرداختنی", AccountType.Payable);
+
+            var purchaseReturn = await _systemAccounts.GetOrCreateAsync(
+                tenantId, "برگشت از خرید", AccountType.Income);
+
+            lines.Add(new TransactionLine
+            {
+                AccountId = payable.Id,
+                ContactId = invoice.ContactId,
+                Debit = invoice.TotalAmount,
+                Description = lineDescription
+            });
+
+            lines.Add(new TransactionLine
+            {
+                AccountId = purchaseReturn.Id,
+                Credit = invoice.TotalAmount,
+                Description = lineDescription
+            });
+        }
 
         return new Transaction
         {
             TenantId = tenantId,
-            Number = 0, // شماره‌گذاری خودکار در TransactionService
+            Number = 0,
             Date = invoice.Date,
             Description = description,
             Reference = invoice.Number.ToString(),
@@ -953,4 +1088,296 @@ public class InvoiceService : IInvoiceService
     }
 
     private DateTime UtcNow() => _timeProvider.GetUtcNow().UtcDateTime;
+
+    public async Task<List<InvoiceReturnableItemDto>> GetReturnableItemsAsync(
+        int originalInvoiceId,
+        int tenantId)
+    {
+        var original = await _context.Invoices
+            .Include(x => x.Items)
+                .ThenInclude(x => x.Product)
+            .FirstOrDefaultAsync(x =>
+                x.Id == originalInvoiceId &&
+                x.TenantId == tenantId);
+
+        if (original is null)
+            throw new InvalidOperationException("فاکتور اصلی پیدا نشد.");
+
+        if (original.Status != InvoiceStatus.Posted)
+            throw new InvalidOperationException("فقط فاکتور قطعی‌شده قابل برگشت است.");
+
+        if (original.InvoiceType is not (InvoiceType.Sale or InvoiceType.Purchase))
+            throw new InvalidOperationException("فقط فاکتور فروش یا خرید قابل برگشت است.");
+
+        var returnedQuantities = await GetPostedReturnedQuantitiesAsync(
+            originalInvoiceId,
+            tenantId);
+
+        return original.Items
+            .Select(item =>
+            {
+                returnedQuantities.TryGetValue(item.Id, out var returned);
+
+                var remaining = item.Quantity - returned;
+
+                return new InvoiceReturnableItemDto
+                {
+                    OriginalInvoiceItemId = item.Id,
+                    ProductId = item.ProductId,
+                    ProductName = item.Product?.Name ?? string.Empty,
+                    Description = item.Description,
+                    WarehouseId = item.WarehouseId,
+                    OriginalQuantity = item.Quantity,
+                    ReturnedQuantity = returned,
+                    RemainingQuantity = Math.Max(0, remaining),
+                    UnitPrice = item.UnitPrice,
+                    DiscountPercent = item.DiscountPercent,
+                    TaxRate = item.TaxRate,
+                    TrackInventory = item.Product?.TrackInventory ?? false
+                };
+            })
+            .Where(x => x.RemainingQuantity > 0)
+            .ToList();
+    }
+
+    public Task<Invoice> CreateReturnAsync(
+        InvoiceReturnRequest request,
+        int tenantId)
+    {
+        return _context.ExecuteInTransactionAsync(
+            IsolationLevel.Serializable,
+            async () =>
+            {
+                if (request is null)
+                    throw new InvalidOperationException("اطلاعات برگشت معتبر نیست.");
+
+                if (request.OriginalInvoiceId <= 0)
+                    throw new InvalidOperationException("فاکتور اصلی انتخاب نشده است.");
+
+                if (request.Date == default)
+                    throw new InvalidOperationException("تاریخ برگشت الزامی است.");
+
+                if (request.Items is null || request.Items.Count == 0)
+                    throw new InvalidOperationException("حداقل یک قلم برای برگشت انتخاب کنید.");
+
+                if (request.Items.Any(x =>
+                    x.OriginalInvoiceItemId <= 0 || x.Quantity <= 0))
+                {
+                    throw new InvalidOperationException(
+                        "شناسه ردیف اصلی و مقدار برگشتی باید معتبر باشند.");
+                }
+
+                if (request.Items
+                    .GroupBy(x => x.OriginalInvoiceItemId)
+                    .Any(g => g.Count() > 1))
+                {
+                    throw new InvalidOperationException(
+                        "یک ردیف از فاکتور اصلی را فقط یک بار در برگشت وارد کنید.");
+                }
+
+                var original = await _context.Invoices
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == request.OriginalInvoiceId &&
+                        x.TenantId == tenantId);
+
+                if (original is null)
+                    throw new InvalidOperationException("فاکتور اصلی پیدا نشد.");
+
+                if (original.Status != InvoiceStatus.Posted)
+                    throw new InvalidOperationException(
+                        "فقط فاکتور اصلی قطعی‌شده قابل برگشت است.");
+
+                if (original.InvoiceType is not (InvoiceType.Sale or InvoiceType.Purchase))
+                    throw new InvalidOperationException(
+                        "فقط فاکتور فروش یا خرید قابل برگشت است.");
+
+                if (!original.ContactId.HasValue)
+                    throw new InvalidOperationException(
+                        "فاکتور اصلی فاقد طرف حساب معتبر است.");
+
+                if (request.Date < original.Date)
+                    throw new InvalidOperationException(
+                        "تاریخ برگشت نمی‌تواند قبل از تاریخ فاکتور اصلی باشد.");
+
+                var originalItems = original.Items.ToDictionary(x => x.Id);
+
+                var returnedQuantities = await GetPostedReturnedQuantitiesAsync(
+                    original.Id,
+                    tenantId);
+
+                var returnItems = new List<InvoiceItem>();
+
+                foreach (var requestedItem in request.Items)
+                {
+                    if (!originalItems.TryGetValue(
+                        requestedItem.OriginalInvoiceItemId,
+                        out var originalItem))
+                    {
+                        throw new InvalidOperationException(
+                            $"ردیف {requestedItem.OriginalInvoiceItemId} متعلق به فاکتور اصلی نیست.");
+                    }
+
+                    returnedQuantities.TryGetValue(
+                        originalItem.Id,
+                        out var alreadyReturned);
+
+                    var remaining = originalItem.Quantity - alreadyReturned;
+
+                    if (requestedItem.Quantity > remaining)
+                    {
+                        throw new InvalidOperationException(
+                            $"مقدار قابل برگشت کالای شناسه {originalItem.ProductId} کافی نیست. " +
+                            $"مقدار اولیه: {originalItem.Quantity:N3}، " +
+                            $"قبلاً برگشت‌شده: {alreadyReturned:N3}، " +
+                            $"باقی‌مانده: {Math.Max(0, remaining):N3}، " +
+                            $"درخواست فعلی: {requestedItem.Quantity:N3}.");
+                    }
+
+                    returnItems.Add(new InvoiceItem
+                    {
+                        TenantId = tenantId,
+                        ProductId = originalItem.ProductId,
+                        WarehouseId = originalItem.WarehouseId,
+                        ReferenceInvoiceItemId = originalItem.Id,
+                        Description = originalItem.Description,
+                        Quantity = requestedItem.Quantity,
+                        UnitPrice = originalItem.UnitPrice,
+                        DiscountPercent = originalItem.DiscountPercent,
+                        TaxRate = originalItem.TaxRate,
+                        IsCapitalAsset = originalItem.IsCapitalAsset
+                    });
+                }
+
+                var returnType = original.InvoiceType == InvoiceType.Sale
+                    ? InvoiceType.SalesReturn
+                    : InvoiceType.PurchaseReturn;
+
+                var invoice = new Invoice
+                {
+                    TenantId = tenantId,
+                    Number = 0,
+                    Date = request.Date,
+                    InvoiceType = returnType,
+                    ReferenceInvoiceId = original.Id,
+                    ContactId = original.ContactId,
+                    Status = InvoiceStatus.Draft,
+                    Description = string.IsNullOrWhiteSpace(request.Description)
+                        ? $"برگشت از فاکتور شماره {original.Number}"
+                        : request.Description.Trim(),
+                    Items = returnItems
+                };
+
+                InvoiceCalculator.Calculate(invoice);
+
+                if (invoice.TotalAmount <= 0)
+                    throw new InvalidOperationException(
+                        "مبلغ فاکتور برگشت باید بیشتر از صفر باشد.");
+
+                await SaveNewInvoiceAsync(invoice, "ایجاد فاکتور برگشت");
+
+                return invoice;
+            });
+    }
+
+    /// <summary>
+    /// مجموع مقدار برگشت‌شده در برگشت‌های قطعی مربوط به هر ردیف فاکتور اصلی.
+    /// </summary>
+    private async Task<Dictionary<int, decimal>> GetPostedReturnedQuantitiesAsync(
+        int originalInvoiceId,
+        int tenantId)
+    {
+        var rows = await (
+            from item in _context.InvoiceItems
+            join invoice in _context.Invoices
+                on item.InvoiceId equals invoice.Id
+            where invoice.TenantId == tenantId
+                  && invoice.ReferenceInvoiceId == originalInvoiceId
+                  && invoice.Status == InvoiceStatus.Posted
+                  && (invoice.InvoiceType == InvoiceType.SalesReturn
+                      || invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                  && item.ReferenceInvoiceItemId.HasValue
+            group item by item.ReferenceInvoiceItemId!.Value into g
+            select new
+            {
+                OriginalItemId = g.Key,
+                Quantity = g.Sum(x => x.Quantity)
+            })
+            .ToListAsync();
+
+        return rows.ToDictionary(x => x.OriginalItemId, x => x.Quantity);
+    }
+
+    private async Task ValidateReturnBeforePostingAsync(
+        Invoice returnInvoice,
+        int tenantId)
+    {
+        if (!returnInvoice.ReferenceInvoiceId.HasValue)
+            throw new InvalidOperationException(
+                "فاکتور برگشت باید به فاکتور اصلی متصل باشد.");
+
+        var original = await _context.Invoices
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x =>
+                x.Id == returnInvoice.ReferenceInvoiceId.Value &&
+                x.TenantId == tenantId);
+
+        if (original is null || original.Status != InvoiceStatus.Posted)
+            throw new InvalidOperationException(
+                "فاکتور اصلی پیدا نشد یا دیگر قطعی نیست.");
+
+        var expectedReturnType = original.InvoiceType == InvoiceType.Sale
+            ? InvoiceType.SalesReturn
+            : original.InvoiceType == InvoiceType.Purchase
+                ? InvoiceType.PurchaseReturn
+                : (InvoiceType?)null;
+
+        if (!expectedReturnType.HasValue ||
+            returnInvoice.InvoiceType != expectedReturnType.Value)
+        {
+            throw new InvalidOperationException(
+                "نوع فاکتور برگشت با نوع فاکتور اصلی مطابقت ندارد.");
+        }
+
+        if (returnInvoice.ContactId != original.ContactId)
+            throw new InvalidOperationException(
+                "طرف حساب فاکتور برگشت با فاکتور اصلی یکسان نیست.");
+
+        var originalItems = original.Items.ToDictionary(x => x.Id);
+
+        var returnedQuantities = await GetPostedReturnedQuantitiesAsync(
+            original.Id,
+            tenantId);
+
+        foreach (var item in returnInvoice.Items)
+        {
+            if (!item.ReferenceInvoiceItemId.HasValue ||
+                !originalItems.TryGetValue(
+                    item.ReferenceInvoiceItemId.Value,
+                    out var originalItem))
+            {
+                throw new InvalidOperationException(
+                    "یکی از ردیف‌های برگشت به ردیف معتبری از فاکتور اصلی متصل نیست.");
+            }
+
+            if (item.ProductId != originalItem.ProductId)
+                throw new InvalidOperationException(
+                    "کالای ردیف برگشت با کالای ردیف اصلی مطابقت ندارد.");
+
+            returnedQuantities.TryGetValue(
+                originalItem.Id,
+                out var alreadyReturned);
+
+            var remaining = originalItem.Quantity - alreadyReturned;
+
+            if (item.Quantity <= 0 || item.Quantity > remaining)
+            {
+                throw new InvalidOperationException(
+                    $"مقدار قابل برگشت کالا کافی نیست. " +
+                    $"باقی‌مانده: {Math.Max(0, remaining):N3}، " +
+                    $"مقدار این برگشت: {item.Quantity:N3}.");
+            }
+        }
+    }
+
 }

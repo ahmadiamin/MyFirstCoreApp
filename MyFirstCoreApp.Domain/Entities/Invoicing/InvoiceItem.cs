@@ -68,4 +68,13 @@ public class InvoiceItem : TenantEntity
     /// فقط برای اقلام فاکتور خرید کاربرد دارد.
     /// </summary>
     public bool IsCapitalAsset { get; set; } = false;
+
+    /// <summary>
+    /// ردیف فاکتور اصلی که این ردیف برگشت از آن ایجاد شده است.
+    /// برای فاکتورهای عادی و خدماتی بدون مقدار می‌ماند.
+    /// </summary>
+    public int? ReferenceInvoiceItemId { get; set; }
+
+    public InvoiceItem? ReferenceInvoiceItem { get; set; }
+
 }

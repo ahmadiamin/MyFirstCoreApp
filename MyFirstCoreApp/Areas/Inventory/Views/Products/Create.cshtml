@@ -29,4 +29,43 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+
+           // ============================================
+           // select2
+           // ============================================
+           $('.select2').select2({
+               width: '100%',
+               dir: 'rtl',
+               language: 'fa',
+               placeholder: 'انتخاب کنید',
+               allowClear: true
+           });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const trackInventory =
+                document.getElementById("TrackInventory");
+
+            const openingStockSection =
+                document.getElementById("openingStockSection");
+
+            if (!trackInventory || !openingStockSection)
+                return;
+
+            function toggleOpeningStock() {
+                openingStockSection.style.display =
+                    trackInventory.checked ? "block" : "none";
+            }
+
+            trackInventory.addEventListener(
+                "change",
+                toggleOpeningStock
+            );
+
+            toggleOpeningStock();
+        });
+    </script>
 }

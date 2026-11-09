@@ -54,6 +54,10 @@
             });
             return isDup;
         }
+
+        // ============================================
+        // 🆕 محاسبه جمع‌ها
+        // ============================================
         function updateTotals() {
             let subTotal = 0, discountTotal = 0, taxTotal = 0;
 
@@ -89,12 +93,16 @@
         // ============================================
         // 🆕 راه‌اندازی MagicSuggest کالا برای یه ردیف
         // ============================================
-        function initProductMagicSuggestForRow(index, initialId, initialName, initialTrackInventory) {
+                function initProductMagicSuggestForRow(index, initialId, initialName, initialTrackInventory) {
             var containerId = 'product_ms_' + index;
             var $container = $('.product-magicsuggest[data-index="' + index + '"]');
+            var $row = $container.closest('tr');
 
             $container.empty();
-            $container.append($('<div id="' + containerId + '" class="magicsuggest-container"></div>'));
+
+            $container.append(
+                $('<div id="' + containerId + '" class="magicsuggest-container"></div>')
+            );
 
             $container.append(`
                 <div class="new-product-service-option mt-2" style="display:none;">
@@ -111,138 +119,244 @@
             `);
 
             var InvoiceType = @((int)(Model.InvoiceType));
+            var showStock = false;
+            var ms = null;
 
-            $.ajax({
-                url: '/Invoicing/Invoices/SearchProducts',
-                type: 'GET',
-                data: { invoiceType: InvoiceType},
+            function updateStockDisplay(item) {
+                var $stock = $row.find('.product-stock');
 
-                success: function (r) {
-                    var initialData = r.data.map(function (p) {
-                        return { id: p.id, name: p.name, code: p.code, salePrice: p.salePrice, unitName: p.unitName, taxRate: p.taxRate, trackInventory: p.trackInventory };
-                    });
+                if (!showStock ||
+                    !item ||
+                    item.trackInventory === false ||
+                    item.stock === null ||
+                    item.stock === undefined) {
+                    $stock.empty();
+                    return;
+                }
 
-                    var ms = $('#' + containerId).magicSuggest({
-                        data: initialData,
-                        valueField: 'id',
-                        displayField: 'name',
-                        allowFreeEntries: true,
-                        maxSelection: 1,
-                        resultAsString: false,
-                        useCommaKey: false,
+                $stock.text(
+                    'موجودی: ' + formatNumberWithComma(String(item.stock))
+                );
+            }
 
-                        selectionRenderer: function (item) { return item.name; },
-                        renderer: function (item) {
-                            var txt = item.name;
-                            if (item.code) txt += ' <small style="color:#666;">(' + item.code + ')</small>';
-                            if (item.unitName) txt += ' <small style="color:#007bff;">[' + item.unitName + ']</small>';
-                            return txt;
-                        },
-                        placeholder: 'نام کالا را تایپ کنید...',
-                        noSuggestionText: 'موردی یافت نشد. Enter بزنید تا جدید اضافه شود.',
-                        minChars: 0,
-                        typeDelay: 200,
-                        maxSuggestions: 50,
-                        maxSelectionRenderer: function () {
-                            return 'فقط یک کالا می‌توانید انتخاب کنید.';
-                        }
-                    });
+            function loadProducts() {
+                var selectedWarehouseId = $row.find('.warehouse-select').val();
 
-                    if (initialId && initialId > 0 && initialName) {
-                        ms.addToSelection([{ id: initialId, name: initialName, trackInventory: initialTrackInventory !== 'false' }]);
-                    }
+                $.ajax({
+                    url: '/Invoicing/Invoices/SearchProducts',
+                    type: 'GET',
+                    data: {
+                        invoiceType: InvoiceType,
+                        warehouseId: selectedWarehouseId || null
+                    },
+                    success: function (r) {
+                        if (!r.success) return;
 
-                    $(ms).on('selectionchange', function () {
-                        var selection = ms.getSelection();
-                        var $row = $('.product-magicsuggest[data-index="' + index + '"]').closest('tr');
-                        var $serviceOption = $row.find('.new-product-service-option');
-                        var $serviceCheckbox = $row.find('.is-service-checkbox');
-                        
-                        if (selection && selection.length > 0) {
-                            var item = selection[0];
+                        showStock = r.showStock === true;
 
-                            var isNewProduct = item.isNewProduct === true || item.trackInventory === undefined;
+                        var data = r.data.map(function (p) {
+                            return {
+                                id: p.id,
+                                name: p.name,
+                                code: p.code,
+                                salePrice: p.salePrice,
+                                unitName: p.unitName,
+                                taxRate: p.taxRate,
+                                trackInventory: p.trackInventory,
+                                stock: p.stock
+                            };
+                        });
 
-                            console.log('item:', item);
-                            console.log('item.id:', item.id);
-                            console.log('isNewProduct:', isNewProduct);
+                        if (ms) {
+                            ms.setData(data);
 
-                            $serviceOption.toggle(isNewProduct);
+                            var selectedId = $('#ProductId_Hidden_' + index).val();
 
-                            console.log('display after toggle:', $serviceOption.css('display'));                          
+                            if (selectedId && selectedId !== '0') {
+                                var selectedItem = data.find(function (p) {
+                                    return p.id.toString() === selectedId.toString();
+                                });
 
-                            
-                            if (!isNewProduct) {
-                                $serviceCheckbox.prop('checked', false);
-                            }
-
-                            var isService = isNewProduct && $serviceCheckbox.is(':checked');
-                            var tracksInventory = isNewProduct
-                                ? !isService
-                                : item.trackInventory !== false;
-
-                            $row.find('.warehouse-picker').toggle(tracksInventory);
-                            $row.find('.warehouse-not-applicable').toggle(!tracksInventory);
-
-                            if (!tracksInventory) {
-                                $row.find('.warehouse-select').val('');
-                            }
-
-                            if (!isNewProduct) {
-                                if (isProductDuplicate(item.id, index)) {
-                                    alert('این کالا قبلاً در فاکتور ثبت شده است.');
-                                    ms.clear();
-
-                                    $('#ProductId_Hidden_' + index).val('0');
-                                    $('#ProductName_Hidden_' + index).val('');
-                                    return;
-                                }
-
-                                $('#ProductId_Hidden_' + index).val(item.id);
-                                $('#ProductName_Hidden_' + index).val(item.name);
-
-                                if (item.salePrice !== undefined && item.salePrice !== null) {
-                                    $row.find('.price-input')
-                                        .val(formatNumberWithComma(item.salePrice.toString()));
-                                }
-
-                                if (item.taxRate !== undefined && item.taxRate !== null) {
-                                    $row.find('.tax-input').val(item.taxRate);
-                                }
-
-                                updateTotals();
-                            } else {
-                                $('#ProductId_Hidden_' + index).val('0');
-                                $('#ProductName_Hidden_' + index).val(item.name);
+                                updateStockDisplay(selectedItem);
                             }
                         } else {
-                            $('#ProductId_Hidden_' + index).val('');
-                            $('#ProductName_Hidden_' + index).val('');
+                            ms = $('#' + containerId).magicSuggest({
+                                data: data,
+                                valueField: 'id',
+                                displayField: 'name',
+                                allowFreeEntries: true,
+                                maxSelection: 1,
+                                resultAsString: false,
+                                useCommaKey: false,
 
-                            $serviceOption.hide();
-                            $serviceCheckbox.prop('checked', false);
+                                selectionRenderer: function (item) {
+                                    return item.name;
+                                },
 
-                            $row.find('.warehouse-picker').show();
-                            $row.find('.warehouse-not-applicable').hide();
+                                renderer: function (item) {
+                                    var txt = item.name;
+
+                                    if (item.code) {
+                                        txt += ' <small style="color:#666;">(' + item.code + ')</small>';
+                                    }
+
+                                    if (item.unitName) {
+                                        txt += ' <small style="color:#007bff;">[' + item.unitName + ']</small>';
+                                    }
+
+                                    if (showStock &&
+                                        item.trackInventory !== false &&
+                                        item.stock !== null &&
+                                        item.stock !== undefined) {
+                                        txt += ' <small style="color:#28a745; margin-right:5px;">موجودی: ' +
+                                            formatNumberWithComma(String(item.stock)) +
+                                            '</small>';
+                                    }
+
+                                    return txt;
+                                },
+
+                                placeholder: 'نام کالا را تایپ کنید...',
+                                noSuggestionText: 'موردی یافت نشد. Enter بزنید تا جدید اضافه شود.',
+                                minChars: 0,
+                                typeDelay: 200,
+                                maxSuggestions: 50,
+                                maxSelectionRenderer: function () {
+                                    return 'فقط یک کالا می‌توانید انتخاب کنید.';
+                                }
+                            });
+
+                            $container.data('magicSuggest', ms);
+
+                            if (initialId && initialId > 0 && initialName) {
+                                var initialProduct = data.find(function (p) {
+                                    return p.id.toString() === initialId.toString();
+                                });
+
+                                ms.addToSelection([
+                                    initialProduct || {
+                                        id: initialId,
+                                        name: initialName,
+                                        trackInventory: initialTrackInventory !== 'false'
+                                    }
+                                ]);
+                            }
+
+                            $(ms).on('selectionchange', function () {
+                                var selection = ms.getSelection();
+                                var $serviceOption = $row.find('.new-product-service-option');
+                                var $serviceCheckbox = $row.find('.is-service-checkbox');
+
+                                if (selection && selection.length > 0) {
+                                    var item = selection[0];
+
+                                    var isNewProduct =
+                                        item.isNewProduct === true ||
+                                        item.trackInventory === undefined;
+
+                                    $serviceOption.toggle(isNewProduct);
+
+                                    if (!isNewProduct) {
+                                        $serviceCheckbox.prop('checked', false);
+                                    }
+
+                                    var isService = isNewProduct && $serviceCheckbox.is(':checked');
+
+                                    var tracksInventory = isNewProduct
+                                        ? !isService
+                                        : item.trackInventory !== false;
+
+                                    $row.find('.warehouse-picker').toggle(tracksInventory);
+                                    $row.find('.warehouse-not-applicable').toggle(!tracksInventory);
+
+                                    if (!tracksInventory) {
+                                        $row.find('.warehouse-select')
+                                            .val('')
+                                            .trigger('change.select2');
+                                    }
+
+                                    if (!isNewProduct) {
+                                        if (isProductDuplicate(item.id, index)) {
+                                            alert('این کالا قبلاً در فاکتور ثبت شده است.');
+                                            ms.clear();
+
+                                            $('#ProductId_Hidden_' + index).val('0');
+                                            $('#ProductName_Hidden_' + index).val('');
+                                            updateStockDisplay(null);
+                                            return;
+                                        }
+
+                                        $('#ProductId_Hidden_' + index).val(item.id);
+                                        $('#ProductName_Hidden_' + index).val(item.name);
+
+                                        if (item.salePrice !== undefined && item.salePrice !== null) {
+                                            $row.find('.price-input')
+                                                .val(formatNumberWithComma(item.salePrice.toString()));
+                                        }
+
+                                        if (item.taxRate !== undefined && item.taxRate !== null) {
+                                            $row.find('.tax-input').val(item.taxRate);
+                                        }
+
+                                        updateStockDisplay(item);
+                                        updateTotals();
+                                    } else {
+                                        $('#ProductId_Hidden_' + index).val('0');
+                                        $('#ProductName_Hidden_' + index).val(item.name);
+                                        updateStockDisplay(null);
+                                    }
+                                } else {
+                                    $('#ProductId_Hidden_' + index).val('');
+                                    $('#ProductName_Hidden_' + index).val('');
+
+                                    $serviceOption.hide();
+                                    $serviceCheckbox.prop('checked', false);
+
+                                    $row.find('.warehouse-picker').show();
+                                    $row.find('.warehouse-not-applicable').hide();
+
+                                    updateStockDisplay(null);
+                                }
+                            });
+
+                            // نمایش موجودی کالای اولیه در حالت ویرایش
+                            if (initialId && initialId > 0) {
+                                var selectedInitial = data.find(function (p) {
+                                    return p.id.toString() === initialId.toString();
+                                });
+
+                                updateStockDisplay(selectedInitial);
+                            }
+
+                            $container.on('change', '.is-service-checkbox', function () {
+                                var isService = $(this).is(':checked');
+
+                                $row.find('.warehouse-picker').toggle(!isService);
+                                $row.find('.warehouse-not-applicable').toggle(isService);
+
+                                if (isService) {
+                                    $row.find('.warehouse-select')
+                                        .val('')
+                                        .trigger('change.select2');
+
+                                    updateStockDisplay(null);
+                                } else {
+                                    loadProducts();
+                                }
+                            });
+
+                            // با تغییر انبار، موجودی کالاها مجدداً دریافت می‌شود.
+                            $row.off('change.productStock', '.warehouse-select');
+                            $row.on('change.productStock', '.warehouse-select', function () {
+                                loadProducts();
+                            });
                         }
-                    });
+                    }
+                });
+            }
 
-                    $container.on('change', '.is-service-checkbox', function () {
-                        var isService = $(this).is(':checked');
-
-                        var $row = $(this).closest('tr');
-
-                        $row.find('.warehouse-picker').toggle(!isService);
-                        $row.find('.warehouse-not-applicable').toggle(isService);
-
-                        if (isService) {
-                            $row.find('.warehouse-select').val('');
-                        }
-                    });
-                }
-            });
+            loadProducts();
         }
-
         $(document).ready(function () {
 
             // ============================================
@@ -259,7 +373,7 @@
                     });
                 });
             }
-            initSelect2('select.select2');
+            initSelect2('select.select2, select.warehouse-select');
 
             // ============================================
             // ۲. DatePicker
@@ -405,10 +519,12 @@
             <tr class="item-row">
                 <td class="item-number" data-label="#">${newIndex + 1}</td>
                 <td data-label="کالا">
-                    <div class="product-magicsuggest magicsuggest-container"
-                         data-index="${newIndex}"
-                         data-initial-id="0"
-                         data-initial-name=""></div>
+            <div class="product-magicsuggest magicsuggest-container"
+             data-index="${newIndex}"
+             data-initial-id="0"
+             data-initial-name=""></div>
+
+        <div class="product-stock text-muted small mt-1"></div>
                     <input type="hidden" name="Items[${newIndex}].ProductId"
                            id="ProductId_Hidden_${newIndex}" value="0" />
                     <input type="hidden" name="Items[${newIndex}].ProductName"
@@ -416,7 +532,7 @@
                 </td>
                 <td class="warehouse-cell" data-label="انبار">
                     <span class="warehouse-picker">
-                    <select name="Items[${newIndex}].WarehouseId" class="form-control warehouse-select">
+                    <select name="Items[${newIndex}].WarehouseId" class="form-control warehouse-select select2">
                         ${$('#warehouseOptionsTemplate').html()}
                     </select>
                     </span>
@@ -424,19 +540,23 @@
                 </td>
                 <td data-label="تعداد">
                     <input type="text" name="Items[${newIndex}].Quantity"
-                           class="form-control persian-number quantity-input" value="۱" />
+                           class="form-control persian-number quantity-input" value="۱"
+                           inputmode="decimal" />
                 </td>
                 <td data-label="قیمت واحد">
                     <input type="text" name="Items[${newIndex}].UnitPrice"
-                           class="form-control persian-number persian-number-comma price-input" value="۰" />
+                           class="form-control persian-number persian-number-comma price-input" value="۰"
+                           inputmode="numeric" />
                 </td>
                 <td data-label="تخفیف %">
                     <input type="text" name="Items[${newIndex}].DiscountPercent"
-                           class="form-control persian-number discount-input" value="۰" />
+                           class="form-control persian-number discount-input" value="۰"
+                           inputmode="numeric" />
                 </td>
                 <td data-label="مالیات %">
                     <input type="text" name="Items[${newIndex}].TaxRate"
-                           class="form-control persian-number tax-input" value="۰" />
+                           class="form-control persian-number tax-input" value="۰"
+                           inputmode="numeric" />
                 </td>
                 <td data-label="جمع خط">
                     <input type="text" name="Items[${newIndex}].LineTotal"
@@ -451,6 +571,9 @@
         `;
 
                 $('#itemsBody').append(newRow);
+                // 🆕 init select2 برای ردیف جدید
+                initSelect2($('#itemsBody tr.item-row:last select.select2'));
+                
                 itemIndex++;
                 renumberItems();
                 updateTotals();
@@ -478,12 +601,11 @@
                     $row.find('[name^="Items["]').each(function () {
                         var $inp = $(this);
                         var name = $inp.attr('name');
-                        // نام را از Items[عدد].FieldName به Items[i].FieldName تبدیل کن
                         var newName = name.replace(/^Items\[\d+\]/, 'Items[' + i + ']');
                         $inp.attr('name', newName);
                     });
 
-                    // ۳. id های hidden (ProductId_Hidden_x و ProductName_Hidden_x)
+                    // ۳. id های hidden
                     var $pid = $row.find('input[id^="ProductId_Hidden_"]');
                     var $pname = $row.find('input[id^="ProductName_Hidden_"]');
                     if ($pid.length) {
@@ -496,15 +618,11 @@
                     // ۴. container مربوط به MagicSuggest
                     var $ms = $row.find('.product-magicsuggest');
                     if ($ms.length) {
-                        // فقط data-index را عوض نکن؛ چون MagicSuggest با index قبلی init شده
-                        // بهتر است کانتینر را ری‌ست کنیم و با index جدید دوباره بسازیم.
                         var oldIndex = $ms.data('index');
                         if (oldIndex != i) {
-                            // پاک‌سازی نمونه قبلی
                             $ms.removeData('ms-initialized');
                             $ms.empty();
 
-                            // ذخیره مقدار فعلی (اگر انتخاب شده)
                             var currentProductId = $row.find('input[id^="ProductId_Hidden_"]').val() || 0;
                             var currentProductName = $row.find('input[id^="ProductName_Hidden_"]').val() || '';
 
@@ -513,7 +631,6 @@
                             $ms.data('initial-id', currentProductId);
                             $ms.data('initial-name', currentProductName);
 
-                            // دوباره راه‌اندازی
                             initProductMagicSuggestForRow(i, currentProductId, currentProductName);
                         } else {
                             $ms.attr('data-index', i);
@@ -526,7 +643,32 @@
             updateTotals();
 
             // ============================================
-            // ۶. Submit
+            // ۶. 🆕 انتخاب خودکار مقدار در فوکوس (برای موبایل)
+            // ============================================
+            $(document).on('focus', '.quantity-input, .price-input, .discount-input, .tax-input, .line-total, .allocation-amount', function () {
+                var $this = $(this);
+                // در موبایل، setTimeout لازم است تا select بعد از باز شدن کیبورد اجرا شود
+                setTimeout(function () {
+                    try { $this.select(); } catch (e) { /* ignore */ }
+                }, 10);
+            });
+
+            // 🆕 اگر کاربر فیلد را خالی گذاشت، مقدار پیش‌فرض برگردد
+            $(document).on('blur', '.quantity-input, .price-input, .discount-input, .tax-input', function () {
+                var $this = $(this);
+                var val = $this.val();
+                if (!val || val.trim() === '') {
+                    if ($this.hasClass('quantity-input')) {
+                        $this.val('۱');
+                    } else {
+                        $this.val('۰');
+                    }
+                    updateTotals();
+                }
+            });
+
+            // ============================================
+            // ۷. Submit
             // ============================================
             $('#invoiceForm').on('submit', function () {
                 $('.persian-number').each(function () {

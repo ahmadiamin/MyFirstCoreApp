@@ -9,5 +9,11 @@ public enum InvoiceType
     Sale = 2,
 
     /// <summary>فاکتور خرید</summary>
-    Purchase = 3
+    Purchase = 3,
+
+    /// <summary>برگشت از فروش</summary>
+    SalesReturn = 4,
+
+    /// <summary>برگشت از خرید</summary>
+    PurchaseReturn = 5
 }

@@ -53,3 +53,59 @@ public sealed class InvoiceItemRequest
     public bool IsCapitalAsset { get; set; }
     public bool IsService { get; set; }
 }
+
+/// <summary>
+/// درخواست ایجاد برگشت از فروش یا برگشت از خرید.
+/// قیمت، تخفیف و مالیات از فاکتور اصلی استخراج می‌شوند.
+/// </summary>
+public sealed class InvoiceReturnRequest
+{
+    public int OriginalInvoiceId { get; set; }
+
+    public DateOnly Date { get; set; }
+
+    public string? Description { get; set; }
+
+    public List<InvoiceReturnItemRequest> Items { get; set; } = new();
+}
+
+/// <summary>
+/// ردیف برگشت؛ فقط شناسه ردیف اصلی و مقدار برگشتی از کاربر دریافت می‌شود.
+/// </summary>
+public sealed class InvoiceReturnItemRequest
+{
+    public int OriginalInvoiceItemId { get; set; }
+
+    public decimal Quantity { get; set; }
+}
+
+/// <summary>
+/// اطلاعات یک ردیف فاکتور اصلی و مقدار قابل برگشت آن.
+/// </summary>
+public sealed class InvoiceReturnableItemDto
+{
+    public int OriginalInvoiceItemId { get; set; }
+
+    public int ProductId { get; set; }
+
+    public string ProductName { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+
+    public int? WarehouseId { get; set; }
+
+    public decimal OriginalQuantity { get; set; }
+
+    public decimal ReturnedQuantity { get; set; }
+
+    public decimal RemainingQuantity { get; set; }
+
+    public decimal UnitPrice { get; set; }
+
+    public decimal DiscountPercent { get; set; }
+
+    public decimal TaxRate { get; set; }
+
+    public bool TrackInventory { get; set; }
+}
+

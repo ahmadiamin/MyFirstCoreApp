@@ -23,10 +23,11 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
             .HasForeignKey(x => x.TransactionGroupId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // رابطه با سال مالی
+        // رابطه با سال مالی (الزامی؛ حذف سالِ دارای سند ممکن نیست)
         builder.HasOne(x => x.FiscalYear)
             .WithMany()
             .HasForeignKey(x => x.FiscalYearId)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         // فیلتر سراسری (شرکت + حذف نرم) در ApplicationDbContext اعمال می‌شود؛

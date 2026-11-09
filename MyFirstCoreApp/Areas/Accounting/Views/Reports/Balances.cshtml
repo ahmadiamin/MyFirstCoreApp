@@ -11,6 +11,87 @@
     ViewData["Title"] = title;
 }
 
+<style>
+    .contact-balance-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 10px;
+    }
+
+    .contact-balance-card .title {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .contact-balance-card .row-line {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+    }
+
+    .contact-balance-card .main-amount {
+        font-weight: 700;
+        font-size: 15px;
+        margin-top: 6px;
+    }
+
+    .contact-balance-card .main-amount.debit { color: #28a745; }
+    .contact-balance-card .main-amount.credit { color: #dc3545; }
+
+    .contact-balance-card .age-box {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 6px;
+    }
+
+    .contact-balance-card .age-box .age-item {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #f1f8ff;
+        color: #6c757d;
+    }
+
+    .contact-balance-card .age-box .age-item.danger {
+        background: #fff5f5;
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .contact-balance-card .age-box .age-item.warning {
+        background: #fff8e6;
+        color: #b8860b;
+    }
+
+    .contact-balance-card .badges {
+        margin-top: 6px;
+    }
+
+    .contact-balance-card .badges .badge {
+        margin-left: 4px;
+        margin-bottom: 4px;
+    }
+
+    /* جدول دسکتاپ مثل قبل */
+    .contact-balances-table {
+        font-size: 12px;
+    }
+
+    .contact-balances-table th,
+    .contact-balances-table td {
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .contact-balances-table thead th {
+        background: #f4f6f9;
+        text-align: center;
+    }
+</style>
+
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger alert-dismissible">
@@ -23,12 +104,13 @@
     <div class="card-header">
         <h3 class="card-title">
             <i class="fa fa-@(isDebtors ? "arrow-down" : "arrow-up")"></i>
-            @title <small class="text-muted">— @subtitle</small>
+            @title <small class="text-muted d-none d-md-inline">— @subtitle</small>
         </h3>
         <div class="card-tools">
             <a asp-area="Accounting" asp-controller="Reports" asp-action="@(isDebtors ? "Creditors" : "Debtors")"
                class="btn btn-sm btn-outline-secondary">
-                @(isDebtors ? "گزارش بستانکاران" : "گزارش بدهکاران")
+                <i class="fa fa-exchange-alt"></i>
+                <span class="d-none d-md-inline">@(isDebtors ? "گزارش بستانکاران" : "گزارش بدهکاران")</span>
             </a>
         </div>
     </div>
@@ -36,38 +118,35 @@
     <form method="get" asp-area="Accounting" asp-controller="Reports" asp-action="@action">
         <div class="card-body">
             <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>مانده تا تاریخ</label>
-                        <input type="text" name="asOf" value="@Model.AsOf" class="form-control datepicker" autocomplete="off" dir="ltr" />
-                    </div>
+                <div class="col-md-3 col-6 mb-2">
+                    <label>مانده تا تاریخ</label>
+                    <input type="text" name="asOf" value="@Model.AsOf" class="form-control datepicker"
+                           autocomplete="off" dir="ltr" />
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>حداقل مانده (ریال)</label>
-                        <input type="text" name="minAmount" value="@Model.MinAmountText" class="form-control" autocomplete="off" dir="ltr" placeholder="بدون حداقل" />
-                    </div>
+                <div class="col-md-3 col-6 mb-2">
+                    <label>حداقل مانده (ریال)</label>
+                    <input type="text" name="minAmount" value="@Model.MinAmountText"
+                           class="form-control" autocomplete="off" dir="ltr" placeholder="بدون حداقل" />
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>جستجو (نام، کد، موبایل)</label>
-                        <input type="text" name="search" value="@Model.Search" class="form-control" autocomplete="off" />
-                    </div>
+                <div class="col-md-3 col-12 mb-2">
+                    <label>جستجو (نام، کد، موبایل)</label>
+                    <input type="text" name="search" value="@Model.Search"
+                           class="form-control" autocomplete="off" />
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>مرتب‌سازی</label>
-                        <select name="sort" class="form-control select2">
-                            <option value="1" selected="@(Model.Sort == 1)">بیشترین مانده</option>
-                            <option value="2" selected="@(Model.Sort == 2)">نام</option>
-                            <option value="3" selected="@(Model.Sort == 3)">قدیمی‌ترین فعالیت</option>
-                        </select>
-                    </div>
+                <div class="col-md-3 col-12 mb-2">
+                    <label>مرتب‌سازی</label>
+                    <select name="sort" class="form-control select2">
+                        <option value="1" selected="@(Model.Sort == 1)">بیشترین مانده</option>
+                        <option value="2" selected="@(Model.Sort == 2)">نام</option>
+                        <option value="3" selected="@(Model.Sort == 3)">قدیمی‌ترین فعالیت</option>
+                    </select>
                 </div>
             </div>
         </div>
         <div class="card-footer">
-            <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> نمایش گزارش</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-search"></i> نمایش گزارش
+            </button>
         </div>
     </form>
 </div>
@@ -83,131 +162,141 @@
 
 @if (report != null)
 {
+    <!-- خلاصه آماری -->
     <div class="row">
-        <div class="col-md-3 col-6">
+        <div class="col-md-3 col-6 mb-2">
             <div class="info-box">
                 <span class="info-box-icon bg-info"><i class="fa fa-users"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text">تعداد طرف حساب</span>
-                    <span class="info-box-number">@report.Count.ToString("N0")</span>
+                    <span class="info-box-number">@toPersianDigits(report.Count.ToString("N0"))</span>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-md-3 col-6 mb-2">
             <div class="info-box">
                 <span class="info-box-icon @(isDebtors ? "bg-success" : "bg-danger")"><i class="fa fa-coins"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text">جمع مانده</span>
-                    <span class="info-box-number">@report.TotalAmount.ToString("N0")</span>
+                    <span class="info-box-number">@toPersianDigits(report.TotalAmount.ToString("N0"))</span>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-md-3 col-6 mb-2">
             <div class="info-box">
                 <span class="info-box-icon bg-warning"><i class="fa fa-money-check"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text">چک در انتظار (کم‌شده از مانده)</span>
-                    <span class="info-box-number">@report.TotalPendingCheque.ToString("N0")</span>
+                    <span class="info-box-text">چک در انتظار</span>
+                    <span class="info-box-number">@toPersianDigits(report.TotalPendingCheque.ToString("N0"))</span>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-md-3 col-6 mb-2">
             <div class="info-box">
                 <span class="info-box-icon bg-secondary"><i class="fa fa-triangle-exclamation"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text">مانده اگر چک‌ها برگردند</span>
-                    <span class="info-box-number">@report.TotalIfChequesBounce.ToString("N0")</span>
+                    <span class="info-box-number">@toPersianDigits(report.TotalIfChequesBounce.ToString("N0"))</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-body p-0 table-responsive">
-            <table class="table table-hover table-sm mb-0">
-                <thead>
-                    <tr>
-                        <th rowspan="2">طرف حساب</th>
-                        <th rowspan="2">موبایل</th>
-                        <th rowspan="2" class="text-left">جمع بدهکار</th>
-                        <th rowspan="2" class="text-left">جمع بستانکار</th>
-                        <th rowspan="2" class="text-left">مانده</th>
-                        <th colspan="4" class="text-center border-right border-left">سن بدهی (فاکتورهای باز)</th>
-                        <th rowspan="2" class="text-left" title="باقی‌مانده‌ی فاکتورهایی که سررسیدشان گذشته">معوق</th>
-                        <th rowspan="2" class="text-left">سایر</th>
-                        <th rowspan="2" class="text-left">چک در انتظار</th>
-                        <th rowspan="2" class="text-left">مانده با برگشت چک</th>
-                        <th rowspan="2">آخرین فعالیت</th>
-                    </tr>
-                    <tr>
-                        <th class="text-left border-left">۰ تا ۳۰</th>
-                        <th class="text-left">۳۱ تا ۶۰</th>
-                        <th class="text-left">۶۱ تا ۹۰</th>
-                        <th class="text-left border-right">بیش از ۹۰</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in report.Rows)
-                    {
+        <div class="card-body p-0">
+
+            <!-- دسکتاپ: جدول اصلی (همان نسخه قبلی) -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover table-sm mb-0 contact-balances-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <a asp-area="Accounting" asp-controller="Reports" asp-action="Contact"
-                                   asp-route-contactId="@row.ContactId" asp-route-toDate="@PersianDate.Format(report.AsOf)"
-                                   title="صورت‌حساب">@(row.ContactName ?? "—")</a>
-                                @if (!string.IsNullOrEmpty(row.ContactCode))
-                                {
-                                    <small class="text-muted">(@row.ContactCode)</small>
-                                }
-                            </td>
-                            <td dir="ltr" class="text-right">@row.Mobile</td>
-                            <td class="text-left">@row.TotalDebit.ToString("N0")</td>
-                            <td class="text-left">@row.TotalCredit.ToString("N0")</td>
-                            <td class="text-left font-weight-bold">@row.Amount.ToString("N0")</td>
-                            <td class="text-left border-left">@(row.Age0To30 == 0 ? "—" : row.Age0To30.ToString("N0"))</td>
-                            <td class="text-left">@(row.Age31To60 == 0 ? "—" : row.Age31To60.ToString("N0"))</td>
-                            <td class="text-left @(row.Age61To90 > 0 ? "text-warning" : "")">@(row.Age61To90 == 0 ? "—" : row.Age61To90.ToString("N0"))</td>
-                            <td class="text-left border-right @(row.Age90Plus > 0 ? "text-danger font-weight-bold" : "")">@(row.Age90Plus == 0 ? "—" : row.Age90Plus.ToString("N0"))</td>
-                            <td class="text-left @(row.OverdueAmount > 0 ? "text-danger font-weight-bold" : "")">@(row.OverdueAmount == 0 ? "—" : row.OverdueAmount.ToString("N0"))</td>
-                            <td class="text-left @(row.OtherAmount < 0 ? "text-info" : "")" title="مانده منهای فاکتورهای باز (قرض، پیش‌پرداخت، سند دستی)">
-                                @(row.OtherAmount == 0 ? "—" : row.OtherAmount.ToString("N0"))
-                            </td>
-                            <td class="text-left">@(row.PendingChequeAmount == 0 ? "—" : row.PendingChequeAmount.ToString("N0"))</td>
-                            <td class="text-left">@row.AmountIfChequesBounce.ToString("N0")</td>
-                            <td dir="ltr" class="text-right">@PersianDate.Format(row.LastTransactionDate)</td>
+                            <th rowspan="2">طرف حساب</th>
+                            <th rowspan="2">موبایل</th>
+                            <th rowspan="2" class="text-left">جمع بدهکار</th>
+                            <th rowspan="2" class="text-left">جمع بستانکار</th>
+                            <th rowspan="2" class="text-left">مانده</th>
+                            <th colspan="4" class="text-center border-right border-left">سن بدهی (فاکتورهای باز)</th>
+                            <th rowspan="2" class="text-left" title="باقی‌مانده‌ی فاکتورهایی که سررسیدشان گذشته">معوق</th>
+                            <th rowspan="2" class="text-left">سایر</th>
+                            <th rowspan="2" class="text-left">چک در انتظار</th>
+                            <th rowspan="2" class="text-left">مانده با برگشت چک</th>
+                            <th rowspan="2">آخرین فعالیت</th>
                         </tr>
-                    }
-                    @if (!report.Rows.Any())
-                    {
                         <tr>
-                            <td colspan="14" class="text-center text-muted p-4">
-                                @(isDebtors ? "طرف حساب بدهکاری" : "طرف حساب بستانکاری") با این فیلتر پیدا نشد.
-                            </td>
+                            <th class="text-left border-left">۰ تا ۳۰</th>
+                            <th class="text-left">۳۱ تا ۶۰</th>
+                            <th class="text-left">۶۱ تا ۹۰</th>
+                            <th class="text-left border-right">بیش از ۹۰</th>
                         </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in report.Rows)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-area="Accounting" asp-controller="Reports" asp-action="Contact"
+                                       asp-route-contactId="@row.ContactId" asp-route-toDate="@PersianDate.Format(report.AsOf)"
+                                       title="صورت‌حساب">@(row.ContactName ?? "—")</a>
+                                    @if (!string.IsNullOrEmpty(row.ContactCode))
+                                    {
+                                        <small class="text-muted">(@row.ContactCode)</small>
+                                    }
+                                </td>
+                                <td dir="ltr" class="text-right">@row.Mobile</td>
+                                <td class="text-left">@row.TotalDebit.ToString("N0")</td>
+                                <td class="text-left">@row.TotalCredit.ToString("N0")</td>
+                                <td class="text-left font-weight-bold">@row.Amount.ToString("N0")</td>
+                                <td class="text-left border-left">@(row.Age0To30 == 0 ? "—" : row.Age0To30.ToString("N0"))</td>
+                                <td class="text-left">@(row.Age31To60 == 0 ? "—" : row.Age31To60.ToString("N0"))</td>
+                                <td class="text-left @(row.Age61To90 > 0 ? "text-warning" : "")">@(row.Age61To90 == 0 ? "—" : row.Age61To90.ToString("N0"))</td>
+                                <td class="text-left border-right @(row.Age90Plus > 0 ? "text-danger font-weight-bold" : "")">@(row.Age90Plus == 0 ? "—" : row.Age90Plus.ToString("N0"))</td>
+                                <td class="text-left @(row.OverdueAmount > 0 ? "text-danger font-weight-bold" : "")">@(row.OverdueAmount == 0 ? "—" : row.OverdueAmount.ToString("N0"))</td>
+                                <td class="text-left @(row.OtherAmount < 0 ? "text-info" : "")" title="مانده منهای فاکتورهای باز (قرض، پیش‌پرداخت، سند دستی)">
+                                    @(row.OtherAmount == 0 ? "—" : row.OtherAmount.ToString("N0"))
+                                </td>
+                                <td class="text-left">@(row.PendingChequeAmount == 0 ? "—" : row.PendingChequeAmount.ToString("N0"))</td>
+                                <td class="text-left">@row.AmountIfChequesBounce.ToString("N0")</td>
+                                <td dir="ltr" class="text-right">@PersianDate.Format(row.LastTransactionDate)</td>
+                            </tr>
+                        }
+                        @if (!report.Rows.Any())
+                        {
+                            <tr>
+                                <td colspan="14" class="text-center text-muted p-4">
+                                    @(isDebtors ? "طرف حساب بدهکاری" : "طرف حساب بستانکاری") با این فیلتر پیدا نشد.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if (report.Rows.Any())
+                    {
+                        <tfoot>
+                            <tr class="font-weight-bold bg-light">
+                                <td colspan="2">جمع کل (همه‌ی ردیف‌های فیلترشده)</td>
+                                <td class="text-left">@report.TotalDebit.ToString("N0")</td>
+                                <td class="text-left">@report.TotalCredit.ToString("N0")</td>
+                                <td class="text-left">@report.TotalAmount.ToString("N0")</td>
+                                <td class="text-left">@report.TotalAge0To30.ToString("N0")</td>
+                                <td class="text-left">@report.TotalAge31To60.ToString("N0")</td>
+                                <td class="text-left">@report.TotalAge61To90.ToString("N0")</td>
+                                <td class="text-left">@report.TotalAge90Plus.ToString("N0")</td>
+                                <td class="text-left">@report.TotalOverdue.ToString("N0")</td>
+                                <td class="text-left">@report.TotalOther.ToString("N0")</td>
+                                <td class="text-left">@report.TotalPendingCheque.ToString("N0")</td>
+                                <td class="text-left">@report.TotalIfChequesBounce.ToString("N0")</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
                     }
-                </tbody>
-                @if (report.Rows.Any())
-                {
-                    <tfoot>
-                        <tr class="font-weight-bold bg-light">
-                            <td colspan="2">جمع کل (همه‌ی ردیف‌های فیلترشده)</td>
-                            <td class="text-left">@report.TotalDebit.ToString("N0")</td>
-                            <td class="text-left">@report.TotalCredit.ToString("N0")</td>
-                            <td class="text-left">@report.TotalAmount.ToString("N0")</td>
-                            <td class="text-left">@report.TotalAge0To30.ToString("N0")</td>
-                            <td class="text-left">@report.TotalAge31To60.ToString("N0")</td>
-                            <td class="text-left">@report.TotalAge61To90.ToString("N0")</td>
-                            <td class="text-left">@report.TotalAge90Plus.ToString("N0")</td>
-                            <td class="text-left">@report.TotalOverdue.ToString("N0")</td>
-                            <td class="text-left">@report.TotalOther.ToString("N0")</td>
-                            <td class="text-left">@report.TotalPendingCheque.ToString("N0")</td>
-                            <td class="text-left">@report.TotalIfChequesBounce.ToString("N0")</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                }
-            </table>
+                </table>
+            </div>
+
+            <!-- موبایل: کارت‌ها -->
+            <div id="mobileContactBalances" class="d-md-none p-2"></div>
+
         </div>
 
+        <!-- صفحه‌بندی -->
         @if (report.TotalPages > 1)
         {
             <div class="card-footer clearfix">
@@ -223,7 +312,7 @@
                                    asp-route-minAmount="@Model.MinAmountText"
                                    asp-route-search="@Model.Search"
                                    asp-route-sort="@Model.Sort"
-                                   asp-route-page="@p">@p</a>
+                                   asp-route-page="@p">@toPersianDigits(p.ToString())</a>
                             </li>
                         }
                         else if (Math.Abs(p - Model.Page) == 3)
@@ -232,7 +321,9 @@
                         }
                     }
                 </ul>
-                <span class="text-muted">صفحه @Model.Page از @report.TotalPages</span>
+                <span class="text-muted">
+                    صفحه @toPersianDigits(Model.Page.ToString()) از @toPersianDigits(report.TotalPages.ToString())
+                </span>
             </div>
         }
     </div>
@@ -241,13 +332,27 @@
         <i class="fa fa-info-circle"></i>
         «مانده» از دفتر (اسناد قطعی) است. «سایر» = مانده منهای فاکتورهای باز؛ قرض، پیش‌پرداخت تخصیص‌نیافته و اسناد دستی (منفی یعنی فاکتورهای باز از مانده بیشتر است).
         «چک در انتظار» قبلاً از مانده کم شده است؛ ستون آخر ریسک برگشت چک‌ها را نشان می‌دهد.
-        «معوق» = باقی‌مانده‌ی فاکتورهای بازی که سررسید دارند و سررسیدشان قبل از «مانده تا تاریخ» است (فاکتور بدون سررسید معوق نمی‌شود).
+        «معوق» = باقی‌مانده‌ی فاکتورهای بازی که سررسید دارند و سررسیدشان قبل از «مانده تا تاریخ» است.
     </div>
+}
+
+@functions {
+    string toPersianDigits(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        return s.Replace('0', '۰').Replace('1', '۱').Replace('2', '۲').Replace('3', '۳')
+                .Replace('4', '۴').Replace('5', '۵').Replace('6', '۶').Replace('7', '۷')
+                .Replace('8', '۸').Replace('9', '۹');
+    }
 }
 
 @section Scripts {
     <script>
         $(document).ready(function () {
+
+            // ============================================
+            // DatePicker + Select2
+            // ============================================
             $('.datepicker').each(function () {
                 var $input = $(this);
                 var val = $input.val();
@@ -259,7 +364,6 @@
                 if (val) $input.persianDatepicker('setDate', val);
             });
 
-            // Select2
             $('.select2').select2({
                 dir: 'rtl',
                 placeholder: '-- انتخاب --',
@@ -267,6 +371,139 @@
                 width: '100%',
                 language: 'fa'
             });
+
+            @if (report == null)
+            {
+                <text>return;</text>
+            }
+
+            // ============================================
+            // 🆕 پاس دادن isDebtors از Razor به JS
+            // ============================================
+            var isDebtors = @(isDebtors ? "true" : "false");
+
+            // ============================================
+            // داده‌ها
+            // ============================================
+            var balancesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                report.Rows.Select(r => new {
+                    contactId = r.ContactId,
+                    contactName = r.ContactName,
+                    contactCode = r.ContactCode,
+                    mobile = r.Mobile,
+                    totalDebit = r.TotalDebit,
+                    totalCredit = r.TotalCredit,
+                    amount = r.Amount,
+                    age0To30 = r.Age0To30,
+                    age31To60 = r.Age31To60,
+                    age61To90 = r.Age61To90,
+                    age90Plus = r.Age90Plus,
+                    overdueAmount = r.OverdueAmount,
+                    otherAmount = r.OtherAmount,
+                    pendingChequeAmount = r.PendingChequeAmount,
+                    amountIfChequesBounce = r.AmountIfChequesBounce,
+                    lastTransactionDate = r.LastTransactionDate != null
+                        ? MyFirstCoreApp.Application.Common.Utilities.PersianDate.Format(r.LastTransactionDate.Value)
+                        : null
+                }),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+            // ============================================
+            // ابزار
+            // ============================================
+            function toPersianDigits(n) {
+                return String(n).replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function formatMoney(n) {
+                if (n == null || n === 0) return '—';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US'));
+            }
+
+            function formatMoneyAlways(n) {
+                if (n == null) return '—';
+                var x = Number(n);
+                if (isNaN(x)) return n;
+                return toPersianDigits(x.toLocaleString('en-US'));
+            }
+
+            // ============================================
+            // موبایل
+            // ============================================
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileContactBalances');
+                var html = '';
+
+                if (!rows || !rows.length) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">' +
+                        '<i class="fa fa-info-circle fa-2x mb-2"></i><br/>' +
+                        '@(isDebtors ? "طرف حساب بدهکاری" : "طرف حساب بستانکاری") با این فیلتر پیدا نشد.</div>';
+                    return;
+                }
+
+                rows.forEach(function (r, index) {
+                    var ageItems = '';
+                    if (r.age0To30 > 0) ageItems += '<span class="age-item">۰-۳۰: ' + formatMoney(r.age0To30) + '</span>';
+                    if (r.age31To60 > 0) ageItems += '<span class="age-item">۳۱-۶۰: ' + formatMoney(r.age31To60) + '</span>';
+                    if (r.age61To90 > 0) ageItems += '<span class="age-item warning">۶۱-۹۰: ' + formatMoney(r.age61To90) + '</span>';
+                    if (r.age90Plus > 0) ageItems += '<span class="age-item danger">۹۰+: ' + formatMoney(r.age90Plus) + '</span>';
+
+                    var badges = '';
+                    if (r.overdueAmount > 0) badges += '<span class="badge badge-danger">معوق: ' + formatMoney(r.overdueAmount) + '</span>';
+                    if (r.pendingChequeAmount > 0) badges += '<span class="badge badge-warning">چک در انتظار: ' + formatMoney(r.pendingChequeAmount) + '</span>';
+                    if (r.otherAmount !== 0) badges += '<span class="badge badge-info">سایر: ' + formatMoneyAlways(r.otherAmount) + '</span>';
+
+                    html += '<div class="contact-balance-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="title">' +
+                                '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
+                                '<i class="fa fa-user text-muted ml-1"></i>' +
+                                '<a href="/Accounting/Reports/Contact?contactId=' + r.contactId +
+                                '&toDate=' + encodeURIComponent('@PersianDate.Format(report.AsOf)') + '">' +
+                                (r.contactName || '—') + '</a>' +
+                                (r.contactCode ? ' <small class="text-muted">(' + r.contactCode + ')</small>' : '') +
+                            '</div>' +
+                        '</div>' +
+                        (r.mobile ? '<div class="row-line">موبایل: <span dir="ltr">' + r.mobile + '</span></div>' : '') +
+                        '<div class="main-amount ' + (isDebtors ? 'debit' : 'credit') + '">' +
+                            'مانده: ' + formatMoneyAlways(r.amount) + ' ریال' +
+                        '</div>' +
+                        '<div class="row-line">جمع بدهکار: ' + formatMoneyAlways(r.totalDebit) + ' | جمع بستانکار: ' + formatMoneyAlways(r.totalCredit) + '</div>' +
+                        (ageItems ? '<div class="age-box">' + ageItems + '</div>' : '') +
+                        (badges ? '<div class="badges">' + badges + '</div>' : '') +
+                        '<div class="row-line">مانده با برگشت چک: ' + formatMoneyAlways(r.amountIfChequesBounce) + ' ریال</div>' +
+                        (r.lastTransactionDate ? '<div class="row-line">آخرین فعالیت: <span dir="ltr">' + r.lastTransactionDate + '</span></div>' : '') +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+            }
+
+            // ============================================
+            // رندر موبایل (فقط اگر در موبایل باشیم)
+            // ============================================
+            function applyLayout() {
+                var mobileDiv = document.getElementById('mobileContactBalances');
+                if (!mobileDiv) return;
+
+                if (window.matchMedia('(max-width: 767.98px)').matches) {
+                    renderMobileList(balancesData);
+                }
+            }
+
+            applyLayout();
+
+            var mql = window.matchMedia('(max-width: 767.98px)');
+            mql.addEventListener('change', function () {
+                if (mql.matches) {
+                    renderMobileList(balancesData);
+                }
+            });
+
         });
     </script>
 }

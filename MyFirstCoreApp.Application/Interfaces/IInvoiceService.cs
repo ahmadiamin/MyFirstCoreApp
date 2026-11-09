@@ -68,4 +68,20 @@ public interface IInvoiceService
 
     /// <summary>تسویه با تخفیف (سند جداگانه می‌سازد؛ سند اصلی فاکتور دست نمی‌خورد).</summary>
     Task SettleWithDiscountAsync(int invoiceId, int tenantId, decimal discountAmount);
+
+
+    /// <summary>
+    /// دریافت اقلام فاکتور اصلی و مقدار باقی‌مانده قابل برگشت.
+    /// </summary>
+    Task<List<InvoiceReturnableItemDto>> GetReturnableItemsAsync(
+        int originalInvoiceId,
+        int tenantId);
+
+    /// <summary>
+    /// ایجاد فاکتور برگشت از فروش یا برگشت از خرید به‌صورت پیش‌نویس.
+    /// </summary>
+    Task<Invoice> CreateReturnAsync(
+        InvoiceReturnRequest request,
+        int tenantId);
+
 }

@@ -409,7 +409,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<int?>("FiscalYearId")
+                    b.Property<int>("FiscalYearId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
@@ -2353,6 +2353,53 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.ToTable("Invoices", (string)null);
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceBehaviorSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AllowNegativeStockOnSales")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowStockInInvoice")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("InvoiceBehaviorSettings", (string)null);
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -2466,6 +2513,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasPrecision(18, 3)
                         .HasColumnType("decimal(18,3)");
 
+                    b.Property<int?>("ReferenceInvoiceItemId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TaxAmount")
                         .HasPrecision(18)
                         .HasColumnType("decimal(18,0)");
@@ -2495,6 +2545,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.HasIndex("InvoiceId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("ReferenceInvoiceItemId");
 
                     b.HasIndex("WarehouseId");
 
@@ -2879,7 +2931,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Accounting.FiscalYear", "FiscalYear")
                         .WithMany()
                         .HasForeignKey("FiscalYearId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Accounting.TransactionGroup", "TransactionGroup")
                         .WithMany()
@@ -3244,6 +3297,11 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceItem", "ReferenceInvoiceItem")
+                        .WithMany()
+                        .HasForeignKey("ReferenceInvoiceItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
@@ -3252,6 +3310,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("Invoice");
 
                     b.Navigation("Product");
+
+                    b.Navigation("ReferenceInvoiceItem");
 
                     b.Navigation("Warehouse");
                 });

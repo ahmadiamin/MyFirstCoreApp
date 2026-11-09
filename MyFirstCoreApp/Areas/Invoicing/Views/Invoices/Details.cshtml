@@ -226,7 +226,7 @@
                                 <td class="text-center persian-number">@i</td>
                                 <td>@item.Product?.Name</td>
                                 <td>@(item.Warehouse?.Name ?? "—")</td>
-                                <td class="text-center persian-number">@item.Quantity</td>
+                                <td class="text-center persian-number">@item.Quantity.ToString("0.###")</td>
                                 <td class="text-left persian-number-comma">@item.UnitPrice.ToString("N0")</td>
                                 <td class="text-left persian-number-comma">@item.DiscountAmount.ToString("N0")</td>
                                 <td class="text-left persian-number-comma">@item.TaxAmount.ToString("N0")</td>
@@ -274,7 +274,7 @@
                         {
                             <div class="row-line">انبار: @item.Warehouse.Name</div>
                         }
-                        <div class="row-line">تعداد: <span class="persian-number" dir="ltr">@item.Quantity</span></div>
+                        <div class="row-line">تعداد: <span class="persian-number" dir="ltr">@item.Quantity.ToString("0.###")</span></div>
                         <div class="row-line">قیمت واحد: <span class="persian-number-comma" dir="ltr">@item.UnitPrice.ToString("N0")</span></div>
                         @if (item.DiscountAmount > 0)
                         {

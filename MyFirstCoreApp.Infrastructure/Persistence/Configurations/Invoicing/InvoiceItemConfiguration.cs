@@ -50,5 +50,13 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
         builder.HasIndex(x => x.InvoiceId);
         builder.HasIndex(x => x.ProductId);
         builder.HasIndex(x => x.WarehouseId);
+
+
+        builder.HasOne(x => x.ReferenceInvoiceItem)
+            .WithMany()
+            .HasForeignKey(x => x.ReferenceInvoiceItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.ReferenceInvoiceItemId);
     }
 }

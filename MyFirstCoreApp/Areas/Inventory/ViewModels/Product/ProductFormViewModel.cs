@@ -54,4 +54,20 @@ public class ProductFormViewModel
     // Dropdowns
     public List<SelectListItem> UnitOptions { get; set; } = new();
     public List<SelectListItem> CategoryOptions { get; set; } = new();
+
+
+    [Display(Name = "انبار موجودی اولیه")]
+    public int? OpeningWarehouseId { get; set; }
+
+    [Display(Name = "تعداد موجودی اولیه")]
+    [Range(typeof(decimal), "0", "79228162514264337593543950335",
+        ErrorMessage = "موجودی اولیه نمی‌تواند منفی باشد")]
+    public decimal OpeningQuantity { get; set; }
+
+    [Display(Name = "بهای تمام‌شده هر واحد")]
+    [Range(typeof(decimal), "0", "79228162514264337593543950335",
+        ErrorMessage = "بهای واحد نمی‌تواند منفی باشد")]
+    public decimal OpeningUnitCost { get; set; }
+
+    public List<SelectListItem> WarehouseOptions { get; set; } = new();
 }

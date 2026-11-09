@@ -7,7 +7,11 @@ using MyFirstCoreApp.Application.Common.Models;
 using MyFirstCoreApp.Areas.Inventory.ViewModels.Product;
 using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Infrastructure.Persistence;
-
+using System.Data;
+using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Application.Inventory;
+using MyFirstCoreApp.Domain.Enums;
+using MyFirstCoreApp.Application.Common.Utilities;
 namespace MyFirstCoreApp.Areas.Inventory.Controllers;
 
 [Area("Inventory")]
@@ -16,13 +20,16 @@ public class ProductsController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IStockMovementService _stockMovementService;
 
     public ProductsController(
         ApplicationDbContext context,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        IStockMovementService stockMovementService  )
     {
         _context = context;
         _currentTenant = currentTenant;
+        _stockMovementService = stockMovementService;
     }
 
     // GET: /Inventory/Products
@@ -78,14 +85,15 @@ public class ProductsController : Controller
     }
 
     // GET: /Inventory/Products/Create
-    [Authorize(Policy = "Product.Create")]
     public async Task<IActionResult> Create()
     {
         var model = new ProductFormViewModel
         {
             UnitOptions = await GetUnitOptionsAsync(),
-            CategoryOptions = await GetCategoryOptionsAsync()
+            CategoryOptions = await GetCategoryOptionsAsync(),
+            WarehouseOptions = await GetWarehouseOptionsAsync()
         };
+
         return View(model);
     }
 
@@ -96,12 +104,41 @@ public class ProductsController : Controller
     public async Task<IActionResult> Create(ProductFormViewModel model)
     {
         var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Forbid();
+
+        if (!tenantId.HasValue)
+            return Forbid();
+
+        // اعتبارسنجی موجودی اولیه
+        if (!model.TrackInventory && model.OpeningQuantity > 0)
+        {
+            ModelState.AddModelError(
+                nameof(model.OpeningQuantity),
+                "برای خدمات امکان ثبت موجودی اولیه وجود ندارد.");
+        }
+
+        if (model.OpeningQuantity > 0)
+        {
+            if (!model.OpeningWarehouseId.HasValue)
+            {
+                ModelState.AddModelError(
+                    nameof(model.OpeningWarehouseId),
+                    "برای ثبت موجودی اولیه، انتخاب انبار الزامی است.");
+            }
+
+            if (!model.IsActive)
+            {
+                ModelState.AddModelError(
+                    nameof(model.IsActive),
+                    "برای ثبت موجودی اولیه، کالا باید فعال باشد.");
+            }
+        }
 
         if (!ModelState.IsValid)
         {
             model.UnitOptions = await GetUnitOptionsAsync();
             model.CategoryOptions = await GetCategoryOptionsAsync();
+            model.WarehouseOptions = await GetWarehouseOptionsAsync();
+
             return View(model);
         }
 
@@ -122,11 +159,80 @@ public class ProductsController : Controller
             IsActive = model.IsActive
         };
 
-        _context.Products.Add(entity);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.ExecuteInTransactionAsync(
+                IsolationLevel.Serializable,
+                async () =>
+                {
+                    // 1. ثبت کالا
+                    _context.Products.Add(entity);
 
-        TempData["Success"] = "کالا با موفقیت ثبت شد.";
-        return RedirectToAction(nameof(Index));
+                    await _context.SaveChangesAsync();
+
+                    // 2. در صورت داشتن موجودی اولیه، ثبت سند افتتاحیه
+                    if (model.TrackInventory &&
+                        model.OpeningQuantity > 0)
+                    {
+                        var movementRequest = new StockMovementRequest
+                        {
+                            Date = DateOnly.FromDateTime(DateTime.Today),
+
+                            MovementType = (int)StockMovementType.Opening,
+
+                            SourceWarehouseId = null,
+
+                            DestinationWarehouseId =
+                                model.OpeningWarehouseId,
+
+                            Description =
+                                $"موجودی اولیه هنگام تعریف کالا: {entity.Name}",
+
+                            ReferenceInvoiceId = null,
+
+                            Items = new List<StockMovementItemRequest>
+                            {
+                            new()
+                            {
+                                ProductId = entity.Id,
+                                Quantity = model.OpeningQuantity,
+                                UnitCost = model.OpeningUnitCost,
+                                Description = "موجودی افتتاحیه"
+                            }
+                            }
+                        };
+
+                        // ایجاد سند پیش‌نویس
+                        var movementId =
+                            await _stockMovementService.CreateAsync(
+                                movementRequest,
+                                tenantId.Value);
+
+                        // قطعی کردن سند
+                        await _stockMovementService.PostAsync(
+                            movementId,
+                            tenantId.Value);
+                    }
+                });
+
+            TempData["Success"] = model.OpeningQuantity > 0
+                ? "کالا و موجودی اولیه آن با موفقیت ثبت شدند."
+                : "کالا با موفقیت ثبت شد.";
+
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                ex.Message);
+
+            model.UnitOptions = await GetUnitOptionsAsync();
+            model.CategoryOptions = await GetCategoryOptionsAsync();
+            model.WarehouseOptions = await GetWarehouseOptionsAsync();
+
+            return View(model);
+        }
     }
 
     // GET: /Inventory/Products/Edit/5
@@ -297,6 +403,26 @@ public class ProductsController : Controller
         return await _context.ProductCategories
             .Where(x => x.TenantId == tenantId.Value && x.IsActive)
             .OrderBy(x => x.SortOrder).ThenBy(x => x.Name)
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text = x.Name
+            })
+            .ToListAsync();
+    }
+
+    private async Task<List<SelectListItem>> GetWarehouseOptionsAsync()
+    {
+        var tenantId = _currentTenant.TenantId;
+
+        if (!tenantId.HasValue)
+            return new();
+
+        return await _context.Warehouses
+            .Where(x =>
+                x.TenantId == tenantId.Value &&
+                x.IsActive)
+            .OrderBy(x => x.Name)
             .Select(x => new SelectListItem
             {
                 Value = x.Id.ToString(),

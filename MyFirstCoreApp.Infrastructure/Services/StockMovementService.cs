@@ -64,7 +64,6 @@ public class StockMovementService : IStockMovementService
         await _context.ExecuteInTransactionAsync(IsolationLevel.Serializable,
         async () =>
         {
-
             if (request.Id <= 0)
                 throw new InvalidOperationException("شناسه سند معتبر نیست.");
 
@@ -80,35 +79,17 @@ public class StockMovementService : IStockMovementService
                 throw new InvalidOperationException("سند گردش انبار پیدا نشد.");
 
             if (movement.Status != StockMovementStatus.Draft)
-                throw new InvalidOperationException(
-                    "فقط سند پیش‌نویس قابل ویرایش است.");
+                throw new InvalidOperationException("فقط سند پیش‌نویس قابل ویرایش است.");
 
             await ValidateWarehousesAsync(request, tenantId);
             await ValidateProductsAsync(request.Items, tenantId);
-            await ValidateReferenceInvoiceAsync(
-                request.ReferenceInvoiceId, tenantId);
-
-            // اگر سند به فاکتور دیگری مرتبط شود، باید ارتباط قبلی
-            // و محدودیت یکتایی ReferenceInvoiceId نیز رعایت شود.
-            if (request.ReferenceInvoiceId.HasValue)
-            {
-                var duplicateReference = await _context.StockMovements
-                    .AnyAsync(x =>
-                        x.TenantId == tenantId &&
-                        x.Id != movement.Id &&
-                        x.ReferenceInvoiceId == request.ReferenceInvoiceId);
-
-                if (duplicateReference)
-                    throw new InvalidOperationException(
-                        "برای این فاکتور قبلاً گردش انبار ثبت شده است.");
-            }
+            await ValidateReferenceInvoiceAsync(request.ReferenceInvoiceId, tenantId);
 
             _context.StockMovementItems.RemoveRange(movement.Items);
             movement.Items.Clear();
 
             movement.Date = request.Date;
-            movement.MovementType =
-                (StockMovementType)request.MovementType;
+            movement.MovementType = (StockMovementType)request.MovementType;
             movement.SourceWarehouseId = request.SourceWarehouseId;
             movement.DestinationWarehouseId = request.DestinationWarehouseId;
             movement.ReferenceInvoiceId = request.ReferenceInvoiceId;
@@ -120,16 +101,28 @@ public class StockMovementService : IStockMovementService
             await _context.SaveChangesAsync();
         });
     }
-
-    public async Task PostAsync(int id, int tenantId)
+    public Task PostAsync(int id, int tenantId)
     {
-        await _context.ExecuteInTransactionAsync(IsolationLevel.Serializable,
+        // ثبت عادی گردش انبار؛ بدون مجوز منفی‌شدن موجودی
+        return PostInternalAsync(
+            id,
+            tenantId,
+            allowNegativeStockForSale: false);
+    }
+
+    private async Task PostInternalAsync(
+        int id,
+        int tenantId,
+        bool allowNegativeStockForSale)
+    {
+        await _context.ExecuteInTransactionAsync(
+            IsolationLevel.Serializable,
             async () =>
             {
                 var movement = await _context.StockMovements.Include(x => x.Items)
                 .FirstOrDefaultAsync(x =>
-                x.Id == id &&
-                x.TenantId == tenantId);
+                    x.Id == id &&
+                    x.TenantId == tenantId);
 
                 if (movement is null)
                     throw new InvalidOperationException("سند گردش انبار پیدا نشد.");
@@ -162,12 +155,13 @@ public class StockMovementService : IStockMovementService
                 ValidateRequest(request);
                 await ValidateWarehousesAsync(request, tenantId);
                 await ValidateProductsAsync(request.Items, tenantId);
-                await ValidateReferenceInvoiceAsync(
-                    request.ReferenceInvoiceId, tenantId);
-
+                await ValidateReferenceInvoiceAsync(request.ReferenceInvoiceId, tenantId);
+                var canAllowNegativeStock = await CanAllowNegativeStockForSaleAsync(
+                    movement,
+                    tenantId,
+                    allowNegativeStockForSale);
                 // حواله و انتقال نباید باعث منفی‌شدن موجودی انبار مبدأ شوند.
-                if (movement.MovementType is StockMovementType.Issue
-                    or StockMovementType.Transfer)
+                if (!canAllowNegativeStock && movement.MovementType is StockMovementType.Issue or StockMovementType.Transfer)
                 {
                     var requiredByProduct = movement.Items
                         .GroupBy(x => x.ProductId)
@@ -202,10 +196,9 @@ public class StockMovementService : IStockMovementService
                 movement.PostedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
-
             });
     }
-
+    
     public async Task CancelAsync(int id, int tenantId)
     {
         await _context.ExecuteInTransactionAsync(IsolationLevel.Serializable,
@@ -407,6 +400,38 @@ public class StockMovementService : IStockMovementService
         }).ToList();
     }
 
+    private async Task<bool> CanAllowNegativeStockForSaleAsync(
+    StockMovement movement,
+    int tenantId,
+    bool allowNegativeStockForSale)
+    {
+        // این قابلیت فقط از مسیر داخلی ثبت فاکتور قابل فعال‌شدن است.
+        if (!allowNegativeStockForSale)
+            return false;
+
+        // فقط حواله خروج مربوط به فاکتور فروش
+        if (movement.MovementType != StockMovementType.Issue ||
+            !movement.ReferenceInvoiceId.HasValue ||
+            movement.ReversesMovementId.HasValue)
+        {
+            return false;
+        }
+
+        // اطمینان از اینکه سند واقعاً مربوط به فاکتور فروش همین شرکت است.
+        var isSaleInvoice = await _context.Invoices.AnyAsync(x =>
+            x.Id == movement.ReferenceInvoiceId.Value &&
+            x.TenantId == tenantId &&
+            x.InvoiceType == InvoiceType.Sale);
+
+        if (!isSaleInvoice)
+            return false;
+
+        // بررسی تنظیم اختصاصی شرکت
+        return await _context.InvoiceBehaviorSettings.AnyAsync(x =>
+            x.TenantId == tenantId &&
+            x.AllowNegativeStockOnSales);
+    }
+
     private async Task<decimal> GetBalanceInternalAsync(
         int productId,
         int warehouseId,
@@ -509,7 +534,6 @@ public class StockMovementService : IStockMovementService
         }
     }
 
-
     public async Task CreateFromInvoiceAsync(int invoiceId, int tenantId)
     {
         var invoice = await _context.Invoices
@@ -524,9 +548,15 @@ public class StockMovementService : IStockMovementService
         if (invoice.InvoiceType == InvoiceType.PreInvoice)
             return;
 
-        if (invoice.InvoiceType is not (InvoiceType.Sale or InvoiceType.Purchase))
+        if (invoice.InvoiceType is not (
+            InvoiceType.Sale
+            or InvoiceType.Purchase
+            or InvoiceType.SalesReturn
+            or InvoiceType.PurchaseReturn))
+        {
             throw new InvalidOperationException(
                 "نوع فاکتور برای ثبت گردش انبار معتبر نیست.");
+        }
 
         if (invoice.Items.Count == 0)
             throw new InvalidOperationException(
@@ -574,7 +604,8 @@ public class StockMovementService : IStockMovementService
                 "برای این فاکتور قبلاً گردش انبار قطعی و فعال ثبت شده است.");
         }
 
-        var isSale = invoice.InvoiceType == InvoiceType.Sale;
+        var isIssue = invoice.InvoiceType is InvoiceType.Sale or InvoiceType.PurchaseReturn;
+
         int? defaultWarehouseId = null;
         if (trackedItems.Any(item => !item.WarehouseId.HasValue))
             defaultWarehouseId = await _warehouseService.GetDefaultWarehouseIdAsync(tenantId);
@@ -588,30 +619,59 @@ public class StockMovementService : IStockMovementService
             var request = new StockMovementRequest
             {
                 Date = invoice.Date,
-                MovementType = isSale
+                MovementType = isIssue
                     ? (int)StockMovementType.Issue
                     : (int)StockMovementType.Receipt,
 
-                SourceWarehouseId = isSale ? warehouseGroup.Key : null,
-                DestinationWarehouseId = isSale ? null : warehouseGroup.Key,
+                SourceWarehouseId = isIssue ? warehouseGroup.Key : null,
+                DestinationWarehouseId = isIssue ? null : warehouseGroup.Key,
 
                 ReferenceInvoiceId = invoice.Id,
 
-                Description = isSale
-                    ? $"خروج کالا بابت فاکتور فروش شماره {invoice.Number}"
-                    : $"ورود کالا بابت فاکتور خرید شماره {invoice.Number}",
-
-                Items = warehouseGroup.Select(item => new StockMovementItemRequest
+                Description = invoice.InvoiceType switch
                 {
-                    ProductId = item.ProductId,
-                    Quantity = item.Quantity,
-                    UnitCost = isSale ? null : item.UnitPrice,
-                    Description = item.Description
-                }).ToList()
+                    InvoiceType.Sale =>
+                        $"خروج کالا بابت فاکتور فروش شماره {invoice.Number}",
+
+                    InvoiceType.Purchase =>
+                        $"ورود کالا بابت فاکتور خرید شماره {invoice.Number}",
+
+                    InvoiceType.SalesReturn =>
+                        $"ورود کالا بابت برگشت از فروش شماره {invoice.Number}",
+
+                    InvoiceType.PurchaseReturn =>
+                        $"خروج کالا بابت برگشت از خرید شماره {invoice.Number}",
+
+                    _ => "گردش انبار بابت فاکتور"
+                },
+
+                Items = warehouseGroup
+                    .GroupBy(item => item.ProductId)
+                    .Select(group => new StockMovementItemRequest
+                    {
+                        ProductId = group.Key,
+
+                        Quantity = group.Sum(x => x.Quantity),
+
+                        UnitCost = invoice.InvoiceType is
+                            InvoiceType.Purchase or InvoiceType.SalesReturn
+                                ? group.Sum(x => x.Quantity * x.UnitPrice) /
+                                  group.Sum(x => x.Quantity)
+                                : null,
+
+                        Description = group
+                            .Select(x => x.Description)
+                            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
+                    })
+                    .ToList()
             };
 
             var movementId = await CreateAsync(request, tenantId);
-            await PostAsync(movementId, tenantId);
+
+            await PostInternalAsync(
+                movementId,
+                tenantId,
+                allowNegativeStockForSale: true);
         }
 
     }
@@ -622,23 +682,11 @@ public class StockMovementService : IStockMovementService
             IsolationLevel.Serializable,
             async () =>
             {
-                var invoiceExists = await _context.Invoices.AnyAsync(i =>
-                i.Id == invoiceId &&
-                i.TenantId == tenantId);
-
-                if (!invoiceExists)
-                    throw new InvalidOperationException("فاکتور موردنظر پیدا نشد.");
-
                 var invoice = await _context.Invoices
-                    .Where(i =>
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(i =>
                         i.Id == invoiceId &&
-                        i.TenantId == tenantId)
-                    .Select(i => new
-                    {
-                        i.InvoiceType,
-                        i.Status
-                    })
-                    .FirstOrDefaultAsync();
+                        i.TenantId == tenantId);
 
                 if (invoice is null)
                     throw new InvalidOperationException("فاکتور موردنظر پیدا نشد.");
@@ -674,11 +722,21 @@ public class StockMovementService : IStockMovementService
 
                 if (originalMovements.Count == 0)
                 {
-                    if (invoice.InvoiceType is InvoiceType.Sale or InvoiceType.Purchase &&
-                        invoice.Status != InvoiceStatus.Posted)
+                    var productIds = invoice.Items
+                        .Select(x => x.ProductId)
+                        .Distinct()
+                        .ToList();
+
+                    var hasTrackedItems = await _context.Products.AnyAsync(x =>
+                        x.TenantId == tenantId &&
+                        x.TrackInventory &&
+                        productIds.Contains(x.Id));
+
+                    if (invoice.Status == InvoiceStatus.Posted && hasTrackedItems)
                     {
                         throw new InvalidOperationException(
-                            "فاکتور قطعی‌شده و دارای گردش انبار برای برگشت وجود ندارد.");
+                            "فاکتور قطعی‌شده دارای کالای انبارگردانی‌شونده است، " +
+                            "اما گردش انبار متناظر با آن پیدا نشد.");
                     }
 
                     return;

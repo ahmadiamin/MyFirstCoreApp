@@ -166,33 +166,6 @@ try
         {
             logger.LogError(ex, "خطا در Seed اولیه");
         }
-
-        try
-        {
-            // اسناد قدیمی را به سال مالی وصل می‌کند و برای شرکت‌های بدون سال، سال شمسی می‌سازد (idempotent)
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var timeProvider = scope.ServiceProvider.GetRequiredService<TimeProvider>();
-
-            var result = await FiscalYearBackfill.RunAsync(context, timeProvider);
-
-            if (result.YearsCreated > 0 || result.TransactionsAssigned > 0)
-            {
-                logger.LogInformation(
-                    "سال مالی: {Created} سال ساخته شد و {Assigned} سند وصل شد.",
-                    result.YearsCreated, result.TransactionsAssigned);
-            }
-
-            if (result.TransactionsUnassigned > 0)
-            {
-                logger.LogWarning(
-                    "{Count} سند در هیچ سال مالی نمی‌افتد (بازه‌های سفارشی). بازه‌ی سال‌های مالی را اصلاح کنید.",
-                    result.TransactionsUnassigned);
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "خطا در تکمیل سال‌های مالی");
-        }
     }
 
     app.Run();

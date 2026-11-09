@@ -451,14 +451,13 @@
                         }
                     } catch (e) { /* ignore */ }
                 }
-
-                // فیلتر نوع از query string
+                // فیلتر نوع به‌صورت query string
+                var url = '/Invoicing/Invoices/GetData';
                 if (invoiceTypeFilter) {
-                    request.invoiceType = invoiceTypeFilter;
+                    url += '?invoiceType=' + encodeURIComponent(invoiceTypeFilter);
                 }
-
                 $.ajax({
-                    url: '/Invoicing/Invoices/GetData',
+                    url: url,
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(request),

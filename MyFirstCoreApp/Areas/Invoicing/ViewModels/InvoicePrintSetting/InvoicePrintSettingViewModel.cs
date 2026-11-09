@@ -21,4 +21,12 @@ public class InvoicePrintSettingViewModel
     public string Description { get; set; } = string.Empty;
 
     public List<SelectListItem> Poems { get; set; } = new();
+
+    [Display(Name = "اجازه فروش با موجودی ناکافی")]
+    public bool AllowNegativeStockOnSales { get; set; } = false;
+
+    [Display(Name = "نمایش موجودی کالا هنگام ثبت فاکتور")]
+    public bool ShowStockInInvoice { get; set; } = true;
+
+
 }

@@ -72,6 +72,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         public DbSet<InvoiceHistory> InvoiceHistories { get; set; }
         public DbSet<InvoicePrintSetting> InvoicePrintSettings { get; set; }
         public DbSet<InvoicePoem> InvoicePoems { get; set; }
+        public DbSet<InvoiceBehaviorSetting> InvoiceBehaviorSettings { get; set; }
 
         // Banking
         public DbSet<Cheque> Cheques { get; set; }

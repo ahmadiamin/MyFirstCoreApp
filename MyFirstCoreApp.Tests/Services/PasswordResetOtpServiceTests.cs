@@ -1450,4 +1450,94 @@ public sealed class PasswordResetOtpServiceTests
 
         Assert.NotNull(savedOtp.ConsumedAt);
     }
+
+    [Fact]
+    public async Task RequestCode_WithUnconfirmedPhone_ShouldNotSendSms()
+    {
+        using var database = new TestDatabase();
+        using var context = database.NewContext();
+
+        var user = new ApplicationUser
+        {
+            Id = "otp-unconfirmed-user",
+            UserName = "otp-unconfirmed-user",
+            PhoneNumber = "09123456789",
+            PhoneNumberConfirmed = false,
+            IsActive = true
+        };
+
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var smsService = new FakeSystemSmsService();
+
+        var service = new PasswordResetOtpService(
+            context,
+            CreateUserManager(context),
+            new PasswordHasher<ApplicationUser>(),
+            smsService);
+
+        var result = await service.RequestCodeAsync(user.PhoneNumber);
+
+        // پاسخ عمومی برای جلوگیری از تشخیص شماره‌های ثبت‌شده
+        Assert.True(result.IsAccepted);
+
+        Assert.Equal(0, smsService.SendCount);
+        Assert.Empty(context.PasswordResetOtps);
+    }
+
+    [Fact]
+    public async Task RequestCode_WithInactiveUser_ShouldNotSendSms()
+    {
+        using var database = new TestDatabase();
+        using var context = database.NewContext();
+
+        var user = new ApplicationUser
+        {
+            Id = "otp-inactive-user",
+            UserName = "otp-inactive-user",
+            PhoneNumber = "09123456789",
+            PhoneNumberConfirmed = true,
+            IsActive = false
+        };
+
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var smsService = new FakeSystemSmsService();
+
+        var service = new PasswordResetOtpService(
+            context,
+            CreateUserManager(context),
+            new PasswordHasher<ApplicationUser>(),
+            smsService);
+
+        var result = await service.RequestCodeAsync(user.PhoneNumber);
+
+        Assert.True(result.IsAccepted);
+        Assert.Equal(0, smsService.SendCount);
+        Assert.Empty(context.PasswordResetOtps);
+    }
+
+    [Fact]
+    public async Task RequestCode_WithUnknownMobile_ShouldNotRevealAccountExistence()
+    {
+        using var database = new TestDatabase();
+        using var context = database.NewContext();
+
+        var smsService = new FakeSystemSmsService();
+
+        var service = new PasswordResetOtpService(
+            context,
+            CreateUserManager(context),
+            new PasswordHasher<ApplicationUser>(),
+            smsService);
+
+        var result = await service.RequestCodeAsync("09111111111");
+
+        Assert.True(result.IsAccepted);
+        Assert.Equal(0, smsService.SendCount);
+        Assert.Empty(context.PasswordResetOtps);
+    }
+
 }

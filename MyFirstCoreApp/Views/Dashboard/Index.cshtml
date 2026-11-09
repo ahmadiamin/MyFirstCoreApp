@@ -161,7 +161,7 @@
 {
     <!-- فاکتورهای باز -->
     <div class="row">
-        <div class="col-md-3 col-6">
+        <div class="col-lg-3 col-md-6 col-sm-12">
             <div class="info-box">
                 <span class="info-box-icon bg-success"><i class="fa fa-cart-shopping"></i></span>
                 <div class="info-box-content">
@@ -170,7 +170,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-lg-3 col-md-6 col-sm-12">
             <div class="info-box">
                 <span class="info-box-icon bg-warning"><i class="fa fa-truck"></i></span>
                 <div class="info-box-content">
@@ -179,7 +179,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-lg-3 col-md-6 col-sm-12">
             <div class="info-box">
                 <span class="info-box-icon bg-info"><i class="fa fa-hourglass-half"></i></span>
                 <div class="info-box-content">
@@ -192,7 +192,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-lg-3 col-md-6 col-sm-12">
             <div class="info-box">
                 <span class="info-box-icon bg-danger"><i class="fa fa-hourglass-half"></i></span>
                 <div class="info-box-content">
@@ -393,7 +393,9 @@
         <div class="col-lg-6">
             <div class="card card-outline card-success">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fa fa-arrow-down"></i> بدهکاران برتر (به ما بدهکارند)</h3>
+                    <a asp-area="Accounting" asp-controller="Reports" asp-action="Debtors">
+                        <h3 class="card-title"><i class="fa fa-arrow-down"></i> بدهکاران برتر (به ما بدهکارند)</h3>
+                    </a>
                 </div>
                 <div class="card-body p-0">
                     <table class="table table-sm mb-0">
@@ -420,7 +422,9 @@
         <div class="col-lg-6">
             <div class="card card-outline card-danger">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fa fa-arrow-up"></i> بستانکاران برتر (ما به آن‌ها بدهکاریم)</h3>
+                    <a asp-area="Accounting" asp-controller="Reports" asp-action="Creditors">
+                        <h3 class="card-title"><i class="fa fa-arrow-up"></i> بستانکاران برتر (ما به آن‌ها بدهکاریم)</h3>
+                    </a>
                 </div>
                 <div class="card-body p-0">
                     <table class="table table-sm mb-0">
@@ -444,21 +448,7 @@
             </div>
         </div>
     </div>
-
-    <!-- گزارش کامل بدهکاران -->
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card-footer text-center">
-                <a asp-area="Accounting" asp-controller="Reports" asp-action="Debtors">گزارش کامل بدهکاران</a>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card-footer text-center">
-                <a asp-area="Accounting" asp-controller="Reports" asp-action="Creditors">گزارش کامل بستانکاران</a>
-            </div>
-        </div>
-    </div>
-
+    
     <!-- جریان ماهانه (بدون وابستگی به کتابخانه‌ی نمودار) -->
     <div class="row">
         <div class="col-12">
@@ -633,8 +623,9 @@
                         @if (Model.SystemSmsBalance?.Success == true)
                         {
                             <h3 class="font-weight-bold">
-                                @Model.SystemSmsBalance.BalanceAmount?.ToString("N0") تومان
+                                @Model.SystemSmsBalance.BalanceAmount?.ToString("N0")
                             </h3>
+                            <p>تومان</p>
                             <strong>
                                 @Model.SystemSmsBalance.BalanceCount?.ToString("N2") عدد
                             </strong>
@@ -645,7 +636,6 @@
                                 دریافت اطلاعات اعتبار امکان‌پذیر نیست.
                             </p>
                         }
-                        <p>اعتبار پیامک سامانه</p>
                     </div>
                     <div class="icon"><i class="fa fa-comment-sms"></i></div>
                     <a href="https://farazsms.com" class="small-box-footer" target="_blank">

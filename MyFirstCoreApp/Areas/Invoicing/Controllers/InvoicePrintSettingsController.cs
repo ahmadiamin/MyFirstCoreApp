@@ -36,6 +36,11 @@ public class InvoicePrintSettingsController : Controller
                 x.TenantId == tenantId.Value &&
                 !x.IsDeleted);
 
+        var behaviorSetting = await _context.InvoiceBehaviorSettings
+            .FirstOrDefaultAsync(x =>
+                x.TenantId == tenantId.Value &&
+                !x.IsDeleted);
+
         var model = setting == null
             ? new InvoicePrintSettingViewModel()
             : new InvoicePrintSettingViewModel
@@ -44,6 +49,8 @@ public class InvoicePrintSettingsController : Controller
                 PoemSelectionMode = setting.PoemSelectionMode,
                 SelectedInvoicePoemId = setting.SelectedInvoicePoemId,
                 Description = setting.Description,
+                AllowNegativeStockOnSales =    behaviorSetting?.AllowNegativeStockOnSales ?? false,
+                ShowStockInInvoice =    behaviorSetting?.ShowStockInInvoice ?? true,
             };
 
         await LoadPoemsAsync(model, tenantId.Value);
@@ -113,6 +120,23 @@ public class InvoicePrintSettingsController : Controller
                 ? model.SelectedInvoicePoemId
                 : null;
         setting.Description = model.Description;
+
+        var behaviorSetting = await _context.InvoiceBehaviorSettings
+            .FirstOrDefaultAsync(x =>
+                x.TenantId == tenantId.Value &&
+                !x.IsDeleted);
+
+        if (behaviorSetting == null)
+        {
+            behaviorSetting = new InvoiceBehaviorSetting
+            {
+                TenantId = tenantId.Value
+            };
+            _context.InvoiceBehaviorSettings.Add(behaviorSetting);
+        }
+
+        behaviorSetting.AllowNegativeStockOnSales =            model.AllowNegativeStockOnSales;
+        behaviorSetting.ShowStockInInvoice =            model.ShowStockInInvoice;
 
         await _context.SaveChangesAsync();
 

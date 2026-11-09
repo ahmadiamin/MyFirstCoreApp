@@ -85,6 +85,9 @@
                              data-initial-name="@(Model.Items[i].ProductName ?? "")"
                              data-initial-track-inventory="@(Model.Items[i].TrackInventory?.ToString().ToLowerInvariant() ?? "true")">
                         </div>
+
+                        <div class="product-stock text-muted small mt-1"></div>
+
                         <input type="hidden" name="Items[@i].ProductId"
                                id="ProductId_Hidden_@i"
                                value="@Model.Items[i].ProductId" />
