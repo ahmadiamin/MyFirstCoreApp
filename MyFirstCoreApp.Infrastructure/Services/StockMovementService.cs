@@ -883,6 +883,100 @@ public class StockMovementService : IStockMovementService
             });
     }
 
+    public Task<int> AdjustBalanceAsync(
+        int productId,
+        int warehouseId,
+        decimal targetQuantity,
+        decimal? unitCost,
+        DateOnly date,
+        int tenantId)
+    {
+        return _context.ExecuteInTransactionAsync(
+            IsolationLevel.Serializable,
+            async () =>
+            {
+                if (productId <= 0 || warehouseId <= 0)
+                    throw new InvalidOperationException("کالا یا انبار معتبر نیست.");
+
+                if (targetQuantity < 0)
+                    throw new InvalidOperationException("موجودی جدید نمی‌تواند منفی باشد.");
+
+                if (date == default)
+                    throw new InvalidOperationException("تاریخ اصلاح موجودی معتبر نیست.");
+
+                if (unitCost < 0)
+                    throw new InvalidOperationException("بهای واحد نمی‌تواند منفی باشد.");
+
+                var product = await _context.Products.FirstOrDefaultAsync(x =>
+                    x.Id == productId &&
+                    x.TenantId == tenantId &&
+                    x.IsActive &&
+                    x.TrackInventory);
+
+                if (product is null)
+                    throw new InvalidOperationException(
+                        "کالا پیدا نشد، غیرفعال است یا کنترل موجودی آن فعال نیست.");
+
+                var warehouseExists = await _context.Warehouses.AnyAsync(x =>
+                    x.Id == warehouseId &&
+                    x.TenantId == tenantId &&
+                    x.IsActive);
+
+                if (!warehouseExists)
+                    throw new InvalidOperationException(
+                        "انبار پیدا نشد، غیرفعال است یا متعلق به شرکت جاری نیست.");
+
+                var currentQuantity = await GetBalanceInternalAsync(
+                    productId,
+                    warehouseId,
+                    tenantId);
+
+                var difference = targetQuantity - currentQuantity;
+
+                // اگر موجودی فعلی با شمارش واقعی برابر است، سند اضافه نساز.
+                if (difference == 0)
+                    return 0;
+
+                var isIncrease = difference > 0;
+                var movement = new StockMovement
+                {
+                    TenantId = tenantId,
+                    Number = await GenerateNumberAsync(date, tenantId),
+                    Date = date,
+                    MovementType = isIncrease
+                        ? StockMovementType.Receipt
+                        : StockMovementType.Issue,
+                    Status = StockMovementStatus.Draft,
+                    SourceWarehouseId = isIncrease ? null : warehouseId,
+                    DestinationWarehouseId = isIncrease ? warehouseId : null,
+                    Description =
+                        $"اصلاح موجودی کالا «{product.Name}»؛ موجودی قبل: {currentQuantity}، موجودی بعد: {targetQuantity}",
+                    Items = new List<StockMovementItem>
+                    {
+                        new()
+                        {
+                            TenantId = tenantId,
+                            ProductId = productId,
+                            Quantity = Math.Abs(difference),
+                            UnitCost = isIncrease ? unitCost : null,
+                            Description = "اصلاح موجودی بر اساس شمارش انبار"
+                        }
+                    }
+                };
+
+                _context.StockMovements.Add(movement);
+                await _context.SaveChangesAsync();
+
+                // برای کاهش موجودی، کنترل تاریخی و جلوگیری از منفی‌شدن همچنان برقرار است.
+                await PostInternalAsync(
+                    movement.Id,
+                    tenantId,
+                    allowNegativeStockForSale: false);
+
+                return movement.Id;
+            });
+    }
+
     public Task<decimal> GetBalanceAsync(
     int productId,
     int warehouseId,
