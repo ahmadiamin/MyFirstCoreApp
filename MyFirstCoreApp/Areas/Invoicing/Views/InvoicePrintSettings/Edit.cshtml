@@ -64,6 +64,24 @@
 
             <div class="form-group">
                 <div class="custom-control custom-checkbox">
+                    <input asp-for="AllowNegativeStockOnPurchaseReturns"
+                           class="custom-control-input"
+                           id="AllowNegativeStockOnPurchaseReturns" />
+
+                    <label asp-for="AllowNegativeStockOnPurchaseReturns"
+                           class="custom-control-label"
+                           for="AllowNegativeStockOnPurchaseReturns">
+                    </label>
+                </div>
+
+                <small class="form-text text-muted">
+                    در صورت فعال بودن، ثبت فاکتور برگشت از خرید حتی در صورت ناکافی‌بودن موجودی مجاز است
+                    و موجودی انبار می‌تواند منفی شود. این گزینه مستقل از تنظیم فروش است.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
                     <input asp-for="ShowStockInInvoice"
                            class="custom-control-input"
                            id="ShowStockInInvoice" />
