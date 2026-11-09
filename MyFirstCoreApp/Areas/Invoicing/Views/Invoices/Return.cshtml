@@ -1,0 +1,121 @@
+@model MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoiceReturn.InvoiceReturnViewModel
+
+@{
+    ViewData["Title"] = Model.ReturnTypeName;
+}
+
+<div class="card card-warning">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-rotate-left"></i>
+            @Model.ReturnTypeName از فاکتور شماره @Model.OriginalInvoiceNumber
+        </h3>
+    </div>
+
+    <form asp-action="Return" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="OriginalInvoiceId" />
+
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>شماره فاکتور اصلی</label>
+                        <input class="form-control" value="@Model.OriginalInvoiceNumber" readonly />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>طرف حساب</label>
+                        <input class="form-control" value="@Model.ContactName" readonly />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="Date"></label>
+                        <input asp-for="Date" class="form-control" autocomplete="off" placeholder="1405/01/10" />
+                        <span asp-validation-for="Date" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Description"></label>
+                <textarea asp-for="Description" class="form-control" rows="2"
+                          placeholder="شرح برگشت (اختیاری)"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <h5 class="mt-4 mb-3">اقلام قابل برگشت</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>کالا</th>
+                            <th class="text-center">مقدار اولیه</th>
+                            <th class="text-center">برگشت‌های قطعی قبلی</th>
+                            <th class="text-center">مانده قابل برگشت</th>
+                            <th style="width: 170px;" class="text-center">مقدار این برگشت</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Items.Count; i++)
+                        {
+                            <tr>
+                                <td>
+                                    @Model.Items[i].ProductName
+                                    <input type="hidden" asp-for="Items[i].OriginalInvoiceItemId" />
+                                </td>
+                                <td class="text-center">@Model.Items[i].OriginalQuantity.ToString("0.###")</td>
+                                <td class="text-center">@Model.Items[i].ReturnedQuantity.ToString("0.###")</td>
+                                <td class="text-center font-weight-bold">@Model.Items[i].RemainingQuantity.ToString("0.###")</td>
+                                <td>
+                                    <input asp-for="Items[i].ReturnQuantity"
+                                           type="number"
+                                           class="form-control text-center return-quantity"
+                                           min="0"
+                                           max="@Model.Items[i].RemainingQuantity.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                           step="0.001" />
+                                    <span asp-validation-for="Items[i].ReturnQuantity" class="text-danger"></span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <small class="text-muted">
+                قیمت واحد، تخفیف و مالیات از فاکتور اصلی برداشته می‌شود. فقط مقدار برگشتی را وارد کنید.
+            </small>
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-warning">
+                <i class="fa-solid fa-save"></i> ثبت پیش‌نویس برگشت
+            </button>
+            <a asp-action="Details" asp-route-id="@Model.OriginalInvoiceId" class="btn btn-secondary">
+                انصراف
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            $('.return-quantity').on('input', function () {
+                var max = parseFloat($(this).attr('max')) || 0;
+                var value = parseFloat($(this).val()) || 0;
+                if (value > max) {
+                    $(this).val(max);
+                }
+                if (value < 0) {
+                    $(this).val(0);
+                }
+            });
+        });
+    </script>
+}
