@@ -487,21 +487,22 @@ public class StockMovementService : IStockMovementService
             return false;
         }
 
-        var isPurchaseInvoiceReversal = await (
-            from invoice in _context.Invoices
-            join originalMovement in _context.StockMovements
-                on invoice.Id equals originalMovement.ReferenceInvoiceId
-            where invoice.Id == movement.ReferenceInvoiceId.Value
-                  && invoice.TenantId == tenantId
-                  && invoice.InvoiceType == InvoiceType.Purchase
-                  && originalMovement.Id == movement.ReversesMovementId.Value
-                  && originalMovement.TenantId == tenantId
-                  && originalMovement.MovementType == StockMovementType.Receipt
-                  && originalMovement.ReversesMovementId == null
-            select invoice.Id
-        ).AnyAsync();
+        var isPurchaseInvoice = await _context.Invoices.AnyAsync(x =>
+            x.Id == movement.ReferenceInvoiceId.Value &&
+            x.TenantId == tenantId &&
+            x.InvoiceType == InvoiceType.Purchase);
 
-        if (!isPurchaseInvoiceReversal)
+        if (!isPurchaseInvoice)
+            return false;
+
+        var isOriginalPurchaseReceipt = await _context.StockMovements.AnyAsync(x =>
+            x.Id == movement.ReversesMovementId.Value &&
+            x.TenantId == tenantId &&
+            x.ReferenceInvoiceId == movement.ReferenceInvoiceId.Value &&
+            x.MovementType == StockMovementType.Receipt &&
+            x.ReversesMovementId == null);
+
+        if (!isOriginalPurchaseReceipt)
             return false;
 
         return await _context.InvoiceBehaviorSettings.AnyAsync(x =>
