@@ -141,6 +141,110 @@ public sealed class StockMovementServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task AdjustBalanceAsync_SetsTargetQuantityByPostingDifferenceMovement()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        await CreateAndPostAsync(
+            productId,
+            warehouseId,
+            StockMovementType.Opening,
+            5m);
+
+        int adjustmentId;
+        await using (var context = _db.NewContext())
+        {
+            adjustmentId = await NewService(context).AdjustBalanceAsync(
+                productId,
+                warehouseId,
+                targetQuantity: 8m,
+                unitCost: 120m,
+                date: TestDate.AddDays(1),
+                tenantId: TenantA);
+        }
+
+        await using var verify = _db.NewContext();
+        var balance = await NewService(verify).GetBalanceAsync(
+            productId,
+            warehouseId,
+            TenantA);
+
+        Assert.Equal(8m, balance);
+
+        var adjustment = await verify.StockMovements
+            .Include(x => x.Items)
+            .SingleAsync(x => x.Id == adjustmentId);
+
+        Assert.Equal(StockMovementType.Receipt, adjustment.MovementType);
+        Assert.Equal(StockMovementStatus.Posted, adjustment.Status);
+        Assert.Equal(3m, adjustment.Items.Single().Quantity);
+        Assert.Equal(120m, adjustment.Items.Single().UnitCost);
+    }
+
+    [Fact]
+    public async Task AdjustBalanceAsync_DecreasesQuantityWithoutChangingPriorMovements()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        var openingId = await CreateAndPostAsync(
+            productId,
+            warehouseId,
+            StockMovementType.Opening,
+            10m);
+
+        int adjustmentId;
+        await using (var context = _db.NewContext())
+        {
+            adjustmentId = await NewService(context).AdjustBalanceAsync(
+                productId,
+                warehouseId,
+                targetQuantity: 4m,
+                unitCost: null,
+                date: TestDate.AddDays(1),
+                tenantId: TenantA);
+        }
+
+        await using var verify = _db.NewContext();
+        var balance = await NewService(verify).GetBalanceAsync(
+            productId,
+            warehouseId,
+            TenantA);
+
+        Assert.Equal(4m, balance);
+
+        var opening = await verify.StockMovements.SingleAsync(x => x.Id == openingId);
+        var adjustment = await verify.StockMovements
+            .Include(x => x.Items)
+            .SingleAsync(x => x.Id == adjustmentId);
+
+        Assert.Equal(StockMovementType.Opening, opening.MovementType);
+        Assert.Equal(StockMovementType.Issue, adjustment.MovementType);
+        Assert.Equal(6m, adjustment.Items.Single().Quantity);
+        Assert.Equal(StockMovementStatus.Posted, adjustment.Status);
+    }
+
+    [Fact]
+    public async Task AdjustBalanceAsync_WhenTargetEqualsCurrentBalance_DoesNotCreateMovement()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        await CreateAndPostAsync(
+            productId,
+            warehouseId,
+            StockMovementType.Opening,
+            7m);
+
+        await using var context = _db.NewContext();
+        var movementId = await NewService(context).AdjustBalanceAsync(
+            productId,
+            warehouseId,
+            targetQuantity: 7m,
+            unitCost: null,
+            date: TestDate.AddDays(1),
+            tenantId: TenantA);
+
+        Assert.Equal(0, movementId);
+        Assert.Equal(1, await context.StockMovements.CountAsync());
+    }
+
+    [Fact]
     public async Task Post_Transfer_DecreasesSourceAndIncreasesDestinationBalance()
     {
         // Arrange
