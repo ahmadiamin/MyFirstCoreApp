@@ -51,6 +51,7 @@ public class InvoicePrintSettingsController : Controller
                 Description = setting.Description,
                 AllowNegativeStockOnSales = behaviorSetting?.AllowNegativeStockOnSales ?? false,
                 AllowNegativeStockOnPurchaseReturns = behaviorSetting?.AllowNegativeStockOnPurchaseReturns ?? false,
+                AllowNegativeStockOnPurchaseReversal = behaviorSetting?.AllowNegativeStockOnPurchaseReversal ?? false,
                 ShowStockInInvoice = behaviorSetting?.ShowStockInInvoice ?? true,
             };
 
@@ -138,6 +139,7 @@ public class InvoicePrintSettingsController : Controller
 
         behaviorSetting.AllowNegativeStockOnSales = model.AllowNegativeStockOnSales;
         behaviorSetting.AllowNegativeStockOnPurchaseReturns = model.AllowNegativeStockOnPurchaseReturns;
+        behaviorSetting.AllowNegativeStockOnPurchaseReversal = model.AllowNegativeStockOnPurchaseReversal;
         behaviorSetting.ShowStockInInvoice = model.ShowStockInInvoice;
 
         await _context.SaveChangesAsync();
