@@ -8,6 +8,7 @@ using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Application.Invoicing;
 using MyFirstCoreApp.Areas.Invoicing.ViewModels.Invoice;
+using MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoiceReturn;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using Stimulsoft.Report;
@@ -343,7 +344,162 @@ public class InvoicesController : Controller
 
         if (entity == null) return NotFound();
 
+        // فاکتورهای برگشتی مرتبط با فاکتور اصلی (محدود به همان مستأجر)
+        ViewBag.ReturnInvoices = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.TenantId == tenantId.Value && i.ReferenceInvoiceId == entity.Id)
+            .OrderByDescending(i => i.Date)
+            .ThenByDescending(i => i.Number)
+            .ToListAsync();
+
         return View(entity);
+    }
+
+    // ============================================
+    // برگشت از فروش / برگشت از خرید
+    // ============================================
+
+    // GET: /Invoicing/Invoices/Return/5
+    [HttpGet]
+    [Authorize(Policy = "Invoice.Create")]
+    public async Task<IActionResult> Return(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        try
+        {
+            var model = await BuildReturnViewModelAsync(
+                id,
+                PersianDate.Format(_timeProvider.Today()),
+                null,
+                null,
+                tenantId.Value);
+
+            if (model.Items.Count == 0)
+            {
+                TempData["Error"] = "تمام اقلام این فاکتور قبلاً برگشت داده شده‌اند.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            return View(model);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+    }
+
+    // POST: /Invoicing/Invoices/Return
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Invoice.Create")]
+    public async Task<IActionResult> Return(InvoiceReturnViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        if (!PersianDate.TryParse(model.Date, out var date))
+            ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
+
+        var requestedItems = model.Items?
+            .Where(x => x.ReturnQuantity > 0)
+            .Select(x => new InvoiceReturnItemRequest
+            {
+                OriginalInvoiceItemId = x.OriginalInvoiceItemId,
+                Quantity = x.ReturnQuantity
+            })
+            .ToList() ?? new List<InvoiceReturnItemRequest>();
+
+        if (requestedItems.Count == 0)
+            ModelState.AddModelError(nameof(model.Items), "برای حداقل یک قلم، مقدار برگشتی وارد کنید.");
+
+        if (!ModelState.IsValid)
+        {
+            model = await BuildReturnViewModelAsync(
+                model.OriginalInvoiceId,
+                model.Date,
+                model.Description,
+                model.Items,
+                tenantId.Value);
+            return View(model);
+        }
+
+        try
+        {
+            var invoice = await _invoiceService.CreateReturnAsync(
+                new InvoiceReturnRequest
+                {
+                    OriginalInvoiceId = model.OriginalInvoiceId,
+                    Date = date,
+                    Description = model.Description,
+                    Items = requestedItems
+                },
+                tenantId.Value);
+
+            TempData["Success"] = $"پیش‌نویس برگشت شماره {invoice.Number} ایجاد شد.";
+            return RedirectToAction(nameof(Details), new { id = invoice.Id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError("", ex.Message);
+            model = await BuildReturnViewModelAsync(
+                model.OriginalInvoiceId,
+                model.Date,
+                model.Description,
+                model.Items,
+                tenantId.Value);
+            return View(model);
+        }
+    }
+
+    private async Task<InvoiceReturnViewModel> BuildReturnViewModelAsync(
+        int originalInvoiceId,
+        string? date,
+        string? description,
+        IEnumerable<InvoiceReturnItemViewModel>? submittedItems,
+        int tenantId)
+    {
+        var original = await _context.Invoices
+            .AsNoTracking()
+            .Include(x => x.Contact)
+            .FirstOrDefaultAsync(x =>
+                x.Id == originalInvoiceId &&
+                x.TenantId == tenantId)
+            ?? throw new InvalidOperationException("فاکتور اصلی پیدا نشد.");
+
+        var returnableItems = await _invoiceService.GetReturnableItemsAsync(
+            originalInvoiceId,
+            tenantId);
+
+        var submittedQuantities = submittedItems?
+            .GroupBy(x => x.OriginalInvoiceItemId)
+            .ToDictionary(g => g.Key, g => g.First().ReturnQuantity)
+            ?? new Dictionary<int, decimal>();
+
+        return new InvoiceReturnViewModel
+        {
+            OriginalInvoiceId = original.Id,
+            OriginalInvoiceNumber = original.Number,
+            ContactName = original.Contact?.Name ?? "",
+            ReturnTypeName = original.InvoiceType == InvoiceType.Sale
+                ? "برگشت از فروش"
+                : "برگشت از خرید",
+            Date = string.IsNullOrWhiteSpace(date)
+                ? PersianDate.Format(_timeProvider.Today())
+                : date,
+            Description = description,
+            Items = returnableItems.Select(x => new InvoiceReturnItemViewModel
+            {
+                OriginalInvoiceItemId = x.OriginalInvoiceItemId,
+                ProductName = x.ProductName,
+                OriginalQuantity = x.OriginalQuantity,
+                ReturnedQuantity = x.ReturnedQuantity,
+                RemainingQuantity = x.RemainingQuantity,
+                ReturnQuantity = submittedQuantities.GetValueOrDefault(x.OriginalInvoiceItemId)
+            }).ToList()
+        };
     }
 
     // ============================================

@@ -49,8 +49,8 @@ public class InvoicePrintSettingsController : Controller
                 PoemSelectionMode = setting.PoemSelectionMode,
                 SelectedInvoicePoemId = setting.SelectedInvoicePoemId,
                 Description = setting.Description,
-                AllowNegativeStockOnSales =    behaviorSetting?.AllowNegativeStockOnSales ?? false,
-                ShowStockInInvoice =    behaviorSetting?.ShowStockInInvoice ?? true,
+                AllowNegativeStockOnSales = behaviorSetting?.AllowNegativeStockOnSales ?? false,
+                ShowStockInInvoice = behaviorSetting?.ShowStockInInvoice ?? true,
             };
 
         await LoadPoemsAsync(model, tenantId.Value);
@@ -135,8 +135,8 @@ public class InvoicePrintSettingsController : Controller
             _context.InvoiceBehaviorSettings.Add(behaviorSetting);
         }
 
-        behaviorSetting.AllowNegativeStockOnSales =            model.AllowNegativeStockOnSales;
-        behaviorSetting.ShowStockInInvoice =            model.ShowStockInInvoice;
+        behaviorSetting.AllowNegativeStockOnSales = model.AllowNegativeStockOnSales;
+        behaviorSetting.ShowStockInInvoice = model.ShowStockInInvoice;
 
         await _context.SaveChangesAsync();
 

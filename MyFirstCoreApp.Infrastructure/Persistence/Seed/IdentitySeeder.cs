@@ -319,18 +319,18 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "Invoice.Delete", DisplayName = "حذف فاکتور",      GroupName = "Invoicing", IsActive = true },
                 new Permission { Name = "Invoice.Post",   DisplayName = "قطعی کردن فاکتور", GroupName = "Invoicing", IsActive = true },
 
-                // Invoice Print Settings
+                // Invoice Settings
                 new Permission
                 {
-                    Name = "InvoicePrintSetting.View",
-                    DisplayName = "مشاهده تنظیمات چاپ فاکتور",
+                    Name = "InvoiceSetting.View",
+                    DisplayName = "مشاهده تنظیمات فاکتور",
                     GroupName = "Invoicing",
                     IsActive = true
                 },
                 new Permission
                 {
-                    Name = "InvoicePrintSetting.Edit",
-                    DisplayName = "ویرایش تنظیمات چاپ فاکتور",
+                    Name = "InvoiceSetting.Edit",
+                    DisplayName = "ویرایش تنظیمات فاکتور",
                     GroupName = "Invoicing",
                     IsActive = true
                 },
@@ -633,16 +633,18 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "پیش‌فاکتورها", Url = "/Invoicing/Invoices?invoiceType=1", Icon = "fa-solid fa-file-pen", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 1, IsActive = true },
                 new Menu { Title = "فاکتورهای فروش", Url = "/Invoicing/Invoices?invoiceType=2", Icon = "fa-solid fa-cart-shopping", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 2, IsActive = true },
                 new Menu { Title = "فاکتورهای خرید", Url = "/Invoicing/Invoices?invoiceType=3", Icon = "fa-solid fa-truck", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 3, IsActive = true },
-                
-                //تنظیمات چاپ فاکتور
+                new Menu { Title = "برگشت از فروش", Url = "/Invoicing/Invoices?invoiceType=4", Icon = "fa-solid fa-rotate-left", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 4, IsActive = true },
+                new Menu { Title = "برگشت از خرید", Url = "/Invoicing/Invoices?invoiceType=5", Icon = "fa-solid fa-rotate-right", Permission = "Invoice.View", ParentId = invoicingParent.Id, SortOrder = 5, IsActive = true },
+
+                //تنظیمات فاکتور
                 new Menu
                 {
-                    Title = "تنظیمات چاپ فاکتور",
+                    Title = "تنظیمات فاکتور",
                     Url = "/Invoicing/InvoicePrintSettings/Edit",
                     Icon = "fa fa-print",
                     Permission = "InvoicePrintSetting.View",
                     ParentId = invoicingParent.Id,
-                    SortOrder = 4,
+                    SortOrder = 6,
                     IsActive = true
                 },
                 new Menu
@@ -652,7 +654,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                     Icon = "fa fa-quote-left",
                     Permission = "InvoicePoem.View",
                     ParentId = invoicingParent.Id,
-                    SortOrder = 5,
+                    SortOrder = 7,
                     IsActive = true
                 },
 
