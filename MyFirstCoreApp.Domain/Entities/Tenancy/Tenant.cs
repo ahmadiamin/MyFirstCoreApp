@@ -10,6 +10,12 @@ public class Tenant : BaseEntity
     public string? EconomicCode { get; set; }                  // کد اقتصادی
     public string? Phone { get; set; }
     public string? Address { get; set; }
+    // فایل‌های هویتی شرکت در زیرساخت عمومی پیوست‌ها ذخیره می‌شوند.
+    public int? LogoAttachmentId { get; set; }
+    public int? StampAttachmentId { get; set; }
+    public int? SignatureAttachmentId { get; set; }
+
+    // مسیر قدیمی برای سازگاری با داده‌های قبلی حفظ شده است.
     public string? LogoPath { get; set; }
     public bool IsActive { get; set; } = true;
 
