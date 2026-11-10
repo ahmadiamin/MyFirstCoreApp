@@ -464,24 +464,35 @@ public class TenantController : Controller
         {
             tenant.UpdatedAt = DateTime.UtcNow;
             await _tenantService.UpdateAsync(tenant);
-
-            if (oldAttachmentId.HasValue)
-                await _attachments.DeleteAsync(oldAttachmentId.Value);
-
-            TempData["Success"] = "تصویر با موفقیت ذخیره شد.";
         }
-        catch (Exception)
+        catch
         {
             // اگر اتصال فایل جدید به شرکت ذخیره نشد، رکورد جدید را حذف نرم می‌کنیم.
             await _attachments.DeleteAsync(newAttachmentId);
             throw;
         }
 
+        // فایل قبلی فقط پس از ثبت موفق شناسه‌ی جدید حذف نرم می‌شود.
+        if (oldAttachmentId.HasValue)
+        {
+            try
+            {
+                await _attachments.DeleteAsync(oldAttachmentId.Value);
+            }
+            catch (InvalidOperationException)
+            {
+                // ممکن است رکورد قبلی از قبل حذف شده باشد؛ فایل جدید معتبر باقی می‌ماند.
+            }
+        }
+
+        TempData["Success"] = "تصویر با موفقیت ذخیره شد.";
+
         return RedirectToAction(nameof(Edit), new { id });
     }
 
     [HttpGet]
     [Authorize]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> BrandingImage(int id, string kind)
     {
         var userId = _currentUser.UserId;
