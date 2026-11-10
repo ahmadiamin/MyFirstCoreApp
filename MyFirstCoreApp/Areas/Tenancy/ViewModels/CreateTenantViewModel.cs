@@ -29,6 +29,10 @@ public class CreateTenantViewModel
     [MaxLength(1000)]
     public string? Address { get; set; }
 
+    public int? LogoAttachmentId { get; set; }
+    public int? StampAttachmentId { get; set; }
+    public int? SignatureAttachmentId { get; set; }
+
     [Display(Name = "کلید API پیامک")]
     [MaxLength(1000)]
     public string? SmsApiKeyInput { get; set; }
