@@ -6,12 +6,14 @@ using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Models;
 using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Application.Attachments;
 using MyFirstCoreApp.Application.Invoicing;
 using MyFirstCoreApp.Areas.Invoicing.ViewModels.Invoice;
 using MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoiceReturn;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using Stimulsoft.Report;
+using Stimulsoft.Report.Components;
 using System.Data;
 
 namespace MyFirstCoreApp.Areas.Invoicing.Controllers;
@@ -31,6 +33,7 @@ public class InvoicesController : Controller
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<InvoicesController> _logger;
     private readonly IStockBalanceService _stockBalanceService;
+    private readonly IAttachmentService _attachments;
 
     public InvoicesController(
         ApplicationDbContext context,
@@ -38,7 +41,8 @@ public class InvoicesController : Controller
         IInvoiceService invoiceService,
         TimeProvider timeProvider,
         ILogger<InvoicesController> logger,
-        IStockBalanceService stockBalanceService)
+        IStockBalanceService stockBalanceService,
+        IAttachmentService attachments)
     {
         _context = context;
         _currentTenant = currentTenant;
@@ -46,6 +50,7 @@ public class InvoicesController : Controller
         _timeProvider = timeProvider;
         _logger = logger;
         _stockBalanceService = stockBalanceService;
+        _attachments = attachments;
     }
 
     // ============================================
@@ -852,7 +857,15 @@ public class InvoicesController : Controller
 
     [HttpGet]
     [Authorize(Policy = "Invoice.View")]
-    public async Task<IActionResult> PrintPdf(int id)
+    public Task<IActionResult> PrintPdf(int id)
+        => PrintPdfCore(id, official: false);
+
+    [HttpGet]
+    [Authorize(Policy = "Invoice.View")]
+    public Task<IActionResult> PrintOfficialPdf(int id)
+        => PrintPdfCore(id, official: true);
+
+    private async Task<IActionResult> PrintPdfCore(int id, bool official)
     {
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue)
@@ -893,13 +906,14 @@ public class InvoicesController : Controller
                 item.LineTotal);
         }
 
+        var reportFileName = official ? "OfficialInvoice.mrt" : "Invoice.mrt";
         var reportPath = Path.Combine(
             AppContext.BaseDirectory,
             "Reports",
-            "Invoice.mrt");
+            reportFileName);
 
         if (!System.IO.File.Exists(reportPath))
-            return Problem("فایل قالب Invoice.mrt پیدا نشد.");
+            return Problem($"فایل قالب {reportFileName} پیدا نشد.");
 
         using var report = new StiReport();
         report.Load(reportPath);
@@ -907,9 +921,24 @@ public class InvoicesController : Controller
         // اتصال اطلاعات ردیف‌ها به Business Object قالب
         report.RegBusinessObject("Invoices", itemsTable);
 
-        // فعلاً این خط را حذف کن؛ ساختار ستون‌ها از قبل در MRT تعریف شده است.
-        // report.Dictionary.SynchronizeBusinessObjects(3);
+        // قالب رسمی، تصاویر هویتی همین شرکت را از مخزن امن پیوست‌ها دریافت می‌کند.
+        if (official)
+        {
+            var logoBytes = await ReadTenantBrandingImageAsync(tenant.LogoAttachmentId, tenant.Id);
+            var stampBytes = await ReadTenantBrandingImageAsync(tenant.StampAttachmentId, tenant.Id);
+            var signatureBytes = await ReadTenantBrandingImageAsync(tenant.SignatureAttachmentId, tenant.Id);
 
+            if (logoBytes is { Length: > 0 } && report.GetComponentByName("ImgLogo") is StiImage logoImage)
+                logoImage.ImageBytes = logoBytes;
+
+            if (stampBytes is { Length: > 0 } && report.GetComponentByName("ImgStamp") is StiImage stampImage)
+                stampImage.ImageBytes = stampBytes;
+
+            if (signatureBytes is { Length: > 0 } && report.GetComponentByName("ImgSignature") is StiImage signatureImage)
+                signatureImage.ImageBytes = signatureBytes;
+        }
+
+        // ساختار ستون‌های Business Object از قبل در MRT تعریف شده است.
         report.Compile();
 
         // اطلاعات شرکت و فاکتور
@@ -1030,12 +1059,40 @@ public class InvoicesController : Controller
         return File(
             stream.ToArray(),
             "application/pdf",
-            $"Invoice-{invoice.Number}.pdf");
+            $"{(official ? "OfficialInvoice" : "Invoice")}-{invoice.Number}.pdf");
     }
 
     // ============================================
     // Helpers
     // ============================================
+
+    private async Task<byte[]?> ReadTenantBrandingImageAsync(int? attachmentId, int tenantId)
+    {
+        if (!attachmentId.HasValue)
+            return null;
+
+        try
+        {
+            var info = await _attachments.GetInfoAsync(attachmentId.Value);
+            if (info.EntityType != AttachmentEntityType.Tenant ||
+                info.EntityId != tenantId ||
+                !info.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var file = await _attachments.OpenAsync(attachmentId.Value);
+            await using (file.Content)
+            {
+                using var memory = new MemoryStream();
+                await file.Content.CopyToAsync(memory);
+                return memory.ToArray();
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // فایل حذف‌شده یا نامعتبر نباید چاپ فاکتور را متوقف کند.
+            return null;
+        }
+    }
 
     /// <summary>
     /// خطای کسب‌وکار (InvalidOperationException) پیام فارسی به کاربر می‌دهد.
