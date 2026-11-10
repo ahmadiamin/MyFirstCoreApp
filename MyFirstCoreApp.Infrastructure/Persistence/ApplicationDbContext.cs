@@ -104,6 +104,25 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
             base.OnModelCreating(builder);
             builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
+            // سه نقش مستقل برای فایل‌های هویتی شرکت؛ حذف فایل پیوست نباید شرکت را حذف کند.
+            builder.Entity<Tenant>()
+                .HasOne<Attachment>()
+                .WithMany()
+                .HasForeignKey(x => x.LogoAttachmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Tenant>()
+                .HasOne<Attachment>()
+                .WithMany()
+                .HasForeignKey(x => x.StampAttachmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Tenant>()
+                .HasOne<Attachment>()
+                .WithMany()
+                .HasForeignKey(x => x.SignatureAttachmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<RolePermission>()
                 .HasKey(x => new
                 {
