@@ -3,6 +3,80 @@
     ViewData["Title"] = "ویرایش شرکت";
 }
 
+<div class="card card-outline card-info">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa fa-images"></i> لوگو، مهر و امضای شرکت</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">تصاویر فقط برای قالب چاپ رسمی فاکتور استفاده می‌شوند. فرمت‌های JPG، PNG و WEBP با حداکثر حجم ۵ مگابایت مجاز هستند.</p>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                    <h6>لوگوی شرکت</h6>
+                    @if (Model.LogoAttachmentId.HasValue)
+                    {
+                        <img src="@Url.Action("BrandingImage", "Tenant", new { area = "Tenancy", id = ViewBag.TenantId, kind = "logo" })"
+                             alt="لوگوی شرکت" class="img-fluid mb-3" style="max-height:120px; object-fit:contain;" />
+                    }
+                    else
+                    {
+                        <div class="text-muted small mb-3">لوگویی ثبت نشده است.</div>
+                    }
+                    <form asp-area="Tenancy" asp-controller="Tenant" asp-action="UploadBranding"
+                          asp-route-id="@ViewBag.TenantId" asp-route-kind="logo"
+                          method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="file" name="file" class="form-control-file mb-2" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required />
+                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fa fa-upload"></i> بارگذاری لوگو</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                    <h6>مهر شرکت</h6>
+                    @if (Model.StampAttachmentId.HasValue)
+                    {
+                        <img src="@Url.Action("BrandingImage", "Tenant", new { area = "Tenancy", id = ViewBag.TenantId, kind = "stamp" })"
+                             alt="مهر شرکت" class="img-fluid mb-3" style="max-height:120px; object-fit:contain;" />
+                    }
+                    else
+                    {
+                        <div class="text-muted small mb-3">مهری ثبت نشده است.</div>
+                    }
+                    <form asp-area="Tenancy" asp-controller="Tenant" asp-action="UploadBranding"
+                          asp-route-id="@ViewBag.TenantId" asp-route-kind="stamp"
+                          method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="file" name="file" class="form-control-file mb-2" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required />
+                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fa fa-upload"></i> بارگذاری مهر</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                    <h6>امضای مجاز</h6>
+                    @if (Model.SignatureAttachmentId.HasValue)
+                    {
+                        <img src="@Url.Action("BrandingImage", "Tenant", new { area = "Tenancy", id = ViewBag.TenantId, kind = "signature" })"
+                             alt="امضای مجاز" class="img-fluid mb-3" style="max-height:120px; object-fit:contain;" />
+                    }
+                    else
+                    {
+                        <div class="text-muted small mb-3">امضایی ثبت نشده است.</div>
+                    }
+                    <form asp-area="Tenancy" asp-controller="Tenant" asp-action="UploadBranding"
+                          asp-route-id="@ViewBag.TenantId" asp-route-kind="signature"
+                          method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="file" name="file" class="form-control-file mb-2" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required />
+                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fa fa-upload"></i> بارگذاری امضا</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card card-primary">
     <div class="card-header">
         <h3 class="card-title">
