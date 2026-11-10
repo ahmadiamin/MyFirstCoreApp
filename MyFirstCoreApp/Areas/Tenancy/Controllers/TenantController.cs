@@ -304,6 +304,7 @@ public class TenantController : Controller
         await PopulateSmsSettingsSummaryAsync(id, model);
 
         ViewBag.TenantId = id;
+        ViewBag.IsCurrentTenant = _context.CurrentTenantId == id;
 
         return View(model);
     }
@@ -340,6 +341,7 @@ public class TenantController : Controller
         if (!ModelState.IsValid)
         {
             ViewBag.TenantId = id;
+            ViewBag.IsCurrentTenant = _context.CurrentTenantId == id;
             await PopulateBrandingSummaryAsync(id, model);
             await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
             return View(model);
@@ -349,6 +351,8 @@ public class TenantController : Controller
         {
             ModelState.AddModelError(nameof(model.SmsApiKeyInput), "برای جایگزینی کلید، گزینهٔ پاک‌کردن را خالی بگذارید.");
             ViewBag.TenantId = id;
+            ViewBag.IsCurrentTenant = _context.CurrentTenantId == id;
+            await PopulateBrandingSummaryAsync(id, model);
             await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
             return View(model);
         }
@@ -500,6 +504,9 @@ public class TenantController : Controller
             return Challenge();
 
         if (!User.IsInRole("SuperAdmin") && !await _tenantService.IsUserOwnerAsync(id, userId))
+            return Forbid();
+
+        if (_context.CurrentTenantId != id)
             return Forbid();
 
         var tenant = await _tenantService.GetByIdAsync(id);
