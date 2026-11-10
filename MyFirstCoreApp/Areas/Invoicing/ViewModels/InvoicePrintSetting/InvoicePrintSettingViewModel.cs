@@ -25,6 +25,12 @@ public class InvoicePrintSettingViewModel
     [Display(Name = "اجازه فروش با موجودی ناکافی")]
     public bool AllowNegativeStockOnSales { get; set; } = false;
 
+    [Display(Name = "اجازه برگشت از خرید با موجودی ناکافی")]
+    public bool AllowNegativeStockOnPurchaseReturns { get; set; } = false;
+
+    [Display(Name = "اجازه برگشت فاکتور خرید به پیش‌نویس با موجودی ناکافی")]
+    public bool AllowNegativeStockOnPurchaseReversal { get; set; } = false;
+
     [Display(Name = "نمایش موجودی کالا هنگام ثبت فاکتور")]
     public bool ShowStockInInvoice { get; set; } = true;
 

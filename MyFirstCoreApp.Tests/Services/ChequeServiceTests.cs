@@ -625,6 +625,115 @@ public class ChequeServiceTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => CreateAsync(wrongContact));
     }
 
+    [Fact]
+    public async Task LinkedPurchaseCheque_ClearAndUnclear_UpdatesInvoicePaidAmountExactlyOnce()
+    {
+        var contact = await AddContactAsync("فروشنده");
+        var invoiceId = await AddPurchaseInvoiceAsync(contact, Amount * 2);
+
+        var firstRequest = NewRequest(contact, ChequeDirection.Issued, number: "PUR-1");
+        firstRequest.InvoiceId = invoiceId;
+        var first = await CreateAsync(firstRequest);
+
+        await using (var context = _db.NewContext())
+            await NewService(context).MarkAsClearedAsync(first.Id, TenantA, null, null);
+
+        await using (var verify = _db.NewContext())
+        {
+            var invoice = await verify.Invoices.SingleAsync(i => i.Id == invoiceId);
+            var cheque = await verify.Cheques.SingleAsync(c => c.Id == first.Id);
+            Assert.Equal(Amount, invoice.PaidAmount);
+            Assert.True(cheque.InvoicePaymentApplied);
+        }
+
+        // برگشت از پاس باید اثر همین چک را از فاکتور کم کند.
+        await using (var context = _db.NewContext())
+            await NewService(context).UnclearAsync(first.Id, TenantA, "آزمایش برگشت از پاس");
+
+        await using (var verify = _db.NewContext())
+        {
+            var invoice = await verify.Invoices.SingleAsync(i => i.Id == invoiceId);
+            var cheque = await verify.Cheques.SingleAsync(c => c.Id == first.Id);
+            Assert.Equal(0, invoice.PaidAmount);
+            Assert.False(cheque.InvoicePaymentApplied);
+        }
+
+        // پاس مجدد فقط یک‌بار مبلغ را اضافه می‌کند.
+        await using (var context = _db.NewContext())
+            await NewService(context).MarkAsClearedAsync(first.Id, TenantA, null, null);
+
+        // چک دوم نیز باید مانده‌ی فاکتور را درست کاهش دهد.
+        var secondRequest = NewRequest(contact, ChequeDirection.Issued, number: "PUR-2");
+        secondRequest.InvoiceId = invoiceId;
+        var second = await CreateAsync(secondRequest);
+
+        await using (var context = _db.NewContext())
+            await NewService(context).MarkAsCashedAsync(second.Id, TenantA, null, null);
+
+        await using var final = _db.NewContext();
+        Assert.Equal(Amount * 2, (await final.Invoices.SingleAsync(i => i.Id == invoiceId)).PaidAmount);
+        Assert.True((await final.Cheques.SingleAsync(c => c.Id == first.Id)).InvoicePaymentApplied);
+        Assert.True((await final.Cheques.SingleAsync(c => c.Id == second.Id)).InvoicePaymentApplied);
+    }
+
+    [Fact]
+    public async Task LegacyLinkedCheque_UnclearDoesNotSubtractUnappliedAmount_AndReclearAppliesIt()
+    {
+        var contact = await AddContactAsync("فروشنده قدیمی");
+        var invoiceId = await AddPurchaseInvoiceAsync(contact, Amount);
+        var request = NewRequest(contact, ChequeDirection.Issued, number: "LEGACY-1");
+        request.InvoiceId = invoiceId;
+        var cheque = await CreateAsync(request);
+
+        // ابتدا چک را پاس می‌کنیم، سپس وضعیت دیتابیس را شبیه رکورد قدیمی می‌کنیم:
+        // PaidAmount هنوز صفر است و نشانگر اعمال مستقیم هم وجود ندارد.
+        await using (var context = _db.NewContext())
+            await NewService(context).MarkAsClearedAsync(cheque.Id, TenantA, null, null);
+
+        await using (var context = _db.NewContext())
+        {
+            var invoice = await context.Invoices.SingleAsync(i => i.Id == invoiceId);
+            var storedCheque = await context.Cheques.SingleAsync(c => c.Id == cheque.Id);
+            invoice.PaidAmount = 0;
+            storedCheque.InvoicePaymentApplied = false;
+            await context.SaveChangesAsync();
+        }
+
+        await using (var context = _db.NewContext())
+            await NewService(context).UnclearAsync(cheque.Id, TenantA, null);
+
+        await using (var verify = _db.NewContext())
+            Assert.Equal(0, (await verify.Invoices.SingleAsync(i => i.Id == invoiceId)).PaidAmount);
+
+        await using (var context = _db.NewContext())
+            await NewService(context).MarkAsClearedAsync(cheque.Id, TenantA, null, null);
+
+        await using var final = _db.NewContext();
+        Assert.Equal(Amount, (await final.Invoices.SingleAsync(i => i.Id == invoiceId)).PaidAmount);
+        Assert.True((await final.Cheques.SingleAsync(c => c.Id == cheque.Id)).InvoicePaymentApplied);
+    }
+
+    [Fact]
+    public async Task LinkedCheque_CannotSettleAboveInvoiceRemainingAmount()
+    {
+        var contact = await AddContactAsync("فروشنده");
+        var invoiceId = await AddPurchaseInvoiceAsync(contact, Amount - 1);
+        var request = NewRequest(contact, ChequeDirection.Issued, number: "OVERPAY-1");
+        request.InvoiceId = invoiceId;
+        var cheque = await CreateAsync(request);
+
+        await using (var context = _db.NewContext())
+        {
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => NewService(context).MarkAsClearedAsync(cheque.Id, TenantA, null, null));
+            Assert.Contains("بیشتر از مانده", ex.Message);
+        }
+
+        await using var verify = _db.NewContext();
+        Assert.Equal(0, (await verify.Invoices.SingleAsync(i => i.Id == invoiceId)).PaidAmount);
+        Assert.Equal(ChequeStatus.InProgress, (await verify.Cheques.SingleAsync(c => c.Id == cheque.Id)).Status);
+    }
+
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
@@ -642,6 +751,23 @@ public class ChequeServiceTests : IDisposable
     {
         await using var context = _db.NewContext();
         return await context.Cheques.SingleAsync(c => c.Id == id);
+    }
+
+    private async Task<int> AddPurchaseInvoiceAsync(int contactId, decimal totalAmount)
+    {
+        await using var context = _db.NewContext();
+        var invoice = new Invoice
+        {
+            Number = 100 + await context.Invoices.CountAsync(),
+            InvoiceType = InvoiceType.Purchase,
+            Status = InvoiceStatus.Posted,
+            ContactId = contactId,
+            Date = new DateOnly(2026, 3, 1),
+            TotalAmount = totalAmount
+        };
+        context.Invoices.Add(invoice);
+        await context.SaveChangesAsync();
+        return invoice.Id;
     }
 
     private async Task<int> AddContactAsync(string name = "مشتری الف")

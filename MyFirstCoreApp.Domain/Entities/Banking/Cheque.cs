@@ -105,6 +105,9 @@ public class Cheque : TenantEntity
     public int? InvoiceId { get; set; }
     public Invoicing.Invoice? Invoice { get; set; }
 
+    /// <summary>آیا مبلغ این چک هنگام تسویه مستقیماً در پرداختی فاکتور اعمال شده است؟</summary>
+    public bool InvoicePaymentApplied { get; set; }
+
     /// <summary>
     /// سند «پاس/نقد شدن» (بانک ↔ حساب چک). فقط وقتی چک پاس یا نقد شده مقدار دارد.
     /// </summary>

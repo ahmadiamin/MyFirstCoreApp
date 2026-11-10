@@ -22,6 +22,13 @@ public interface IStockMovementService
 
     Task CreateFromInvoiceAsync(int invoiceId, int tenantId);
     Task ReverseInvoiceAsync(int invoiceId, int tenantId);
+    Task<int> AdjustBalanceAsync(
+        int productId,
+        int warehouseId,
+        decimal targetQuantity,
+        decimal? unitCost,
+        DateOnly date,
+        int tenantId);
     Task<decimal> GetBalanceAsync(
     int productId,
     int warehouseId,

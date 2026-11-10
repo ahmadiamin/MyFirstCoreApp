@@ -141,6 +141,110 @@ public sealed class StockMovementServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task AdjustBalanceAsync_SetsTargetQuantityByPostingDifferenceMovement()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        await CreateAndPostAsync(
+            productId,
+            warehouseId,
+            StockMovementType.Opening,
+            5m);
+
+        int adjustmentId;
+        await using (var context = _db.NewContext())
+        {
+            adjustmentId = await NewService(context).AdjustBalanceAsync(
+                productId,
+                warehouseId,
+                targetQuantity: 8m,
+                unitCost: 120m,
+                date: TestDate.AddDays(1),
+                tenantId: TenantA);
+        }
+
+        await using var verify = _db.NewContext();
+        var balance = await NewService(verify).GetBalanceAsync(
+            productId,
+            warehouseId,
+            TenantA);
+
+        Assert.Equal(8m, balance);
+
+        var adjustment = await verify.StockMovements
+            .Include(x => x.Items)
+            .SingleAsync(x => x.Id == adjustmentId);
+
+        Assert.Equal(StockMovementType.Receipt, adjustment.MovementType);
+        Assert.Equal(StockMovementStatus.Posted, adjustment.Status);
+        Assert.Equal(3m, adjustment.Items.Single().Quantity);
+        Assert.Equal(120m, adjustment.Items.Single().UnitCost);
+    }
+
+    [Fact]
+    public async Task AdjustBalanceAsync_DecreasesQuantityWithoutChangingPriorMovements()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        var openingId = await CreateAndPostAsync(
+            productId,
+            warehouseId,
+            StockMovementType.Opening,
+            10m);
+
+        int adjustmentId;
+        await using (var context = _db.NewContext())
+        {
+            adjustmentId = await NewService(context).AdjustBalanceAsync(
+                productId,
+                warehouseId,
+                targetQuantity: 4m,
+                unitCost: null,
+                date: TestDate.AddDays(1),
+                tenantId: TenantA);
+        }
+
+        await using var verify = _db.NewContext();
+        var balance = await NewService(verify).GetBalanceAsync(
+            productId,
+            warehouseId,
+            TenantA);
+
+        Assert.Equal(4m, balance);
+
+        var opening = await verify.StockMovements.SingleAsync(x => x.Id == openingId);
+        var adjustment = await verify.StockMovements
+            .Include(x => x.Items)
+            .SingleAsync(x => x.Id == adjustmentId);
+
+        Assert.Equal(StockMovementType.Opening, opening.MovementType);
+        Assert.Equal(StockMovementType.Issue, adjustment.MovementType);
+        Assert.Equal(6m, adjustment.Items.Single().Quantity);
+        Assert.Equal(StockMovementStatus.Posted, adjustment.Status);
+    }
+
+    [Fact]
+    public async Task AdjustBalanceAsync_WhenTargetEqualsCurrentBalance_DoesNotCreateMovement()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        await CreateAndPostAsync(
+            productId,
+            warehouseId,
+            StockMovementType.Opening,
+            7m);
+
+        await using var context = _db.NewContext();
+        var movementId = await NewService(context).AdjustBalanceAsync(
+            productId,
+            warehouseId,
+            targetQuantity: 7m,
+            unitCost: null,
+            date: TestDate.AddDays(1),
+            tenantId: TenantA);
+
+        Assert.Equal(0, movementId);
+        Assert.Equal(1, await context.StockMovements.CountAsync());
+    }
+
+    [Fact]
     public async Task Post_Transfer_DecreasesSourceAndIncreasesDestinationBalance()
     {
         // Arrange
@@ -843,6 +947,107 @@ public sealed class StockMovementServiceTests : IDisposable
         Assert.Equal(3m, result[1].Incoming);
         Assert.Equal(10m, result[1].Balance);
     }
+    [Fact]
+    public async Task CreateFromInvoice_PurchaseReturn_WithSettingEnabled_AllowsNegativeStock()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        _db.Tenant.TenantId = TenantA;
+
+        await CreateAndPostAsync(
+            productId,
+            warehouseId,
+            StockMovementType.Receipt,
+            2m);
+
+        await using (var settingsContext = _db.NewContext())
+        {
+            settingsContext.InvoiceBehaviorSettings.Add(new InvoiceBehaviorSetting
+            {
+                TenantId = TenantA,
+                AllowNegativeStockOnPurchaseReturns = true
+            });
+            await settingsContext.SaveChangesAsync();
+        }
+
+        var invoiceId = await CreateInvoiceAsync(
+            productId,
+            InvoiceType.PurchaseReturn,
+            5m);
+
+        await using (var context = _db.NewContext())
+            await NewService(context).CreateFromInvoiceAsync(invoiceId, TenantA);
+
+        await using var verify = _db.NewContext();
+        var movement = await verify.StockMovements
+            .SingleAsync(x => x.ReferenceInvoiceId == invoiceId);
+
+        Assert.Equal(StockMovementType.Issue, movement.MovementType);
+        Assert.Equal(StockMovementStatus.Posted, movement.Status);
+        Assert.Equal(-3m, await NewService(verify).GetBalanceAsync(
+            productId, warehouseId, TenantA));
+    }
+
+    [Fact]
+    public async Task CreateFromInvoice_PurchaseReturn_WithSettingDisabled_Throws()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        _db.Tenant.TenantId = TenantA;
+
+        await CreateAndPostAsync(
+            productId,
+            warehouseId,
+            StockMovementType.Receipt,
+            2m);
+
+        var invoiceId = await CreateInvoiceAsync(
+            productId,
+            InvoiceType.PurchaseReturn,
+            5m);
+
+        await using var context = _db.NewContext();
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => NewService(context).CreateFromInvoiceAsync(invoiceId, TenantA));
+    }
+
+    [Fact]
+    public async Task Post_ManualIssue_WithPurchaseReturnSettingEnabled_StillRejectsNegativeStock()
+    {
+        var (productId, warehouseId) = await CreateInventoryDataAsync();
+        _db.Tenant.TenantId = TenantA;
+
+        await using (var settingsContext = _db.NewContext())
+        {
+            settingsContext.InvoiceBehaviorSettings.Add(new InvoiceBehaviorSetting
+            {
+                TenantId = TenantA,
+                AllowNegativeStockOnPurchaseReturns = true
+            });
+            await settingsContext.SaveChangesAsync();
+        }
+
+        await using var context = _db.NewContext();
+        var service = NewService(context);
+        var request = new StockMovementRequest
+        {
+            Date = TestDate,
+            MovementType = (int)StockMovementType.Issue,
+            SourceWarehouseId = warehouseId,
+            Items =
+            [
+                new StockMovementItemRequest
+                {
+                    ProductId = productId,
+                    Quantity = 1m
+                }
+            ]
+        };
+
+        var movementId = await service.CreateAsync(request, TenantA);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.PostAsync(movementId, TenantA));
+    }
+
     private async Task<int> CreateInvoiceAsync(int productId, InvoiceType invoiceType, decimal quantity, decimal unitPrice = 100m, int? warehouseId = null)
     {
         var previousTenant = _db.Tenant.TenantId;
@@ -1189,6 +1394,81 @@ public sealed class StockMovementServiceTests : IDisposable
                 x.ReferenceInvoiceId == invoiceId);
 
         Assert.Equal(2, count);
+    }
+
+    [Fact]
+    public async Task ReverseInvoice_Purchase_WhenStockIsInsufficient_AllowsNegativeStockWhenSettingEnabled()
+    {
+        var previousTenant = _db.Tenant.TenantId;
+        _db.Tenant.TenantId = TenantA;
+
+        try
+        {
+            var (productId, warehouseId) = await CreateInventoryDataAsync();
+
+            var invoiceId = await CreateInvoiceAsync(
+                productId,
+                InvoiceType.Purchase,
+                quantity: 5m);
+
+            await using (var context = _db.NewContext())
+            {
+                context.InvoiceBehaviorSettings.Add(new InvoiceBehaviorSetting
+                {
+                    TenantId = TenantA,
+                    AllowNegativeStockOnPurchaseReversal = true
+                });
+
+                await context.SaveChangesAsync();
+
+                await NewService(context).CreateFromInvoiceAsync(
+                    invoiceId,
+                    TenantA);
+            }
+
+            // تمام موجودی خرید مصرف می‌شود؛ برگشت فاکتور باید موجودی را منفی کند.
+            await CreateAndPostAsync(
+                productId,
+                warehouseId,
+                StockMovementType.Issue,
+                5m);
+
+            await using (var context = _db.NewContext())
+            {
+                await NewService(context).ReverseInvoiceAsync(
+                    invoiceId,
+                    TenantA);
+            }
+
+            await using var verifyContext = _db.NewContext();
+
+            var movements = await verifyContext.StockMovements
+                .IgnoreQueryFilters()
+                .Where(x =>
+                    x.TenantId == TenantA &&
+                    x.ReferenceInvoiceId == invoiceId)
+                .OrderBy(x => x.Id)
+                .ToListAsync();
+
+            Assert.Equal(2, movements.Count);
+            Assert.Equal(StockMovementType.Receipt, movements[0].MovementType);
+            Assert.Equal(StockMovementType.Issue, movements[1].MovementType);
+            Assert.Equal(movements[0].Id, movements[1].ReversesMovementId);
+            Assert.Equal(StockMovementStatus.Posted, movements[1].Status);
+
+            var kardex = await NewService(verifyContext).GetKardexAsync(
+                productId,
+                warehouseId,
+                null,
+                null,
+                TenantA);
+
+            Assert.Equal(-5m, kardex[^1].Balance);
+        }
+        finally
+        {
+            _db.Tenant.TenantId = previousTenant;
+        }
     }
 
     [Fact]

@@ -763,6 +763,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<int?>("InvoiceId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("InvoicePaymentApplied")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -2360,6 +2363,12 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AllowNegativeStockOnPurchaseReturns")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AllowNegativeStockOnPurchaseReversal")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("AllowNegativeStockOnSales")
                         .HasColumnType("bit");

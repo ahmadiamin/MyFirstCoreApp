@@ -64,6 +64,43 @@
 
             <div class="form-group">
                 <div class="custom-control custom-checkbox">
+                    <input asp-for="AllowNegativeStockOnPurchaseReturns"
+                           class="custom-control-input"
+                           id="AllowNegativeStockOnPurchaseReturns" />
+
+                    <label asp-for="AllowNegativeStockOnPurchaseReturns"
+                           class="custom-control-label"
+                           for="AllowNegativeStockOnPurchaseReturns">
+                    </label>
+                </div>
+
+                <small class="form-text text-muted">
+                    در صورت فعال بودن، ثبت فاکتور برگشت از خرید حتی در صورت ناکافی‌بودن موجودی مجاز است
+                    و موجودی انبار می‌تواند منفی شود. این گزینه مستقل از تنظیم فروش است.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input asp-for="AllowNegativeStockOnPurchaseReversal"
+                           class="custom-control-input"
+                           id="AllowNegativeStockOnPurchaseReversal" />
+
+                    <label asp-for="AllowNegativeStockOnPurchaseReversal"
+                           class="custom-control-label"
+                           for="AllowNegativeStockOnPurchaseReversal">
+                    </label>
+                </div>
+
+                <small class="form-text text-muted">
+                    در صورت فعال بودن، هنگام استفاده از گزینه «برگشت به پیش‌نویس» برای فاکتور خرید،
+                    حتی اگر موجودی کالا کافی نباشد، برگشت گردش انبار مجاز است و موجودی می‌تواند منفی شود.
+                    این گزینه مستقل از تنظیم فروش و برگشت از خرید است.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
                     <input asp-for="ShowStockInInvoice"
                            class="custom-control-input"
                            id="ShowStockInInvoice" />
