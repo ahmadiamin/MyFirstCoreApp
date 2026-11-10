@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoiceReturn;
 
-public class InvoiceReturnViewModel
+public sealed class InvoiceReturnViewModel
 {
     public int OriginalInvoiceId { get; set; }
 
@@ -12,7 +12,7 @@ public class InvoiceReturnViewModel
 
     public string ReturnTypeName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "تاریخ الزامی است")]
+    [Required(ErrorMessage = "تاریخ برگشت الزامی است.")]
     [Display(Name = "تاریخ برگشت")]
     public string Date { get; set; } = string.Empty;
 
@@ -23,7 +23,7 @@ public class InvoiceReturnViewModel
     public List<InvoiceReturnItemViewModel> Items { get; set; } = new();
 }
 
-public class InvoiceReturnItemViewModel
+public sealed class InvoiceReturnItemViewModel
 {
     public int OriginalInvoiceItemId { get; set; }
 
@@ -35,7 +35,8 @@ public class InvoiceReturnItemViewModel
 
     public decimal RemainingQuantity { get; set; }
 
-    [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "مقدار برگشت معتبر نیست")]
+    [Range(typeof(decimal), "0", "999999999999",
+        ErrorMessage = "مقدار برگشت معتبر نیست")]
     [Display(Name = "مقدار برگشتی")]
     public decimal ReturnQuantity { get; set; }
 }

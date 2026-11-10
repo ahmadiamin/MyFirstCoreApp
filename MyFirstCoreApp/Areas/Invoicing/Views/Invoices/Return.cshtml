@@ -1,4 +1,5 @@
-﻿@model MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoiceReturn.InvoiceReturnViewModel
+@model MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoiceReturn.InvoiceReturnViewModel
+
 @{
     ViewData["Title"] = Model.ReturnTypeName;
 }
@@ -6,8 +7,8 @@
 <div class="card card-warning">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fa fa-undo"></i>
-            @Model.ReturnTypeName
+            <i class="fa-solid fa-rotate-left"></i>
+            @Model.ReturnTypeName از فاکتور شماره @Model.OriginalInvoiceNumber
         </h3>
     </div>
 
@@ -16,6 +17,7 @@
           asp-action="Return"
           method="post"
           id="invoiceReturnForm">
+
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="OriginalInvoiceId" />
 
@@ -26,17 +28,21 @@
                 <div class="col-md-4 col-6 mb-3">
                     <div class="form-group mb-0">
                         <label>فاکتور اصلی</label>
-                        <div class="form-control bg-light">
-                            <span class="persian-number">شماره @Model.OriginalInvoiceNumber</span>
-                        </div>
+                        <input class="form-control bg-light"
+                               value="شماره @Model.OriginalInvoiceNumber"
+                               readonly />
                     </div>
                 </div>
+
                 <div class="col-md-4 col-6 mb-3">
                     <div class="form-group mb-0">
                         <label>طرف حساب</label>
-                        <div class="form-control bg-light">@Model.ContactName</div>
+                        <input class="form-control bg-light"
+                               value="@Model.ContactName"
+                               readonly />
                     </div>
                 </div>
+
                 <div class="col-md-4 col-12 mb-3">
                     <div class="form-group mb-0">
                         <label asp-for="Date"></label>
@@ -48,6 +54,7 @@
                         <span asp-validation-for="Date" class="text-danger"></span>
                     </div>
                 </div>
+
                 <div class="col-12 mb-3">
                     <div class="form-group mb-0">
                         <label asp-for="Description"></label>
@@ -67,6 +74,7 @@
                     <i class="fa fa-list"></i>
                     اقلام قابل برگشت
                 </h5>
+
                 <span class="badge badge-info">@Model.Items.Count قلم</span>
             </div>
 
@@ -87,38 +95,50 @@
                             <th style="width:190px;">مقدار برگشتی</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         @for (var i = 0; i < Model.Items.Count; i++)
                         {
                             <tr>
-                                <td class="text-center persian-number">@(i + 1)</td>
+                                <td class="text-center persian-number">
+                                    @(i + 1)
+                                </td>
+
                                 <td>
                                     @Model.Items[i].ProductName
-                                    <input type="hidden" name="Items[@i].OriginalInvoiceItemId"
-                                           value="@Model.Items[i].OriginalInvoiceItemId" />
+                                    <input type="hidden"
+                                           asp-for="Items[i].OriginalInvoiceItemId" />
                                 </td>
+
                                 <td class="text-center persian-number">
                                     @Model.Items[i].OriginalQuantity.ToString("0.###")
                                 </td>
+
                                 <td class="text-center persian-number">
                                     @Model.Items[i].ReturnedQuantity.ToString("0.###")
                                 </td>
+
                                 <td class="text-center persian-number font-weight-bold">
                                     @Model.Items[i].RemainingQuantity.ToString("0.###")
                                 </td>
+
                                 <td>
-                                    <input type="number"
-                                           name="Items[@i].ReturnQuantity"
+                                    <input asp-for="Items[i].ReturnQuantity"
+                                           type="number"
                                            class="form-control form-control-sm return-quantity"
-                                           value="@Model.Items[i].ReturnQuantity.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                            min="0"
                                            max="@Model.Items[i].RemainingQuantity.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                            step="0.001"
                                            inputmode="decimal"
                                            dir="ltr"
                                            aria-label="مقدار برگشتی برای @Model.Items[i].ProductName" />
+
+                                    <span asp-validation-for="Items[i].ReturnQuantity"
+                                          class="text-danger"></span>
+
                                     <small class="text-muted">
-                                        حداکثر: @Model.Items[i].RemainingQuantity.ToString("0.###")
+                                        حداکثر:
+                                        @Model.Items[i].RemainingQuantity.ToString("0.###")
                                     </small>
                                 </td>
                             </tr>
@@ -126,6 +146,11 @@
                     </tbody>
                 </table>
             </div>
+
+            <small class="text-muted">
+                قیمت واحد، تخفیف و مالیات از فاکتور اصلی برداشته می‌شود.
+                فقط مقدار برگشتی را وارد کنید.
+            </small>
         </div>
 
         <div class="card-footer">
@@ -133,6 +158,7 @@
                 <i class="fa fa-save"></i>
                 ثبت پیش‌نویس برگشت
             </button>
+
             <a asp-action="Details"
                asp-route-id="@Model.OriginalInvoiceId"
                class="btn btn-secondary">
@@ -151,19 +177,46 @@
             const form = document.getElementById('invoiceReturnForm');
             if (!form) return;
 
+            const inputs = form.querySelectorAll('.return-quantity');
+
+            // کنترل مقدار ورودی هنگام تایپ
+            inputs.forEach(function (input) {
+                input.addEventListener('input', function () {
+                    const max = Number(input.max);
+                    const value = Number(input.value);
+
+                    if (input.value.trim() === '') return;
+
+                    if (Number.isFinite(value)) {
+                        if (value > max) {
+                            input.value = max;
+                        } else if (value < 0) {
+                            input.value = 0;
+                        }
+                    }
+                });
+            });
+
+            // اعتبارسنجی قبل از ارسال فرم
             form.addEventListener('submit', function (event) {
                 let hasQuantity = false;
                 let hasInvalidQuantity = false;
 
-                form.querySelectorAll('.return-quantity').forEach(function (input) {
-                    const value = input.value.trim() === '' ? 0 : Number(input.value);
+                inputs.forEach(function (input) {
+                    const value = input.value.trim() === ''
+                        ? 0
+                        : Number(input.value);
+
                     const max = Number(input.max);
 
                     if (Number.isFinite(value) && value > 0) {
                         hasQuantity = true;
                     }
 
-                    if (!Number.isFinite(value) || value < 0 || value > max) {
+                    if (!Number.isFinite(value) ||
+                        value < 0 ||
+                        value > max) {
+
                         hasInvalidQuantity = true;
                         input.classList.add('is-invalid');
                     } else {

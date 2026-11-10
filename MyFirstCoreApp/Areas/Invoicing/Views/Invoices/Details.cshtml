@@ -155,25 +155,27 @@
                 <div class="info-box">
                     <div class="label">نوع</div>
                     <div class="value">
-                        @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale)
+                        @switch (Model.InvoiceType)
                         {
-                            <span>فروش</span>
-                        }
-                        else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase)
-                        {
-                            <span>خرید</span>
-                        }
-                        else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.SalesReturn)
-                        {
-                            <span>برگشت از فروش</span>
-                        }
-                        else if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.PurchaseReturn)
-                        {
-                            <span>برگشت از خرید</span>
-                        }
-                        else
-                        {
-                            <span>پیش‌فاکتور</span>
+                            case MyFirstCoreApp.Domain.Enums.InvoiceType.Sale:
+                                <span>فروش</span>
+                                break;
+
+                            case MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase:
+                                <span>خرید</span>
+                                break;
+
+                            case MyFirstCoreApp.Domain.Enums.InvoiceType.SalesReturn:
+                                <span>برگشت از فروش</span>
+                                break;
+
+                            case MyFirstCoreApp.Domain.Enums.InvoiceType.PurchaseReturn:
+                                <span>برگشت از خرید</span>
+                                break;
+
+                            default:
+                                <span>پیش‌فاکتور</span>
+                                break;
                         }
                     </div>
                 </div>

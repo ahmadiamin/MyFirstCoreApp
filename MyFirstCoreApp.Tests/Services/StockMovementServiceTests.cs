@@ -1659,6 +1659,13 @@ public sealed class StockMovementServiceTests : IDisposable
             quantity: 5m);
 
         await using var context = _db.NewContext();
+
+        var invoice = await context.Invoices
+            .FirstAsync(x => x.Id == invoiceId && x.TenantId == TenantA);
+
+        invoice.Status = InvoiceStatus.Posted;
+        await context.SaveChangesAsync();
+
         var service = NewService(context);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
