@@ -423,9 +423,9 @@ public class TenantController : Controller
         }
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (extension is not (".jpg" or ".jpeg" or ".png" or ".webp"))
+        if (extension is not (".jpg" or ".jpeg" or ".png"))
         {
-            TempData["Error"] = "فقط تصاویر JPG، PNG و WEBP مجاز هستند.";
+            TempData["Error"] = "فقط تصاویر JPG و PNG مجاز هستند.";
             return RedirectToAction(nameof(Edit), new { id });
         }
 
@@ -532,6 +532,7 @@ public class TenantController : Controller
                 return NotFound();
 
             var file = await _attachments.OpenAsync(attachmentId.Value);
+            Response.Headers["X-Content-Type-Options"] = "nosniff";
             return File(file.Content, file.ContentType);
         }
         catch (InvalidOperationException)
