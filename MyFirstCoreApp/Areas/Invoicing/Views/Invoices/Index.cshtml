@@ -297,6 +297,11 @@
                         'class="btn btn-sm btn-outline-info action-icon-btn" title="PDF">' +
                         '<i class="fa-solid fa-file-pdf"></i></a>';
 
+                // PDF رسمی با لوگو، مهر و امضای شرکت
+                html += '<a href="/Invoicing/Invoices/PrintOfficialPdf/' + d.id + '" ' +
+                        'class="btn btn-sm btn-outline-success action-icon-btn" title="PDF رسمی">' +
+                        '<i class="fa-solid fa-file-signature"></i></a>';
+
                 if (d.invoiceType === 1) {
                     // پیش‌فاکتور
                     if (d.status === 1 || d.status === 3 || d.status === 6) {
