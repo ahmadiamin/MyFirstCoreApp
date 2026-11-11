@@ -8,6 +8,8 @@ public class Tenant : BaseEntity
     public string? LegalName { get; set; }                     // نام حقوقی
     public string? NationalId { get; set; }                    // شناسه ملی
     public string? EconomicCode { get; set; }                  // کد اقتصادی
+    public string? RegistrationNumber { get; set; }              // شماره ثبت
+    public string? PostalCode { get; set; }                       // کد پستی
     public string? Phone { get; set; }
     public string? Address { get; set; }
     // فایل‌های هویتی شرکت در زیرساخت عمومی پیوست‌ها ذخیره می‌شوند.
