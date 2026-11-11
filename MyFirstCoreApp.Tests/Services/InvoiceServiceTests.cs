@@ -78,6 +78,39 @@ public class InvoiceServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Create_PurchaseRejectsDuplicateSupplierInvoiceNumberForSameSupplier()
+    {
+        var supplierId = await AddContactAsync("فروشنده اول");
+        var first = NewRequest(InvoiceType.Purchase, supplierId, Item("کالای اول", 1, 100));
+        first.SupplierInvoiceNumber = "  SUP-1405/001  ";
+        await CreateAsync(first);
+
+        var duplicate = NewRequest(InvoiceType.Purchase, supplierId, Item("کالای دوم", 1, 200));
+        duplicate.SupplierInvoiceNumber = "SUP-1405/001";
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateAsync(duplicate));
+        Assert.Contains("همین فروشنده", ex.Message);
+    }
+
+    [Fact]
+    public async Task Create_PurchaseAllowsSameSupplierInvoiceNumberForDifferentSuppliers()
+    {
+        var supplierA = await AddContactAsync("فروشنده اول");
+        var supplierB = await AddContactAsync("فروشنده دوم");
+
+        var first = NewRequest(InvoiceType.Purchase, supplierA, Item("کالای اول", 1, 100));
+        first.SupplierInvoiceNumber = "INV-100";
+        var second = NewRequest(InvoiceType.Purchase, supplierB, Item("کالای دوم", 1, 200));
+        second.SupplierInvoiceNumber = "INV-100";
+
+        await CreateAsync(first);
+        await CreateAsync(second);
+
+        await using var verify = _db.NewContext();
+        Assert.Equal(2, await verify.Invoices.CountAsync(i => i.SupplierInvoiceNumber == "INV-100"));
+    }
+
+    [Fact]
     public async Task Create_ServiceProduct_IgnoresWarehouseSelection()
     {
         int serviceId;
