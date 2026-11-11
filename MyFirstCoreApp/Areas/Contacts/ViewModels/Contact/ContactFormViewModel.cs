@@ -79,5 +79,7 @@ public class ContactFormViewModel
 
     // ---- Dropdown ----
 
+    public List<ContactPersonFormViewModel> ContactPersons { get; set; } = new();
+
     public List<SelectListItem> ContactTypeOptions { get; set; } = new();
 }
