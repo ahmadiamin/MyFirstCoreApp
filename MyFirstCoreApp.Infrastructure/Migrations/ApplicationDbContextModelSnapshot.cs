@@ -2701,6 +2701,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<string>("LegalName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("LogoAttachmentId")
+                        .HasColumnType("int");
+
                     b.Property<string>("LogoPath")
                         .HasColumnType("nvarchar(max)");
 
@@ -2714,6 +2717,12 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("SignatureAttachmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StampAttachmentId")
+                        .HasColumnType("int");
+
                     b.Property<string>("TimeZone")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -2725,6 +2734,12 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LogoAttachmentId");
+
+                    b.HasIndex("SignatureAttachmentId");
+
+                    b.HasIndex("StampAttachmentId");
 
                     b.ToTable("Tenants");
                 });
@@ -3333,6 +3348,24 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("SelectedInvoicePoem");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Tenancy.Tenant", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Attachments.Attachment", null)
+                        .WithMany()
+                        .HasForeignKey("LogoAttachmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Attachments.Attachment", null)
+                        .WithMany()
+                        .HasForeignKey("SignatureAttachmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Attachments.Attachment", null)
+                        .WithMany()
+                        .HasForeignKey("StampAttachmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Tenancy.TenantSmsSetting", b =>

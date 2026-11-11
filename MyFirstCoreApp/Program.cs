@@ -1,6 +1,7 @@
 ﻿extern alias StimulsoftBase;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Authorization;
@@ -153,18 +154,48 @@ try
     app.MapRazorPages()
        .WithStaticAssets();
 
-    using (var scope = app.Services.CreateScope())
+    // ابزار dotnet ef برنامه را فقط برای ساخت مدل بالا می‌آورد؛ در آن حالت به دیتابیس دست نمی‌زنیم
+    if (!EF.IsDesignTime)
     {
+        using var scope = app.Services.CreateScope();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        var isDevelopment = app.Environment.IsDevelopment();
 
         try
         {
-            // شامل Migrate؛ باید قبل از Backfill اجرا شود
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            // Migration خودکار: پیش‌فرض فقط در توسعه (قابل تغییر با Database:MigrateOnStartup).
+            // در محیط واقعی Migration عمداً دستی اجرا می‌شود (قابل بازبینی، قبل از آن Backup)
+            var migrateOnStartup = app.Configuration.GetValue<bool?>("Database:MigrateOnStartup") ?? isDevelopment;
+
+            if (migrateOnStartup)
+            {
+                await context.Database.MigrateAsync();
+            }
+            else
+            {
+                // دیتابیسِ قدیمی‌تر از کد = خطاهای عجیب در حین کار؛ همین‌جا و با پیام واضح متوقف شو
+                var pending = (await context.Database.GetPendingMigrationsAsync()).ToList();
+
+                if (pending.Count > 0)
+                {
+                    throw new InvalidOperationException(
+                        $"{pending.Count} Migration اعمال‌نشده وجود دارد ({string.Join(", ", pending)}). " +
+                        "ابتدا از دیتابیس Backup بگیر و «dotnet ef database update» را اجرا کن، " +
+                        "یا موقتاً Database:MigrateOnStartup=true بگذار.");
+                }
+            }
+
             await IdentitySeeder.SeedAsync(scope.ServiceProvider);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "خطا در Seed اولیه");
+            logger.LogCritical(ex, "خطا در آماده‌سازی دیتابیس یا Seed اولیه");
+
+            // محیط واقعی: با دیتابیس ناقص یا Seed ناقص (مثلاً بدون نقش‌ها و دسترسی‌ها) بالا نیا
+            if (!isDevelopment)
+                throw;
         }
     }
 
