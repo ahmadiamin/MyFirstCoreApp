@@ -26,6 +26,7 @@ public class InvoicesController : Controller
     private const string InvalidDateMessage = "تاریخ نامعتبر است. نمونه‌ی درست: 1405/01/10";
     private const string NoTenantMessage = "شرکت فعال مشخص نیست.";
     private const string UnexpectedErrorMessage = "خطای غیرمنتظره رخ داد. لطفاً دوباره تلاش کنید.";
+    private const string InvoiceImageDescription = "InvoiceImage";
 
     private readonly ApplicationDbContext _context;
     private readonly ICurrentTenant _currentTenant;
@@ -186,6 +187,7 @@ public class InvoicesController : Controller
     // POST: /Invoicing/Invoices/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [RequestSizeLimit(6 * 1024 * 1024)]
     [Authorize(Policy = "Invoice.Create")]
     public async Task<IActionResult> Create(InvoiceFormViewModel model)
     {
@@ -207,7 +209,21 @@ public class InvoicesController : Controller
         {
             // طرف‌حساب/کالای جدید داخل همان تراکنش سرویس ساخته می‌شود؛
             // با خطا، هیچ رکورد یتیمی باقی نمی‌ماند.
+            var preparedImage = await PrepareInvoiceImageAsync(model.InvoiceImage);
             var invoice = await _invoiceService.CreateAsync(ToRequest(model, date, dueDate), tenantId.Value);
+
+            if (preparedImage != null)
+            {
+                try
+                {
+                    await SaveInvoiceImageAsync(invoice.Id, preparedImage);
+                }
+                catch
+                {
+                    await _invoiceService.DeleteAsync(invoice.Id, tenantId.Value);
+                    throw;
+                }
+            }
 
             TempData["Success"] = $"فاکتور شماره {invoice.Number} با موفقیت ثبت شد.";
             return RedirectToAction(nameof(Index), new { invoiceType = (int)invoice.InvoiceType });
@@ -284,6 +300,7 @@ public class InvoicesController : Controller
             WarehouseOptions = await GetWarehouseOptionsAsync(tenantId.Value)
         };
         model.DefaultWarehouseId = GetDefaultWarehouseId(model.WarehouseOptions);
+        ViewBag.InvoiceImageExists = await GetInvoiceImageAttachmentAsync(entity.Id) != null;
 
         return View(model);
     }
@@ -291,6 +308,7 @@ public class InvoicesController : Controller
     // POST: /Invoicing/Invoices/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [RequestSizeLimit(6 * 1024 * 1024)]
     [Authorize(Policy = "Invoice.Edit")]
     public async Task<IActionResult> Edit(int id, InvoiceFormViewModel model)
     {
@@ -313,7 +331,10 @@ public class InvoicesController : Controller
         try
         {
             // سرویس: وضعیت قابل ویرایش، ثابت بودن نوع فاکتور، اعتبارسنجی، محاسبه و ذخیره‌ی اتمیک
+            var preparedImage = await PrepareInvoiceImageAsync(model.InvoiceImage);
             await _invoiceService.UpdateAsync(ToRequest(model, date, dueDate), tenantId.Value);
+            if (preparedImage != null)
+                await SaveInvoiceImageAsync(id, preparedImage);
 
             TempData["Success"] = $"فاکتور شماره {model.Number} با موفقیت ویرایش شد.";
             return RedirectToAction(nameof(Index), new { invoiceType = (int)model.InvoiceType });
@@ -891,6 +912,25 @@ public class InvoicesController : Controller
         if (tenant == null)
             return NotFound();
 
+        // چاپ فاکتور خرید به‌جای قالب گزارش، تصویر اسکن‌شده‌ی فاکتور فروشنده را دانلود می‌کند.
+        if (invoice.InvoiceType == InvoiceType.Purchase)
+        {
+            var image = await GetInvoiceImageAttachmentAsync(invoice.Id);
+            if (image == null)
+                return NotFound("برای این فاکتور خرید هنوز تصویری بارگذاری نشده است.");
+
+            var imageFile = await _attachments.OpenAsync(image.Id);
+            if (imageFile.EntityType != AttachmentEntityType.Invoice ||
+                imageFile.EntityId != invoice.Id ||
+                !imageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                await imageFile.Content.DisposeAsync();
+                return NotFound();
+            }
+
+            return File(imageFile.Content, imageFile.ContentType, imageFile.FileName);
+        }
+
         // اطلاعات ردیف‌های فاکتور
         var itemsTable = new DataTable("Invoices");
         itemsTable.Columns.Add("ProductName", typeof(string));
@@ -1066,6 +1106,73 @@ public class InvoicesController : Controller
     // ============================================
     // Helpers
     // ============================================
+
+    private async Task<PreparedAttachment?> PrepareInvoiceImageAsync(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+            return null;
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (extension is not (".jpg" or ".jpeg" or ".png" or ".webp"))
+            throw new InvalidOperationException("تصویر فاکتور باید JPG، PNG یا WEBP باشد.");
+
+        await using var stream = file.OpenReadStream();
+        return await _attachments.PrepareAsync(new AttachmentUpload
+        {
+            FileName = file.FileName,
+            Length = file.Length,
+            Content = stream,
+            Description = InvoiceImageDescription
+        });
+    }
+
+    private async Task SaveInvoiceImageAsync(int invoiceId, PreparedAttachment prepared)
+    {
+        var previous = await GetInvoiceImageAttachmentAsync(invoiceId);
+        var added = await _attachments.AddAsync(AttachmentEntityType.Invoice, invoiceId, prepared);
+
+        if (previous != null)
+        {
+            try { await _attachments.DeleteAsync(previous.Id); }
+            catch (InvalidOperationException) { /* تصویر جدید معتبر است؛ حذف قبلی مانع ذخیره نشود. */ }
+        }
+    }
+
+    private async Task<MyFirstCoreApp.Application.Attachments.AttachmentInfo?> GetInvoiceImageAttachmentAsync(int invoiceId)
+    {
+        var files = await _attachments.ListAsync(AttachmentEntityType.Invoice, invoiceId);
+        return files
+            .Where(x => x.Description == InvoiceImageDescription &&
+                        x.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x => x.UploadedAt)
+            .ThenByDescending(x => x.Id)
+            .FirstOrDefault();
+    }
+
+    [HttpGet]
+    [Authorize(Policy = "Invoice.View")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> InvoiceImage(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var exists = await _context.Invoices.AnyAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+        if (!exists) return NotFound();
+
+        var image = await GetInvoiceImageAttachmentAsync(id);
+        if (image == null) return NotFound();
+
+        var file = await _attachments.OpenAsync(image.Id);
+        if (file.EntityType != AttachmentEntityType.Invoice || file.EntityId != id ||
+            !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            await file.Content.DisposeAsync();
+            return NotFound();
+        }
+
+        return File(file.Content, file.ContentType);
+    }
 
     private async Task<byte[]?> ReadTenantBrandingImageAsync(int? attachmentId, int tenantId)
     {
