@@ -21,6 +21,14 @@ public class CreateTenantViewModel
     [MaxLength(30)]
     public string? EconomicCode { get; set; }
 
+    [Display(Name = "شماره ثبت")]
+    [MaxLength(30)]
+    public string? RegistrationNumber { get; set; }
+
+    [Display(Name = "کد پستی")]
+    [MaxLength(20)]
+    public string? PostalCode { get; set; }
+
     [Display(Name = "تلفن")]
     [MaxLength(20)]
     public string? Phone { get; set; }
