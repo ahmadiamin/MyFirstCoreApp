@@ -53,6 +53,8 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
 
         // Contacts
         public DbSet<Contact> Contacts { get; set; }
+        public DbSet<ContactPerson> ContactPersons { get; set; }
+        public DbSet<ContactPersonNumber> ContactPersonNumbers { get; set; }
         public DbSet<CustomerPortalShare> CustomerPortalShares { get; set; }
 
         // Inventory
