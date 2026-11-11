@@ -6,11 +6,18 @@
         <Alias>Invoices</Alias>
         <BusinessObjects isList="true" count="0" />
         <Category />
-        <Columns isList="true" count="4">
-          <value>ProductName,System.String</value>
+        <Columns isList="true" count="11">
+          <value>RowNumber,System.Int32</value>
+          <value>ProductCode,System.String</value>
+          <value>Description,System.String</value>
           <value>Quantity,System.Decimal</value>
-          <value>UnitPrice,System.Int64</value>
-          <value>LineTotal,System.Int64</value>
+          <value>UnitName,System.String</value>
+          <value>UnitPrice,System.Decimal</value>
+          <value>GrossAmount,System.Decimal</value>
+          <value>DiscountAmount,System.Decimal</value>
+          <value>NetAmount,System.Decimal</value>
+          <value>TaxAmount,System.Decimal</value>
+          <value>TotalWithTax,System.Decimal</value>
         </Columns>
         <Dictionary isRef="1" />
         <Guid>5e962d1b9ce14203a27b88f0aa43bc64</Guid>
@@ -55,8 +62,8 @@
       <Components isList="true" count="12">
         <PageHeaderBand1 Ref="4" type="PageHeaderBand" isKey="true">
           <Brush>Transparent</Brush>
-          <ClientRectangle>0,0.4,29.7,5.3</ClientRectangle>
-          <Components isList="true" count="13">
+          <ClientRectangle>0,0.4,29.7,5.0</ClientRectangle>
+          <Components isList="true" count="12">
             <ImgLogo Ref="5" type="Image" isKey="true">
               <Brush>Transparent</Brush>
               <ClientRectangle>16.4,0.2,4.2,1.8</ClientRectangle>
@@ -151,34 +158,34 @@
             </txtSubject>
             <txtFullName Ref="11" type="Text" isKey="true">
               <Border>All;Black;1;Solid;False;4;Black</Border>
-              <Brush>Transparent</Brush>
+              <Brush>[250:250:250]</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,2.4,28.9,1.2</ClientRectangle>
+              <ClientRectangle>15.0,2.4,14.3,2.5</ClientRectangle>
               <Conditions isList="true" count="0" />
-              <Font>Yalda Nazanin,14,Bold</Font>
+              <Font>Yalda Nazanin,11</Font>
               <GrowToHeight>True</GrowToHeight>
               <Guid>b54b384378514a3bbbdb8db7f9267ed2</Guid>
-              <Margins>0,0,0,0</Margins>
-              <Name>txtFullName</Name>
+              <HorAlignment>Right</HorAlignment><Margins>0,0,0,0</Margins>
+              <Name>SellerDetailsBox</Name>
               <Page isRef="3" />
               <Parent isRef="4" />
               <Text>{SellerDetails}</Text>
               <TextBrush>Black</TextBrush>
-              <TextOptions>,,RightToLeft=True,,,A=0</TextOptions>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
               <Type>Expression</Type>
               <VertAlignment>Center</VertAlignment>
             </txtFullName>
             <txtAddress Ref="12" type="Text" isKey="true">
               <Border>All;Black;1;Solid;False;4;Black</Border>
-              <Brush>Transparent</Brush>
+              <Brush>[250:250:250]</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,3.7,28.9,1.2</ClientRectangle>
+              <ClientRectangle>0.4,2.4,14.3,2.5</ClientRectangle>
               <Conditions isList="true" count="0" />
-              <Font>Yalda Nazanin,12,Bold</Font>
+              <Font>Yalda Nazanin,11</Font>
               <GrowToHeight>True</GrowToHeight>
               <Guid>86f2d6213f92487c88a4965c6b5f932b</Guid>
-              <Margins>0,0,0,0</Margins>
-              <Name>txtAddress</Name>
+              <HorAlignment>Right</HorAlignment><Margins>0,0,0,0</Margins>
+              <Name>BuyerDetailsBox</Name>
               <Page isRef="3" />
               <Parent isRef="4" />
               <Text>{BuyerDetails}</Text>
@@ -187,26 +194,7 @@
               <Type>Expression</Type>
               <VertAlignment>Center</VertAlignment>
             </txtAddress>
-            <txtTell Ref="13" type="Text" isKey="true">
-              <Border>All;Black;1;Solid;False;4;Black</Border>
-              <Brush>Transparent</Brush>
-              <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,2.4,6,0.8</ClientRectangle>
-              <Conditions isList="true" count="0" />
-              <Font>Yalda Nazanin,14,Bold</Font>
-              <GrowToHeight>True</GrowToHeight>
-              <Guid>85d9717f11574987985e1ce0c20bd576</Guid>
-              <HorAlignment>Center</HorAlignment>
-              <Margins>0,0,0,0</Margins>
-              <Name>txtTell</Name>
-              <Page isRef="3" />
-              <Parent isRef="4" />
-              <Text></Text>
-              <TextBrush>Black</TextBrush>
-              <TextOptions>,,RightToLeft=True,,,A=0</TextOptions>
-              <Type>Expression</Type>
-              <VertAlignment>Center</VertAlignment>
-            </txtTell>
+            
             <TxtTenantName Ref="14" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <ClientRectangle>4.6,0.4,11.8,0.8</ClientRectangle>
