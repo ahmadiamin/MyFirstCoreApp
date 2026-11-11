@@ -53,7 +53,8 @@ public class ContactFormViewModel
     public string? NationalId { get; set; }
 
     [Display(Name = "کد اقتصادی")]
-    [MaxLength(30)]
+    [MaxLength(14, ErrorMessage = "کد اقتصادی حداکثر باید ۱۴ رقم باشد.")]
+    [RegularExpression(@"^$|^[0-9]{14}$", ErrorMessage = "کد اقتصادی باید دقیقاً ۱۴ رقم باشد.")]
     public string? EconomicCode { get; set; }
 
     [Display(Name = "شماره ثبت")]
