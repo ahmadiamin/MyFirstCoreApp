@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Http;
 using MyFirstCoreApp.Domain.Enums;
 
 namespace MyFirstCoreApp.Areas.Invoicing.ViewModels.Invoice;
@@ -32,6 +33,9 @@ public class InvoiceFormViewModel
     [Display(Name = "نام طرف حساب")]
     [MaxLength(200)]
     public string? ContactName { get; set; }   // 🆕 nullable
+
+    [Display(Name = "تصویر فاکتور")]
+    public IFormFile? InvoiceImage { get; set; }
 
     [Display(Name = "شرح")]
     [MaxLength(2000)]
