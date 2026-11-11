@@ -987,6 +987,22 @@ public class InvoicesController : Controller
         report["CompanyAddress"] = tenant.Address ?? "";
         report["CompanyPhone"] = tenant.Phone ?? "";
 
+        var contact = invoice.Contact;
+        var tenantIsBuyer = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn;
+        var sellerDetails = tenantIsBuyer
+            ? FormatPartyDetails("فروشنده", contact?.Name, contact?.NationalId, contact?.EconomicCode,
+                contact?.RegistrationNumber, contact?.Address, contact?.PostalCode, contact?.Phone ?? contact?.Mobile)
+            : FormatPartyDetails("فروشنده", tenant.LegalName ?? tenant.Name, tenant.NationalId, tenant.EconomicCode,
+                tenant.RegistrationNumber, tenant.Address, tenant.PostalCode, tenant.Phone);
+        var buyerDetails = tenantIsBuyer
+            ? FormatPartyDetails("خریدار", tenant.LegalName ?? tenant.Name, tenant.NationalId, tenant.EconomicCode,
+                tenant.RegistrationNumber, tenant.Address, tenant.PostalCode, tenant.Phone)
+            : FormatPartyDetails("خریدار", contact?.Name, contact?.NationalId, contact?.EconomicCode,
+                contact?.RegistrationNumber, contact?.Address, contact?.PostalCode, contact?.Phone ?? contact?.Mobile);
+
+        report["SellerDetails"] = sellerDetails;
+        report["BuyerDetails"] = buyerDetails;
+
         report["InvoiceTitle"] = invoice.InvoiceType switch
         {
             InvoiceType.PreInvoice => "پیش‌فاکتور",
@@ -1106,6 +1122,16 @@ public class InvoicesController : Controller
     // ============================================
     // Helpers
     // ============================================
+
+    private static string FormatPartyDetails(
+        string title, string? name, string? nationalId, string? economicCode,
+        string? registrationNumber, string? address, string? postalCode, string? phone)
+    {
+        static string Value(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value.Trim();
+        return $"{title}: {Value(name)}{Environment.NewLine}" +
+               $"شناسه ملی: {Value(nationalId)} | کد اقتصادی: {Value(economicCode)} | شماره ثبت: {Value(registrationNumber)}{Environment.NewLine}" +
+               $"آدرس: {Value(address)} | کد پستی: {Value(postalCode)} | تلفن: {Value(phone)}";
+    }
 
     private async Task<PreparedAttachment?> PrepareInvoiceImageAsync(IFormFile? file)
     {
