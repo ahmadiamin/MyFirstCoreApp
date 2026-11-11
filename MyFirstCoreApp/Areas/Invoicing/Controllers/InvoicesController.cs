@@ -1008,19 +1008,38 @@ public class InvoicesController : Controller
 
         var contact = invoice.Contact;
         var tenantIsBuyer = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn;
-        var sellerDetails = tenantIsBuyer
-            ? FormatPartyDetails("فروشنده", contact?.Name, contact?.NationalId, contact?.EconomicCode,
-                contact?.RegistrationNumber, contact?.Address, contact?.PostalCode, contact?.Phone ?? contact?.Mobile)
-            : FormatPartyDetails("فروشنده", tenant.LegalName ?? tenant.Name, tenant.NationalId, tenant.EconomicCode,
-                tenant.RegistrationNumber, tenant.Address, tenant.PostalCode, tenant.Phone);
-        var buyerDetails = tenantIsBuyer
-            ? FormatPartyDetails("خریدار", tenant.LegalName ?? tenant.Name, tenant.NationalId, tenant.EconomicCode,
-                tenant.RegistrationNumber, tenant.Address, tenant.PostalCode, tenant.Phone)
-            : FormatPartyDetails("خریدار", contact?.Name, contact?.NationalId, contact?.EconomicCode,
-                contact?.RegistrationNumber, contact?.Address, contact?.PostalCode, contact?.Phone ?? contact?.Mobile);
 
-        report["SellerDetails"] = sellerDetails;
-        report["BuyerDetails"] = buyerDetails;
+        var sellerName = tenantIsBuyer ? contact?.Name : tenant.LegalName ?? tenant.Name;
+        var sellerNationalId = tenantIsBuyer ? contact?.NationalId : tenant.NationalId;
+        var sellerEconomicCode = tenantIsBuyer ? contact?.EconomicCode : tenant.EconomicCode;
+        var sellerRegistrationNumber = tenantIsBuyer ? contact?.RegistrationNumber : tenant.RegistrationNumber;
+        var sellerAddress = tenantIsBuyer ? contact?.Address : tenant.Address;
+        var sellerPostalCode = tenantIsBuyer ? contact?.PostalCode : tenant.PostalCode;
+        var sellerPhone = tenantIsBuyer ? contact?.Phone ?? contact?.Mobile : tenant.Phone;
+
+        var buyerName = tenantIsBuyer ? tenant.LegalName ?? tenant.Name : contact?.Name;
+        var buyerNationalId = tenantIsBuyer ? tenant.NationalId : contact?.NationalId;
+        var buyerEconomicCode = tenantIsBuyer ? tenant.EconomicCode : contact?.EconomicCode;
+        var buyerRegistrationNumber = tenantIsBuyer ? tenant.RegistrationNumber : contact?.RegistrationNumber;
+        var buyerAddress = tenantIsBuyer ? tenant.Address : contact?.Address;
+        var buyerPostalCode = tenantIsBuyer ? tenant.PostalCode : contact?.PostalCode;
+        var buyerPhone = tenantIsBuyer ? tenant.Phone : contact?.Phone ?? contact?.Mobile;
+
+        report["SellerName"] = sellerName ?? "";
+        report["SellerNationalId"] = sellerNationalId ?? "";
+        report["SellerEconomicCode"] = sellerEconomicCode ?? "";
+        report["SellerRegistrationNumber"] = sellerRegistrationNumber ?? "";
+        report["SellerAddress"] = sellerAddress ?? "";
+        report["SellerPostalCode"] = sellerPostalCode ?? "";
+        report["SellerPhone"] = sellerPhone ?? "";
+
+        report["BuyerName"] = buyerName ?? "";
+        report["BuyerNationalId"] = buyerNationalId ?? "";
+        report["BuyerEconomicCode"] = buyerEconomicCode ?? "";
+        report["BuyerRegistrationNumber"] = buyerRegistrationNumber ?? "";
+        report["BuyerAddress"] = buyerAddress ?? "";
+        report["BuyerPostalCode"] = buyerPostalCode ?? "";
+        report["BuyerPhone"] = buyerPhone ?? "";
 
         report["InvoiceTitle"] = invoice.InvoiceType switch
         {
