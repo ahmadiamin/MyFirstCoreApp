@@ -1042,7 +1042,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.HasIndex("TransactionId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Banking.PaymentAllocation", b =>
@@ -1263,6 +1263,136 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.ToTable("Contacts", (string)null);
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Contacts.ContactPerson", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Position")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("TenantId", "ContactId", "IsActive");
+
+                    b.ToTable("ContactPersons", (string)null);
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Contacts.ContactPersonNumber", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ContactPersonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Extension")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("NumberType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactPersonId");
+
+                    b.HasIndex("TenantId", "ContactPersonId", "NumberType");
+
+                    b.ToTable("ContactPersonNumbers", (string)null);
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Contacts.CustomerPortalShare", b =>
                 {
                     b.Property<int>("Id")
@@ -1453,7 +1583,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.HasIndex("SortOrder");
 
-                    b.ToTable("Menus");
+                    b.ToTable("Menus", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Identity.PasswordResetOtp", b =>
@@ -1548,7 +1678,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Permissions");
+                    b.ToTable("Permissions", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Identity.RolePermission", b =>
@@ -1563,7 +1693,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("RolePermissions");
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Identity.SystemSmsSetting", b =>
@@ -1662,7 +1792,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[IsPrimary] = 1");
 
-                    b.ToTable("UserProfileImages");
+                    b.ToTable("UserProfileImages", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.Product", b =>
@@ -2311,6 +2441,10 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasPrecision(18)
                         .HasColumnType("decimal(18,0)");
 
+                    b.Property<string>("SupplierInvoiceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<decimal>("TaxAmount")
                         .HasPrecision(18)
                         .HasColumnType("decimal(18,0)");
@@ -2348,6 +2482,10 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.HasIndex("TransactionId");
 
                     b.HasIndex("TenantId", "Date");
+
+                    b.HasIndex("TenantId", "ContactId", "SupplierInvoiceNumber")
+                        .IsUnique()
+                        .HasFilter("[InvoiceType] = 3 AND [SupplierInvoiceNumber] IS NOT NULL AND [IsDeleted] = 0");
 
                     b.HasIndex("TenantId", "InvoiceType", "Number")
                         .IsUnique()
@@ -2717,6 +2855,14 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.Property<int?>("SignatureAttachmentId")
                         .HasColumnType("int");
 
@@ -2741,7 +2887,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.HasIndex("StampAttachmentId");
 
-                    b.ToTable("Tenants");
+                    b.ToTable("Tenants", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Tenancy.TenantSmsSetting", b =>
@@ -2868,7 +3014,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("UserTenants");
+                    b.ToTable("UserTenants", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -3110,6 +3256,28 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Contacts.ContactPerson", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Contacts.Contact", "Contact")
+                        .WithMany("ContactPersons")
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Contact");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Contacts.ContactPersonNumber", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Contacts.ContactPerson", "ContactPerson")
+                        .WithMany("Numbers")
+                        .HasForeignKey("ContactPersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContactPerson");
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Contacts.CustomerPortalShare", b =>
@@ -3422,6 +3590,16 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("Allocations");
 
                     b.Navigation("Histories");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Contacts.Contact", b =>
+                {
+                    b.Navigation("ContactPersons");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Contacts.ContactPerson", b =>
+                {
+                    b.Navigation("Numbers");
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Identity.ApplicationUser", b =>
