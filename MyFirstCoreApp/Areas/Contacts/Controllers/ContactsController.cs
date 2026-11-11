@@ -433,6 +433,21 @@ public class ContactsController : Controller
 
         var existingPeopleById = existingPeople.ToDictionary(x => x.Id);
 
+        if (submittedPeople.Where(x => x.Id > 0).Select(x => x.Id).Distinct().Count()
+            != submittedPeople.Count(x => x.Id > 0))
+        {
+            ModelState.AddModelError(nameof(ContactFormViewModel.ContactPersons),
+                "اطلاعات اشخاص تماس تکراری است. صفحه را تازه‌سازی و دوباره تلاش کنید.");
+            return false;
+        }
+
+        if (submittedPeople.Any(x => x.Id == 0 && x.Numbers.Any(n => n.Id > 0)))
+        {
+            ModelState.AddModelError(nameof(ContactFormViewModel.ContactPersons),
+                "شماره تماس جدید دارای شناسه نامعتبر است.");
+            return false;
+        }
+
         // ابتدا تمام شناسه‌ها بررسی می‌شوند تا هیچ رکورد متعلق به طرف حساب یا شرکت دیگری تغییر نکند.
         foreach (var personModel in submittedPeople.Where(x => x.Id > 0))
         {
@@ -440,6 +455,14 @@ public class ContactsController : Controller
             {
                 ModelState.AddModelError(nameof(ContactFormViewModel.ContactPersons),
                     "یکی از اشخاص تماس معتبر نیست. صفحه را تازه‌سازی و دوباره تلاش کنید.");
+                return false;
+            }
+
+            if (personModel.Numbers.Where(x => x.Id > 0).Select(x => x.Id).Distinct().Count()
+                != personModel.Numbers.Count(x => x.Id > 0))
+            {
+                ModelState.AddModelError(nameof(ContactFormViewModel.ContactPersons),
+                    "شماره‌های تماس تکراری هستند.");
                 return false;
             }
 
