@@ -18,7 +18,8 @@ public class CreateTenantViewModel
     public string? NationalId { get; set; }
 
     [Display(Name = "کد اقتصادی")]
-    [MaxLength(30)]
+    [MaxLength(14, ErrorMessage = "شماره اقتصادی حداکثر باید ۱۴ رقم باشد.")]
+    [RegularExpression(@"^$|^[0-9]{14}$", ErrorMessage = "شماره اقتصادی باید دقیقاً ۱۴ رقم باشد.")]
     public string? EconomicCode { get; set; }
 
     [Display(Name = "شماره ثبت")]
