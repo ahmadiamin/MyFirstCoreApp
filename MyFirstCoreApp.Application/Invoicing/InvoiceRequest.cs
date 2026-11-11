@@ -19,6 +19,9 @@ public sealed class InvoiceRequest
     public DateOnly? DueDate { get; set; }
     public InvoiceType InvoiceType { get; set; }
 
+    /// <summary>شماره فاکتور فروشنده؛ فقط برای فاکتور خرید.</summary>
+    public string? SupplierInvoiceNumber { get; set; }
+
     /// <summary>طرف حساب موجود. اگر خالی باشد باید NewContactName پر باشد.</summary>
     public int? ContactId { get; set; }
 

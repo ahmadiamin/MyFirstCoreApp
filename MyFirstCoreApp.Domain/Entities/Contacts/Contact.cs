@@ -61,4 +61,6 @@ public class Contact : TenantEntity
     public bool IsActive { get; set; } = true;
 
     public string? Notes { get; set; }
+
+    public ICollection<ContactPerson> ContactPersons { get; set; } = new List<ContactPerson>();
 }

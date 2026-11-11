@@ -53,6 +53,8 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
 
         // Contacts
         public DbSet<Contact> Contacts { get; set; }
+        public DbSet<ContactPerson> ContactPersons { get; set; }
+        public DbSet<ContactPersonNumber> ContactPersonNumbers { get; set; }
         public DbSet<CustomerPortalShare> CustomerPortalShares { get; set; }
 
         // Inventory
@@ -103,6 +105,28 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         {
             base.OnModelCreating(builder);
             builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+            builder.Entity<Tenant>().Property(x => x.RegistrationNumber).HasMaxLength(30);
+            builder.Entity<Tenant>().Property(x => x.PostalCode).HasMaxLength(20);
+
+            // سه نقش مستقل برای فایل‌های هویتی شرکت؛ حذف فایل پیوست نباید شرکت را حذف کند.
+            builder.Entity<Tenant>()
+                .HasOne<Attachment>()
+                .WithMany()
+                .HasForeignKey(x => x.LogoAttachmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Tenant>()
+                .HasOne<Attachment>()
+                .WithMany()
+                .HasForeignKey(x => x.StampAttachmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Tenant>()
+                .HasOne<Attachment>()
+                .WithMany()
+                .HasForeignKey(x => x.SignatureAttachmentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<RolePermission>()
                 .HasKey(x => new

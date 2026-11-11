@@ -11,7 +11,7 @@
         </h3>
     </div>
 
-    <form asp-area="Invoicing" asp-controller="Invoices" asp-action="Create" method="post" id="invoiceForm">
+    <form asp-area="Invoicing" asp-controller="Invoices" asp-action="Create" method="post" enctype="multipart/form-data" id="invoiceForm">
         @Html.AntiForgeryToken()
 
         <div class="card-body">

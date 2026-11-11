@@ -12,6 +12,7 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Description).HasMaxLength(2000);
+        builder.Property(x => x.SupplierInvoiceNumber).HasMaxLength(100);
 
         // مالی (بدون اعشار)
         builder.Property(x => x.SubTotal).HasPrecision(18, 0);
@@ -45,6 +46,11 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.HasIndex(x => new { x.TenantId, x.InvoiceType, x.Number })
             .IsUnique()
             .HasFilter("[IsDeleted] = 0");
+
+        // شماره فاکتور فروشنده فقط در خریدهای همان فروشنده و شرکت یکتا است.
+        builder.HasIndex(x => new { x.TenantId, x.ContactId, x.SupplierInvoiceNumber })
+            .IsUnique()
+            .HasFilter("[InvoiceType] = 3 AND [SupplierInvoiceNumber] IS NOT NULL AND [IsDeleted] = 0");
 
         builder.HasIndex(x => new { x.TenantId, x.Date });
         builder.HasIndex(x => x.Status);

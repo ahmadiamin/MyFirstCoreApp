@@ -45,8 +45,21 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label asp-for="EconomicCode" class="form-label"></label>
-                            <input asp-for="EconomicCode" class="form-control" />
+                            <input asp-for="EconomicCode" class="form-control ltr" dir="ltr" maxlength="14" inputmode="numeric" />
                             <span asp-validation-for="EconomicCode" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="RegistrationNumber" class="form-label"></label>
+                            <input asp-for="RegistrationNumber" class="form-control" />
+                            <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PostalCode" class="form-label"></label>
+                            <input asp-for="PostalCode" class="form-control ltr" dir="ltr" />
+                            <span asp-validation-for="PostalCode" class="text-danger"></span>
                         </div>
                     </div>
 

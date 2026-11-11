@@ -6,12 +6,14 @@ using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Models;
 using MyFirstCoreApp.Application.Common.Utilities;
 using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Application.Attachments;
 using MyFirstCoreApp.Application.Invoicing;
 using MyFirstCoreApp.Areas.Invoicing.ViewModels.Invoice;
 using MyFirstCoreApp.Areas.Invoicing.ViewModels.InvoiceReturn;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using Stimulsoft.Report;
+using Stimulsoft.Report.Components;
 using System.Data;
 
 namespace MyFirstCoreApp.Areas.Invoicing.Controllers;
@@ -24,6 +26,7 @@ public class InvoicesController : Controller
     private const string InvalidDateMessage = "تاریخ نامعتبر است. نمونه‌ی درست: 1405/01/10";
     private const string NoTenantMessage = "شرکت فعال مشخص نیست.";
     private const string UnexpectedErrorMessage = "خطای غیرمنتظره رخ داد. لطفاً دوباره تلاش کنید.";
+    private const string InvoiceImageDescription = "InvoiceImage";
 
     private readonly ApplicationDbContext _context;
     private readonly ICurrentTenant _currentTenant;
@@ -31,6 +34,7 @@ public class InvoicesController : Controller
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<InvoicesController> _logger;
     private readonly IStockBalanceService _stockBalanceService;
+    private readonly IAttachmentService _attachments;
 
     public InvoicesController(
         ApplicationDbContext context,
@@ -38,7 +42,8 @@ public class InvoicesController : Controller
         IInvoiceService invoiceService,
         TimeProvider timeProvider,
         ILogger<InvoicesController> logger,
-        IStockBalanceService stockBalanceService)
+        IStockBalanceService stockBalanceService,
+        IAttachmentService attachments)
     {
         _context = context;
         _currentTenant = currentTenant;
@@ -46,6 +51,7 @@ public class InvoicesController : Controller
         _timeProvider = timeProvider;
         _logger = logger;
         _stockBalanceService = stockBalanceService;
+        _attachments = attachments;
     }
 
     // ============================================
@@ -181,6 +187,7 @@ public class InvoicesController : Controller
     // POST: /Invoicing/Invoices/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [RequestSizeLimit(6 * 1024 * 1024)]
     [Authorize(Policy = "Invoice.Create")]
     public async Task<IActionResult> Create(InvoiceFormViewModel model)
     {
@@ -202,7 +209,21 @@ public class InvoicesController : Controller
         {
             // طرف‌حساب/کالای جدید داخل همان تراکنش سرویس ساخته می‌شود؛
             // با خطا، هیچ رکورد یتیمی باقی نمی‌ماند.
+            var preparedImage = await PrepareInvoiceImageAsync(model.InvoiceImage);
             var invoice = await _invoiceService.CreateAsync(ToRequest(model, date, dueDate), tenantId.Value);
+
+            if (preparedImage != null)
+            {
+                try
+                {
+                    await SaveInvoiceImageAsync(invoice.Id, preparedImage);
+                }
+                catch
+                {
+                    await _invoiceService.DeleteAsync(invoice.Id, tenantId.Value);
+                    throw;
+                }
+            }
 
             TempData["Success"] = $"فاکتور شماره {invoice.Number} با موفقیت ثبت شد.";
             return RedirectToAction(nameof(Index), new { invoiceType = (int)invoice.InvoiceType });
@@ -258,6 +279,7 @@ public class InvoicesController : Controller
             InvoiceType = entity.InvoiceType,
             ContactId = entity.ContactId,
             ContactName = entity.Contact?.Name,
+            SupplierInvoiceNumber = entity.SupplierInvoiceNumber,
             Description = entity.Description,
             ContactOptions = await GetContactOptionsAsync(),
             InvoiceTypeOptions = GetInvoiceTypeOptions(),
@@ -278,6 +300,7 @@ public class InvoicesController : Controller
             WarehouseOptions = await GetWarehouseOptionsAsync(tenantId.Value)
         };
         model.DefaultWarehouseId = GetDefaultWarehouseId(model.WarehouseOptions);
+        ViewBag.InvoiceImageExists = await GetInvoiceImageAttachmentAsync(entity.Id) != null;
 
         return View(model);
     }
@@ -285,6 +308,7 @@ public class InvoicesController : Controller
     // POST: /Invoicing/Invoices/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [RequestSizeLimit(6 * 1024 * 1024)]
     [Authorize(Policy = "Invoice.Edit")]
     public async Task<IActionResult> Edit(int id, InvoiceFormViewModel model)
     {
@@ -307,7 +331,10 @@ public class InvoicesController : Controller
         try
         {
             // سرویس: وضعیت قابل ویرایش، ثابت بودن نوع فاکتور، اعتبارسنجی، محاسبه و ذخیره‌ی اتمیک
+            var preparedImage = await PrepareInvoiceImageAsync(model.InvoiceImage);
             await _invoiceService.UpdateAsync(ToRequest(model, date, dueDate), tenantId.Value);
+            if (preparedImage != null)
+                await SaveInvoiceImageAsync(id, preparedImage);
 
             TempData["Success"] = $"فاکتور شماره {model.Number} با موفقیت ویرایش شد.";
             return RedirectToAction(nameof(Index), new { invoiceType = (int)model.InvoiceType });
@@ -796,6 +823,7 @@ public class InvoicesController : Controller
             .Include(i => i.Contact)
             .Include(i => i.Items)
                 .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p.Unit)
             .FirstOrDefaultAsync(i =>
                 i.Id == id &&
                 i.TenantId == tenantId.Value);
@@ -852,7 +880,15 @@ public class InvoicesController : Controller
 
     [HttpGet]
     [Authorize(Policy = "Invoice.View")]
-    public async Task<IActionResult> PrintPdf(int id)
+    public Task<IActionResult> PrintPdf(int id)
+        => PrintPdfCore(id, official: false);
+
+    [HttpGet]
+    [Authorize(Policy = "Invoice.View")]
+    public Task<IActionResult> PrintOfficialPdf(int id)
+        => PrintPdfCore(id, official: true);
+
+    private async Task<IActionResult> PrintPdfCore(int id, bool official)
     {
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue)
@@ -863,6 +899,7 @@ public class InvoicesController : Controller
             .Include(i => i.Contact)
             .Include(i => i.Items)
                 .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p.Unit)
             .FirstOrDefaultAsync(i =>
                 i.Id == id &&
                 i.TenantId == tenantId.Value);
@@ -877,29 +914,66 @@ public class InvoicesController : Controller
         if (tenant == null)
             return NotFound();
 
-        // اطلاعات ردیف‌های فاکتور
-        var itemsTable = new DataTable("Invoices");
-        itemsTable.Columns.Add("ProductName", typeof(string));
-        itemsTable.Columns.Add("Quantity", typeof(decimal));
-        itemsTable.Columns.Add("UnitPrice", typeof(decimal));
-        itemsTable.Columns.Add("LineTotal", typeof(decimal));
-
-        foreach (var item in invoice.Items)
+        // چاپ فاکتور خرید به‌جای قالب گزارش، تصویر اسکن‌شده‌ی فاکتور فروشنده را دانلود می‌کند.
+        if (invoice.InvoiceType == InvoiceType.Purchase)
         {
-            itemsTable.Rows.Add(
-                item.Description ?? item.Product?.Name ?? "",
-                item.Quantity,
-                item.UnitPrice,
-                item.LineTotal);
+            var image = await GetInvoiceImageAttachmentAsync(invoice.Id);
+            if (image == null)
+                return NotFound("برای این فاکتور خرید هنوز تصویری بارگذاری نشده است.");
+
+            var imageFile = await _attachments.OpenAsync(image.Id);
+            if (imageFile.EntityType != AttachmentEntityType.Invoice ||
+                imageFile.EntityId != invoice.Id ||
+                !imageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                await imageFile.Content.DisposeAsync();
+                return NotFound();
+            }
+
+            return File(imageFile.Content, imageFile.ContentType, imageFile.FileName);
         }
 
+        // اطلاعات ردیف‌های فاکتور
+        var itemsTable = new DataTable("Invoices");
+        itemsTable.Columns.Add("RowNumber", typeof(int));
+        itemsTable.Columns.Add("ProductCode", typeof(string));
+        itemsTable.Columns.Add("Description", typeof(string));
+        itemsTable.Columns.Add("Quantity", typeof(decimal));
+        itemsTable.Columns.Add("UnitName", typeof(string));
+        itemsTable.Columns.Add("UnitPrice", typeof(decimal));
+        itemsTable.Columns.Add("GrossAmount", typeof(decimal));
+        itemsTable.Columns.Add("DiscountAmount", typeof(decimal));
+        itemsTable.Columns.Add("NetAmount", typeof(decimal));
+        itemsTable.Columns.Add("TaxAmount", typeof(decimal));
+        itemsTable.Columns.Add("TotalWithTax", typeof(decimal));
+
+        var rowNumber = 0;
+        foreach (var item in invoice.Items)
+        {
+            var grossAmount = item.Quantity * item.UnitPrice;
+            var netAmount = grossAmount - item.DiscountAmount;
+            itemsTable.Rows.Add(
+                ++rowNumber,
+                item.Product?.Code ?? "",
+                item.Description ?? item.Product?.Name ?? "",
+                item.Quantity,
+                item.Product?.Unit?.Name ?? "",
+                item.UnitPrice,
+                grossAmount,
+                item.DiscountAmount,
+                netAmount,
+                item.TaxAmount,
+                netAmount + item.TaxAmount);
+        }
+
+        var reportFileName = official ? "OfficialInvoice.mrt" : "Invoice.mrt";
         var reportPath = Path.Combine(
             AppContext.BaseDirectory,
             "Reports",
-            "Invoice.mrt");
+            reportFileName);
 
         if (!System.IO.File.Exists(reportPath))
-            return Problem("فایل قالب Invoice.mrt پیدا نشد.");
+            return Problem($"فایل قالب {reportFileName} پیدا نشد.");
 
         using var report = new StiReport();
         report.Load(reportPath);
@@ -907,15 +981,65 @@ public class InvoicesController : Controller
         // اتصال اطلاعات ردیف‌ها به Business Object قالب
         report.RegBusinessObject("Invoices", itemsTable);
 
-        // فعلاً این خط را حذف کن؛ ساختار ستون‌ها از قبل در MRT تعریف شده است.
-        // report.Dictionary.SynchronizeBusinessObjects(3);
+        // قالب رسمی، تصاویر هویتی همین شرکت را از مخزن امن پیوست‌ها دریافت می‌کند.
+        if (official)
+        {
+            var logoBytes = await ReadTenantBrandingImageAsync(tenant.LogoAttachmentId, tenant.Id);
+            var stampBytes = await ReadTenantBrandingImageAsync(tenant.StampAttachmentId, tenant.Id);
+            var signatureBytes = await ReadTenantBrandingImageAsync(tenant.SignatureAttachmentId, tenant.Id);
 
+            if (logoBytes is { Length: > 0 } && report.GetComponentByName("ImgLogo") is StiImage logoImage)
+                logoImage.ImageBytes = logoBytes;
+
+            if (stampBytes is { Length: > 0 } && report.GetComponentByName("ImgStamp") is StiImage stampImage)
+                stampImage.ImageBytes = stampBytes;
+
+            if (signatureBytes is { Length: > 0 } && report.GetComponentByName("ImgSignature") is StiImage signatureImage)
+                signatureImage.ImageBytes = signatureBytes;
+        }
+
+        // ساختار ستون‌های Business Object از قبل در MRT تعریف شده است.
         report.Compile();
 
         // اطلاعات شرکت و فاکتور
         report["CompanyName"] = tenant.LegalName ?? tenant.Name ?? "";
         report["CompanyAddress"] = tenant.Address ?? "";
         report["CompanyPhone"] = tenant.Phone ?? "";
+
+        var contact = invoice.Contact;
+        var tenantIsBuyer = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn;
+
+        var sellerName = tenantIsBuyer ? contact?.Name : tenant.LegalName ?? tenant.Name;
+        var sellerNationalId = tenantIsBuyer ? contact?.NationalId : tenant.NationalId;
+        var sellerEconomicCode = tenantIsBuyer ? contact?.EconomicCode : tenant.EconomicCode;
+        var sellerRegistrationNumber = tenantIsBuyer ? contact?.RegistrationNumber : tenant.RegistrationNumber;
+        var sellerAddress = tenantIsBuyer ? contact?.Address : tenant.Address;
+        var sellerPostalCode = tenantIsBuyer ? contact?.PostalCode : tenant.PostalCode;
+        var sellerPhone = tenantIsBuyer ? contact?.Phone ?? contact?.Mobile : tenant.Phone;
+
+        var buyerName = tenantIsBuyer ? tenant.LegalName ?? tenant.Name : contact?.Name;
+        var buyerNationalId = tenantIsBuyer ? tenant.NationalId : contact?.NationalId;
+        var buyerEconomicCode = tenantIsBuyer ? tenant.EconomicCode : contact?.EconomicCode;
+        var buyerRegistrationNumber = tenantIsBuyer ? tenant.RegistrationNumber : contact?.RegistrationNumber;
+        var buyerAddress = tenantIsBuyer ? tenant.Address : contact?.Address;
+        var buyerPostalCode = tenantIsBuyer ? tenant.PostalCode : contact?.PostalCode;
+        var buyerPhone = tenantIsBuyer ? tenant.Phone : contact?.Phone ?? contact?.Mobile;
+
+        report["SellerName"] = sellerName ?? "";
+        report["SellerNationalId"] = sellerNationalId ?? "";
+        report["SellerEconomicCode"] = sellerEconomicCode ?? "";
+        report["SellerRegistrationNumber"] = sellerRegistrationNumber ?? "";
+        report["SellerAddress"] = sellerAddress ?? "";
+        report["SellerPostalCode"] = sellerPostalCode ?? "";
+        report["SellerPhone"] = sellerPhone ?? "";
+
+        report["BuyerName"] = buyerName ?? "";
+        report["BuyerNationalId"] = buyerNationalId ?? "";
+        report["BuyerEconomicCode"] = buyerEconomicCode ?? "";
+        report["BuyerRegistrationNumber"] = buyerRegistrationNumber ?? "";
+        report["BuyerAddress"] = buyerAddress ?? "";
+        report["BuyerPostalCode"] = buyerPostalCode ?? "";
+        report["BuyerPhone"] = buyerPhone ?? "";
 
         report["InvoiceTitle"] = invoice.InvoiceType switch
         {
@@ -1030,12 +1154,120 @@ public class InvoicesController : Controller
         return File(
             stream.ToArray(),
             "application/pdf",
-            $"Invoice-{invoice.Number}.pdf");
+            $"{(official ? "OfficialInvoice" : "Invoice")}-{invoice.Number}.pdf");
     }
 
     // ============================================
     // Helpers
     // ============================================
+
+    private static string FormatPartyDetails(
+        string title, string? name, string? nationalId, string? economicCode,
+        string? registrationNumber, string? address, string? postalCode, string? phone)
+    {
+        static string Value(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value.Trim();
+        return $"{title}: {Value(name)}{Environment.NewLine}" +
+               $"شناسه ملی: {Value(nationalId)} | کد اقتصادی: {Value(economicCode)} | شماره ثبت: {Value(registrationNumber)}{Environment.NewLine}" +
+               $"آدرس: {Value(address)} | کد پستی: {Value(postalCode)} | تلفن: {Value(phone)}";
+    }
+
+    private async Task<PreparedAttachment?> PrepareInvoiceImageAsync(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+            return null;
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (extension is not (".jpg" or ".jpeg" or ".png" or ".webp"))
+            throw new InvalidOperationException("تصویر فاکتور باید JPG، PNG یا WEBP باشد.");
+
+        await using var stream = file.OpenReadStream();
+        return await _attachments.PrepareAsync(new AttachmentUpload
+        {
+            FileName = file.FileName,
+            Length = file.Length,
+            Content = stream,
+            Description = InvoiceImageDescription
+        });
+    }
+
+    private async Task SaveInvoiceImageAsync(int invoiceId, PreparedAttachment prepared)
+    {
+        var previous = await GetInvoiceImageAttachmentAsync(invoiceId);
+        await _attachments.AddAsync(AttachmentEntityType.Invoice, invoiceId, prepared);
+
+        if (previous != null)
+        {
+            try { await _attachments.DeleteAsync(previous.Id); }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not soft-delete previous invoice image {AttachmentId}", previous.Id);
+            }
+        }
+    }
+
+    private async Task<MyFirstCoreApp.Application.Attachments.AttachmentInfo?> GetInvoiceImageAttachmentAsync(int invoiceId)
+    {
+        var files = await _attachments.ListAsync(AttachmentEntityType.Invoice, invoiceId);
+        return files
+            .Where(x => x.Description == InvoiceImageDescription &&
+                        x.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x => x.UploadedAt)
+            .ThenByDescending(x => x.Id)
+            .FirstOrDefault();
+    }
+
+    [HttpGet]
+    [Authorize(Policy = "Invoice.View")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> InvoiceImage(int id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var exists = await _context.Invoices.AnyAsync(x => x.Id == id && x.TenantId == tenantId.Value);
+        if (!exists) return NotFound();
+
+        var image = await GetInvoiceImageAttachmentAsync(id);
+        if (image == null) return NotFound();
+
+        var file = await _attachments.OpenAsync(image.Id);
+        if (file.EntityType != AttachmentEntityType.Invoice || file.EntityId != id ||
+            !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            await file.Content.DisposeAsync();
+            return NotFound();
+        }
+
+        return File(file.Content, file.ContentType);
+    }
+
+    private async Task<byte[]?> ReadTenantBrandingImageAsync(int? attachmentId, int tenantId)
+    {
+        if (!attachmentId.HasValue)
+            return null;
+
+        try
+        {
+            var info = await _attachments.GetInfoAsync(attachmentId.Value);
+            if (info.EntityType != AttachmentEntityType.Tenant ||
+                info.EntityId != tenantId ||
+                !info.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var file = await _attachments.OpenAsync(attachmentId.Value);
+            await using (file.Content)
+            {
+                using var memory = new MemoryStream();
+                await file.Content.CopyToAsync(memory);
+                return memory.ToArray();
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // فایل حذف‌شده یا نامعتبر نباید چاپ فاکتور را متوقف کند.
+            return null;
+        }
+    }
 
     /// <summary>
     /// خطای کسب‌وکار (InvalidOperationException) پیام فارسی به کاربر می‌دهد.
@@ -1091,6 +1323,7 @@ public class InvoicesController : Controller
             Date = date,
             DueDate = dueDate,
             InvoiceType = model.InvoiceType,
+            SupplierInvoiceNumber = model.SupplierInvoiceNumber,
             ContactId = model.ContactId > 0 ? model.ContactId : null,
             NewContactName = model.ContactName,
             Description = model.Description,
@@ -1127,6 +1360,9 @@ public class InvoicesController : Controller
         {
             item.ProductOptions = productOptions;
         }
+
+        ViewBag.InvoiceImageExists = model.Id > 0 &&
+            await GetInvoiceImageAttachmentAsync(model.Id) != null;
     }
 
     private async Task<List<SelectListItem>> GetWarehouseOptionsAsync(int tenantId)

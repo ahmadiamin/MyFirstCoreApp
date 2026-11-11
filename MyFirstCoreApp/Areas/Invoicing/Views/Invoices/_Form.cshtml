@@ -33,12 +33,35 @@
         </div>
     </div>
 
+    <div class="col-md-3">
+        <div class="form-group">
+            <label asp-for="SupplierInvoiceNumber"></label>
+            <input asp-for="SupplierInvoiceNumber" class="form-control ltr" dir="ltr" maxlength="100"
+                   placeholder="شماره درج‌شده روی فاکتور فروشنده" />
+            <span asp-validation-for="SupplierInvoiceNumber" class="text-danger"></span>
+            <small class="form-text text-muted">فقط برای فاکتور خرید؛ شماره داخلی فاکتور نیست.</small>
+        </div>
+    </div>
+
     <div class="col-md-4">
         <div class="form-group">
             <label>طرف حساب</label>
             <div id="contactSelect"></div>
             <input type="hidden" name="ContactId" id="ContactId_Hidden" value="@(Model.ContactId ?? 0)" />
             <input type="hidden" name="ContactName" id="ContactName_Hidden" value="@(Model.ContactName ?? "")" />
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="InvoiceImage"></label>
+            <input asp-for="InvoiceImage" type="file" class="form-control-file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+            <small class="form-text text-muted">تصویر فاکتور فروشنده؛ حداکثر ۵ مگابایت. انتخاب فایل جدید، تصویر قبلی را جایگزین می‌کند.</small>
+            @if (ViewBag.InvoiceImageExists == true)
+            {
+                <div class="mt-2"><a href="@Url.Action("InvoiceImage", "Invoices", new { area = "Invoicing", id = Model.Id })" target="_blank" rel="noopener">مشاهده تصویر فعلی فاکتور</a></div>
+            }
+            <span asp-validation-for="InvoiceImage" class="text-danger"></span>
         </div>
     </div>
 
