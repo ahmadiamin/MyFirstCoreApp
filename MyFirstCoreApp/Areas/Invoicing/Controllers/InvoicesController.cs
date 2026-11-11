@@ -1160,7 +1160,10 @@ public class InvoicesController : Controller
         if (previous != null)
         {
             try { await _attachments.DeleteAsync(previous.Id); }
-            catch (InvalidOperationException) { /* تصویر جدید معتبر است؛ حذف قبلی مانع ذخیره نشود. */ }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not soft-delete previous invoice image {AttachmentId}", previous.Id);
+            }
         }
     }
 
