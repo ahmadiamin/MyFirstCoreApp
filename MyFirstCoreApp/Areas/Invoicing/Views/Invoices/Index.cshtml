@@ -292,15 +292,19 @@
                         'class="btn btn-sm btn-outline-info action-icon-btn" title="مشاهده">' +
                         '<i class="fa-solid fa-eye"></i></a>';
 
-                // PDF
+                // خرید: دانلود تصویر فاکتور بارگذاری‌شده؛ سایر انواع: خروجی PDF
+                var isPurchase = d.invoiceType === 3;
                 html += '<a href="/Invoicing/Invoices/PrintPdf/' + d.id + '" ' +
-                        'class="btn btn-sm btn-outline-info action-icon-btn" title="PDF">' +
-                        '<i class="fa-solid fa-file-pdf"></i></a>';
+                        'class="btn btn-sm btn-outline-info action-icon-btn" title="' +
+                        (isPurchase ? 'دانلود تصویر فاکتور' : 'PDF') + '">' +
+                        '<i class="fa-solid ' + (isPurchase ? 'fa-image' : 'fa-file-pdf') + '"></i></a>';
 
-                // PDF رسمی با لوگو، مهر و امضای شرکت
-                html += '<a href="/Invoicing/Invoices/PrintOfficialPdf/' + d.id + '" ' +
-                        'class="btn btn-sm btn-outline-success action-icon-btn" title="PDF رسمی">' +
-                        '<i class="fa-solid fa-file-signature"></i></a>';
+                // PDF رسمی فقط برای فاکتورهای غیرخرید
+                if (!isPurchase) {
+                    html += '<a href="/Invoicing/Invoices/PrintOfficialPdf/' + d.id + '" ' +
+                            'class="btn btn-sm btn-outline-success action-icon-btn" title="PDF رسمی">' +
+                            '<i class="fa-solid fa-file-signature"></i></a>';
+                }
 
                 if (d.invoiceType === 1) {
                     // پیش‌فاکتور
