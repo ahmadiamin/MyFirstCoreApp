@@ -335,12 +335,12 @@
         </PageFooterBand1>
         <Header Ref="27" type="HeaderBand" isKey="true">
           <Brush>Transparent</Brush>
-          <ClientRectangle>0,5.4,21,1</ClientRectangle>
+          <ClientRectangle>0,5.4,29.70,1</ClientRectangle>
           <Components isList="true" count="5">
             <HeaderInvoices_Line Ref="28" type="Text" isKey="true">
               <Border>All;Black;1;Solid;False;4;Black</Border>
               <Brush>[242:242:242]</Brush>
-              <ClientRectangle>19.4,0.2,1.2,0.8</ClientRectangle>
+              <ClientRectangle>27.44,0.2,1.70,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13,Bold</Font>
               <HorAlignment>Center</HorAlignment>
@@ -356,7 +356,7 @@
             <HeaderInvoices_UnitPrice Ref="29" type="Text" isKey="true">
               <Border>All;Black;1;Solid;False;4;Black</Border>
               <Brush>[242:242:242]</Brush>
-              <ClientRectangle>4.4,0.2,3.2,0.8</ClientRectangle>
+              <ClientRectangle>6.22,0.2,4.53,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13,Bold</Font>
               <HorAlignment>Center</HorAlignment>
@@ -373,7 +373,7 @@
             <HeaderInvoices_Quantity Ref="30" type="Text" isKey="true">
               <Border>All;Black;1;Solid;False;4;Black</Border>
               <Brush>[242:242:242]</Brush>
-              <ClientRectangle>7.6,0.2,1.6,0.8</ClientRectangle>
+              <ClientRectangle>10.75,0.2,2.26,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13,Bold</Font>
               <HorAlignment>Center</HorAlignment>
@@ -389,7 +389,7 @@
             <HeaderInvoices_ProductName Ref="31" type="Text" isKey="true">
               <Border>All;Black;1;Solid;False;4;Black</Border>
               <Brush>[242:242:242]</Brush>
-              <ClientRectangle>9.2,0.2,10.2,0.8</ClientRectangle>
+              <ClientRectangle>13.01,0.2,14.43,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13,Bold</Font>
               <HorAlignment>Center</HorAlignment>
@@ -405,7 +405,7 @@
             <HeaderInvoices_LineTotal Ref="32" type="Text" isKey="true">
               <Border>All;Black;1;Solid;False;4;Black</Border>
               <Brush>[242:242:242]</Brush>
-              <ClientRectangle>0.4,0.2,4,0.8</ClientRectangle>
+              <ClientRectangle>0.57,0.2,5.66,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13,Bold</Font>
               <HorAlignment>Center</HorAlignment>
@@ -428,12 +428,12 @@
         <Data Ref="33" type="DataBand" isKey="true">
           <Brush>Transparent</Brush>
           <BusinessObjectGuid>5e962d1b9ce14203a27b88f0aa43bc64</BusinessObjectGuid>
-          <ClientRectangle>0,7.2,21,0.8</ClientRectangle>
+          <ClientRectangle>0,7.2,29.70,0.8</ClientRectangle>
           <Components isList="true" count="18">
             <Invoices_LineTotal Ref="34" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,0,4,0.8</ClientRectangle>
+              <ClientRectangle>0.57,0,5.66,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13</Font>
               <GrowToHeight>True</GrowToHeight>
@@ -459,7 +459,7 @@
             <Invoices_UnitPrice Ref="36" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>4.4,0,3.2,0.8</ClientRectangle>
+              <ClientRectangle>6.22,0,4.53,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13</Font>
               <GrowToHeight>True</GrowToHeight>
@@ -485,7 +485,7 @@
             <Invoices_Quantity Ref="38" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>7.6,0,1.6,0.8</ClientRectangle>
+              <ClientRectangle>10.75,0,2.26,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13</Font>
               <GrowToHeight>True</GrowToHeight>
@@ -509,7 +509,7 @@
             <Invoices_ProductName Ref="40" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>9.2,0,10.2,0.8</ClientRectangle>
+              <ClientRectangle>13.01,0,14.43,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13</Font>
               <GrowToHeight>True</GrowToHeight>
@@ -526,7 +526,7 @@
             <Invoices_Line Ref="41" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>19.4,0,1.2,0.8</ClientRectangle>
+              <ClientRectangle>27.44,0,1.70,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,13</Font>
               <GrowToHeight>True</GrowToHeight>
@@ -542,7 +542,7 @@
               <VertAlignment>Center</VertAlignment>
             </Invoices_Line>
             <HorizontalLinePrimitive3 Ref="42" type="HorizontalLinePrimitive" isKey="true">
-              <ClientRectangle>0.4,0.8,20.2,0.0254</ClientRectangle>
+              <ClientRectangle>0.57,0.8,28.57,0.0254</ClientRectangle>
               <Color>Black</Color>
               <EndCap Ref="43" type="Cap" isKey="true">
                 <Color>Black</Color>
@@ -555,84 +555,84 @@
               </StartCap>
             </HorizontalLinePrimitive3>
             <StartPointPrimitive1 Ref="45" type="Stimulsoft.Report.Components.StiStartPointPrimitive" isKey="true">
-              <ClientRectangle>4.4,0,0,0</ClientRectangle>
+              <ClientRectangle>6.22,0,0,0</ClientRectangle>
               <Name>StartPointPrimitive1</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>2fd8af9041c94c2c9a56155946bfa3ab</ReferenceToGuid>
             </StartPointPrimitive1>
             <EndPointPrimitive1 Ref="46" type="Stimulsoft.Report.Components.StiEndPointPrimitive" isKey="true">
-              <ClientRectangle>4.4,0.8,0,0</ClientRectangle>
+              <ClientRectangle>6.22,0.8,0,0</ClientRectangle>
               <Name>EndPointPrimitive1</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>2fd8af9041c94c2c9a56155946bfa3ab</ReferenceToGuid>
             </EndPointPrimitive1>
             <StartPointPrimitive2 Ref="47" type="Stimulsoft.Report.Components.StiStartPointPrimitive" isKey="true">
-              <ClientRectangle>0.4,0,0,0</ClientRectangle>
+              <ClientRectangle>0.57,0,0,0</ClientRectangle>
               <Name>StartPointPrimitive2</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>6b7a35d6a52c46c3badd8441fefea1d3</ReferenceToGuid>
             </StartPointPrimitive2>
             <EndPointPrimitive2 Ref="48" type="Stimulsoft.Report.Components.StiEndPointPrimitive" isKey="true">
-              <ClientRectangle>0.4,0.8,0,0</ClientRectangle>
+              <ClientRectangle>0.57,0.8,0,0</ClientRectangle>
               <Name>EndPointPrimitive2</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>6b7a35d6a52c46c3badd8441fefea1d3</ReferenceToGuid>
             </EndPointPrimitive2>
             <StartPointPrimitive3 Ref="49" type="Stimulsoft.Report.Components.StiStartPointPrimitive" isKey="true">
-              <ClientRectangle>7.6,0,0,0</ClientRectangle>
+              <ClientRectangle>10.75,0,0,0</ClientRectangle>
               <Name>StartPointPrimitive3</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>20bf376b10df473aa5892805f7ae228f</ReferenceToGuid>
             </StartPointPrimitive3>
             <EndPointPrimitive3 Ref="50" type="Stimulsoft.Report.Components.StiEndPointPrimitive" isKey="true">
-              <ClientRectangle>7.6,0.8,0,0</ClientRectangle>
+              <ClientRectangle>10.75,0.8,0,0</ClientRectangle>
               <Name>EndPointPrimitive3</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>20bf376b10df473aa5892805f7ae228f</ReferenceToGuid>
             </EndPointPrimitive3>
             <StartPointPrimitive4 Ref="51" type="Stimulsoft.Report.Components.StiStartPointPrimitive" isKey="true">
-              <ClientRectangle>9.2,0,0,0</ClientRectangle>
+              <ClientRectangle>13.01,0,0,0</ClientRectangle>
               <Name>StartPointPrimitive4</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>3d7ec2d1e03340fb8e30a6d66df9dc18</ReferenceToGuid>
             </StartPointPrimitive4>
             <EndPointPrimitive4 Ref="52" type="Stimulsoft.Report.Components.StiEndPointPrimitive" isKey="true">
-              <ClientRectangle>9.2,0.8,0,0</ClientRectangle>
+              <ClientRectangle>13.01,0.8,0,0</ClientRectangle>
               <Name>EndPointPrimitive4</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>3d7ec2d1e03340fb8e30a6d66df9dc18</ReferenceToGuid>
             </EndPointPrimitive4>
             <StartPointPrimitive5 Ref="53" type="Stimulsoft.Report.Components.StiStartPointPrimitive" isKey="true">
-              <ClientRectangle>19.4,0,0,0</ClientRectangle>
+              <ClientRectangle>27.44,0,0,0</ClientRectangle>
               <Name>StartPointPrimitive5</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>f0b5d8e586a84485ad91e43ae520458b</ReferenceToGuid>
             </StartPointPrimitive5>
             <EndPointPrimitive5 Ref="54" type="Stimulsoft.Report.Components.StiEndPointPrimitive" isKey="true">
-              <ClientRectangle>19.4,0.8,0,0</ClientRectangle>
+              <ClientRectangle>27.44,0.8,0,0</ClientRectangle>
               <Name>EndPointPrimitive5</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>f0b5d8e586a84485ad91e43ae520458b</ReferenceToGuid>
             </EndPointPrimitive5>
             <StartPointPrimitive6 Ref="55" type="Stimulsoft.Report.Components.StiStartPointPrimitive" isKey="true">
-              <ClientRectangle>20.6,0,0,0</ClientRectangle>
+              <ClientRectangle>29.13,0,0,0</ClientRectangle>
               <Name>StartPointPrimitive6</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <ReferenceToGuid>271e439be8584f6ab3fb78bc85689e8a</ReferenceToGuid>
             </StartPointPrimitive6>
             <EndPointPrimitive6 Ref="56" type="Stimulsoft.Report.Components.StiEndPointPrimitive" isKey="true">
-              <ClientRectangle>20.6,0.8,0,0</ClientRectangle>
+              <ClientRectangle>29.13,0.8,0,0</ClientRectangle>
               <Name>EndPointPrimitive6</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
@@ -649,12 +649,12 @@
         </Data>
         <ColumnFooterBand1 Ref="57" type="Stimulsoft.Report.Components.StiColumnFooterBand" isKey="true">
           <Brush>Transparent</Brush>
-          <ClientRectangle>0,8.8,21,4.4</ClientRectangle>
+          <ClientRectangle>0,8.8,29.70,4.4</ClientRectangle>
           <Components isList="true" count="9">
             <txtDescription Ref="58" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,1.6,20.2,0.5</ClientRectangle>
+              <ClientRectangle>0.57,1.6,28.57,0.5</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,11</Font>
               <Guid>177f1901e9b741e7b5faa91db946bc3a</Guid>
@@ -671,7 +671,7 @@
               <Border>Top, Left, Bottom;Black;1;Solid;False;4;Black</Border>
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,0.2,4,0.8</ClientRectangle>
+              <ClientRectangle>0.57,0.2,5.66,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,12,Bold</Font>
               <Guid>ac171caab11c492795706bd1339fbe9d</Guid>
@@ -697,7 +697,7 @@
             <FooterInvoices_LineTotalLabel Ref="61" type="Text" isKey="true">
               <Border>Top, Right, Bottom;Black;1;Solid;False;4;Black</Border>
               <Brush>Transparent</Brush>
-              <ClientRectangle>4.4,0.2,3.2,0.8</ClientRectangle>
+              <ClientRectangle>6.22,0.2,4.53,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,12,Bold</Font>
               <Guid>4914ccaac2dd48f29d45848b71c9cc27</Guid>
@@ -714,7 +714,7 @@
             <txtContactBalance Ref="62" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,1,7.2,0.6</ClientRectangle>
+              <ClientRectangle>0.57,1,10.18,0.6</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,12,Bold</Font>
               <Guid>a55127bc2acc45e799dbb0478e4c9521</Guid>
@@ -732,7 +732,7 @@
             <Text1 Ref="63" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>11,3.2,9.6,0.6</ClientRectangle>
+              <ClientRectangle>15.56,3.2,13.58,0.6</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,14,Bold</Font>
               <Guid>177ae7aa7cd8431b9da80a720ca1e8eb</Guid>
@@ -750,7 +750,7 @@
             <Text2 Ref="64" type="Text" isKey="true">
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,3.2,9.6,0.6</ClientRectangle>
+              <ClientRectangle>0.57,3.2,13.58,0.6</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,14,Bold</Font>
               <Guid>6c209112eb5b48a3b35b5710b691aa83</Guid>
@@ -768,7 +768,7 @@
             <txtAmountInWords Ref="65" type="Text" isKey="true">
               <Border>All;Black;1;Solid;False;4;Black</Border>
               <Brush>Transparent</Brush>
-              <ClientRectangle>7.6,0.2,13,0.8</ClientRectangle>
+              <ClientRectangle>10.75,0.2,18.39,0.8</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,10</Font>
               <Guid>ac3256cc04cf464db72acbe46a7a276d</Guid>
@@ -785,7 +785,7 @@
           
             <ImgStamp Ref="88" type="Image" isKey="true">
               <Brush>Transparent</Brush>
-              <ClientRectangle>0.8,2.2,3.4,0.9</ClientRectangle>
+              <ClientRectangle>1.13,2.2,4.81,0.9</ClientRectangle>
               <Conditions isList="true" count="0" />
               <HorAlignment>Center</HorAlignment>
               <Margins>0,0,0,0</Margins>
@@ -797,7 +797,7 @@
             </ImgStamp>
             <ImgSignature Ref="89" type="Image" isKey="true">
               <Brush>Transparent</Brush>
-              <ClientRectangle>4.4,2.2,4.2,0.9</ClientRectangle>
+              <ClientRectangle>6.22,2.2,5.94,0.9</ClientRectangle>
               <Conditions isList="true" count="0" />
               <HorAlignment>Center</HorAlignment>
               <Margins>0,0,0,0</Margins>
