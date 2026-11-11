@@ -1,5 +1,4 @@
 ﻿using MyFirstCoreApp.Domain.Common;
-using System.ComponentModel.DataAnnotations;
 
 namespace MyFirstCoreApp.Domain.Entities.Tenancy;
 
@@ -8,7 +7,6 @@ public class Tenant : BaseEntity
     public string Name { get; set; } = string.Empty;          // نام شرکت/بیزینس
     public string? LegalName { get; set; }                     // نام حقوقی
     public string? NationalId { get; set; }                    // شناسه ملی
-    [MaxLength(14)]
     public string? EconomicCode { get; set; }                  // کد اقتصادی
     public string? RegistrationNumber { get; set; }              // شماره ثبت
     public string? PostalCode { get; set; }                       // کد پستی
