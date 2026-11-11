@@ -334,7 +334,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>TotalWithTax</Name>
+              <Name>Header_TotalWithTax</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>جمع مبلغ کل بعلاوه جمع مالیات و عوارض (ریال)</Text>
@@ -352,7 +352,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>TaxAmount</Name>
+              <Name>Header_TaxAmount</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>جمع مالیات و عوارض (ریال)</Text>
@@ -370,7 +370,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>NetAmount</Name>
+              <Name>Header_NetAmount</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>مبلغ کل پس از تخفیف (ریال)</Text>
@@ -388,7 +388,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>DiscountAmount</Name>
+              <Name>Header_DiscountAmount</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>مبلغ تخفیف (ریال)</Text>
@@ -406,7 +406,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>GrossAmount</Name>
+              <Name>Header_GrossAmount</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>مبلغ کل (ریال)</Text>
@@ -424,7 +424,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>UnitPrice</Name>
+              <Name>Header_UnitPrice</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>مبلغ واحد (ریال)</Text>
@@ -442,7 +442,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Center</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>UnitName</Name>
+              <Name>Header_UnitName</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>واحد اندازه گیری</Text>
@@ -460,7 +460,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Center</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>Quantity</Name>
+              <Name>Header_Quantity</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>تعداد / مقدار</Text>
@@ -478,7 +478,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>Description</Name>
+              <Name>Header_Description</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>شرح کالا یا خدمات</Text>
@@ -496,7 +496,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Center</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>ProductCode</Name>
+              <Name>Header_ProductCode</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>کد کالا</Text>
@@ -514,7 +514,7 @@
               <Font>Yalda Nazanin,10,Bold</Font>
               <HorAlignment>Center</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>RowNumber</Name>
+              <Name>Header_RowNumber</Name>
               <Page isRef="3" />
               <Parent isRef="27" />
               <Text>ردیف</Text>
@@ -543,7 +543,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>TotalWithTax</Name>
+              <Name>Data_TotalWithTax</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.TotalWithTax}</Text>
@@ -561,7 +561,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>TaxAmount</Name>
+              <Name>Data_TaxAmount</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.TaxAmount}</Text>
@@ -579,7 +579,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>NetAmount</Name>
+              <Name>Data_NetAmount</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.NetAmount}</Text>
@@ -597,7 +597,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>DiscountAmount</Name>
+              <Name>Data_DiscountAmount</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.DiscountAmount}</Text>
@@ -615,7 +615,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>GrossAmount</Name>
+              <Name>Data_GrossAmount</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.GrossAmount}</Text>
@@ -633,7 +633,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>UnitPrice</Name>
+              <Name>Data_UnitPrice</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.UnitPrice}</Text>
@@ -651,7 +651,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Center</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>UnitName</Name>
+              <Name>Data_UnitName</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.UnitName}</Text>
@@ -669,7 +669,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Center</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>Quantity</Name>
+              <Name>Data_Quantity</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.Quantity}</Text>
@@ -687,7 +687,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Right</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>Description</Name>
+              <Name>Data_Description</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.Description}</Text>
@@ -705,7 +705,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Center</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>ProductCode</Name>
+              <Name>Data_ProductCode</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.ProductCode}</Text>
@@ -723,7 +723,7 @@
               <Font>Yalda Nazanin,10</Font>
               <HorAlignment>Center</HorAlignment>
               <Margins>0.03,0.02,0.03,0.02</Margins>
-              <Name>RowNumber</Name>
+              <Name>Data_RowNumber</Name>
               <Page isRef="3" />
               <Parent isRef="33" />
               <Text>{Invoices.RowNumber}</Text>
