@@ -87,6 +87,8 @@ public class TenantController : Controller
             LegalName = model.LegalName?.Trim(),
             NationalId = model.NationalId?.Trim(),
             EconomicCode = model.EconomicCode?.Trim(),
+            RegistrationNumber = model.RegistrationNumber?.Trim(),
+            PostalCode = model.PostalCode?.Trim(),
             Phone = model.Phone?.Trim(),
             Address = model.Address?.Trim(),
             IsActive = true,
@@ -293,6 +295,8 @@ public class TenantController : Controller
             LegalName = entity.LegalName,
             NationalId = entity.NationalId,
             EconomicCode = entity.EconomicCode,
+            RegistrationNumber = entity.RegistrationNumber,
+            PostalCode = entity.PostalCode,
             Phone = entity.Phone,
             Address = entity.Address,
             LogoAttachmentId = entity.LogoAttachmentId,
@@ -363,6 +367,8 @@ public class TenantController : Controller
         entity.LegalName = model.LegalName?.Trim();
         entity.NationalId = model.NationalId?.Trim();
         entity.EconomicCode = model.EconomicCode?.Trim();
+        entity.RegistrationNumber = model.RegistrationNumber?.Trim();
+        entity.PostalCode = model.PostalCode?.Trim();
         entity.Phone = model.Phone?.Trim();
         entity.Address = model.Address?.Trim();
         entity.UpdatedAt = DateTime.UtcNow;
