@@ -139,6 +139,20 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
+                        <label asp-for="RegistrationNumber"></label>
+                        <input asp-for="RegistrationNumber" class="form-control" />
+                        <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="PostalCode"></label>
+                        <input asp-for="PostalCode" class="form-control ltr" dir="ltr" />
+                        <span asp-validation-for="PostalCode" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
                         <label asp-for="Address"></label>
                         <input asp-for="Address" class="form-control" dir="ltr" />
                         <span asp-validation-for="Address" class="text-danger"></span>
