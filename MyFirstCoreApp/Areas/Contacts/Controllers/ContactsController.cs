@@ -47,7 +47,11 @@ public class ContactsController : Controller
                 (x.Code != null && x.Code.Contains(search)) ||
                 (x.Mobile != null && x.Mobile.Contains(search)) ||
                 (x.Phone != null && x.Phone.Contains(search)) ||
-                (x.NationalId != null && x.NationalId.Contains(search)));
+                (x.NationalId != null && x.NationalId.Contains(search)) ||
+                x.ContactPersons.Any(p => p.Name.Contains(search) ||
+                    (p.Position != null && p.Position.Contains(search)) ||
+                    p.Numbers.Any(n => n.Number.Contains(search) ||
+                        (n.Label != null && n.Label.Contains(search)))));
         }
 
         // 🆕 فیلتر نوع
@@ -374,7 +378,11 @@ public class ContactsController : Controller
                 (x.Code != null && x.Code.Contains(s)) ||
                 (x.Mobile != null && x.Mobile.Contains(s)) ||
                 (x.Phone != null && x.Phone.Contains(s)) ||
-                (x.NationalId != null && x.NationalId.Contains(s)));
+                (x.NationalId != null && x.NationalId.Contains(s)) ||
+                x.ContactPersons.Any(p => p.Name.Contains(s) ||
+                    (p.Position != null && p.Position.Contains(s)) ||
+                    p.Numbers.Any(n => n.Number.Contains(s) ||
+                        (n.Label != null && n.Label.Contains(s)))));
         }
 
         // 🆕 شمارش کل
