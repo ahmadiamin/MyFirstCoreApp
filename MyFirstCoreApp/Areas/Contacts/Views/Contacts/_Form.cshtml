@@ -315,12 +315,12 @@
             container.querySelectorAll('.contact-person-card').forEach(function (personCard, personPosition) {
                 personCard.dataset.personIndex = personPosition;
                 personCard.querySelectorAll('[name]').forEach(function (input) {
-                    input.name = input.name.replace(/ContactPersons\\[\\d+\\]/, 'ContactPersons[' + personPosition + ']');
+                    input.name = input.name.replace(/ContactPersons\[\d+\]/, 'ContactPersons[' + personPosition + ']');
                 });
 
                 personCard.querySelectorAll('.person-number-row').forEach(function (numberRow, numberPosition) {
                     numberRow.querySelectorAll('[name]').forEach(function (input) {
-                        input.name = input.name.replace(/Numbers\\[\\d+\\]/, 'Numbers[' + numberPosition + ']');
+                        input.name = input.name.replace(/Numbers\[\d+\]/, 'Numbers[' + numberPosition + ']');
                     });
                 });
             });
