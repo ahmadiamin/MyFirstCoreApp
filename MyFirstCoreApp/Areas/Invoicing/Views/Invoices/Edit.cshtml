@@ -12,7 +12,7 @@
     </div>
 
     <form asp-area="Invoicing" asp-controller="Invoices" asp-action="Edit"
-          asp-route-id="@Model.Id" method="post" id="invoiceForm">
+          asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" id="invoiceForm">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="Number" />
