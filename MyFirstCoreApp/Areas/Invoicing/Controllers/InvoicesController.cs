@@ -1155,7 +1155,7 @@ public class InvoicesController : Controller
     private async Task SaveInvoiceImageAsync(int invoiceId, PreparedAttachment prepared)
     {
         var previous = await GetInvoiceImageAttachmentAsync(invoiceId);
-        var added = await _attachments.AddAsync(AttachmentEntityType.Invoice, invoiceId, prepared);
+        await _attachments.AddAsync(AttachmentEntityType.Invoice, invoiceId, prepared);
 
         if (previous != null)
         {
@@ -1319,6 +1319,9 @@ public class InvoicesController : Controller
         {
             item.ProductOptions = productOptions;
         }
+
+        ViewBag.InvoiceImageExists = model.Id > 0 &&
+            await GetInvoiceImageAttachmentAsync(model.Id) != null;
     }
 
     private async Task<List<SelectListItem>> GetWarehouseOptionsAsync(int tenantId)
