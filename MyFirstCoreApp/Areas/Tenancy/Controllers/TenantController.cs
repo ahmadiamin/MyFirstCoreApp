@@ -74,6 +74,8 @@ public class TenantController : Controller
     [Authorize]
     public async Task<IActionResult> Create(CreateTenantViewModel model)
     {
+        model.EconomicCode = NormalizeMobileDigits(model.EconomicCode);
+
         if (!ModelState.IsValid)
             return View(model);
 
@@ -319,6 +321,8 @@ public class TenantController : Controller
     [Authorize]
     public async Task<IActionResult> Edit(int id, CreateTenantViewModel model)
     {
+        model.EconomicCode = NormalizeMobileDigits(model.EconomicCode);
+
         var userId = _currentUser.UserId;
         if (string.IsNullOrEmpty(userId))
             return Challenge();
