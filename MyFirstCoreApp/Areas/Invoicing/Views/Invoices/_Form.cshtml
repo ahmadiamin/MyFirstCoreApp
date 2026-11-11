@@ -33,6 +33,16 @@
         </div>
     </div>
 
+    <div class="col-md-3">
+        <div class="form-group">
+            <label asp-for="SupplierInvoiceNumber"></label>
+            <input asp-for="SupplierInvoiceNumber" class="form-control ltr" dir="ltr" maxlength="100"
+                   placeholder="شماره درج‌شده روی فاکتور فروشنده" />
+            <span asp-validation-for="SupplierInvoiceNumber" class="text-danger"></span>
+            <small class="form-text text-muted">فقط برای فاکتور خرید؛ شماره داخلی فاکتور نیست.</small>
+        </div>
+    </div>
+
     <div class="col-md-4">
         <div class="form-group">
             <label>طرف حساب</label>
