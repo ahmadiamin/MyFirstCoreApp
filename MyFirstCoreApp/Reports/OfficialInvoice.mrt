@@ -29,7 +29,7 @@
     <Relations isList="true" count="0" />
     <Report isRef="0" />
     <Resources isList="true" count="0" />
-    <Variables isList="true" count="20">
+    <Variables isList="true" count="32">
       <value>,DateTimeNow,DateTimeNow,,System.DateTime,_x0031__x002F_13_x002F_2016_x0020_8:39:22_x0020_PM,False,False,False,True</value>
       <value>,CompanyName,CompanyName,,System.String,,False,False,False,False</value>
       <value>,CompanyAddress,CompanyAddress,,System.String,,False,False,False,False</value>
@@ -71,11 +71,11 @@
     <Page1 Ref="3" type="Page" isKey="true">
       <Border>None;Black;2;Solid;False;4;Black</Border>
       <Brush>Transparent</Brush>
-      <Components isList="true" count="24">
+      <Components isList="true" count="12">
         <PageHeaderBand1 Ref="4" type="PageHeaderBand" isKey="true">
           <Brush>Transparent</Brush>
           <ClientRectangle>0,0.4,29.7,5.0</ClientRectangle>
-          <Components isList="true" count="12">
+          <Components isList="true" count="24">
             <ImgLogo Ref="5" type="Image" isKey="true">
               <Brush>Transparent</Brush>
               <ClientRectangle>16.4,0.2,4.2,1.8</ClientRectangle>
