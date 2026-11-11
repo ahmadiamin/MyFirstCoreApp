@@ -823,6 +823,7 @@ public class InvoicesController : Controller
             .Include(i => i.Contact)
             .Include(i => i.Items)
                 .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p.Unit)
             .FirstOrDefaultAsync(i =>
                 i.Id == id &&
                 i.TenantId == tenantId.Value);
