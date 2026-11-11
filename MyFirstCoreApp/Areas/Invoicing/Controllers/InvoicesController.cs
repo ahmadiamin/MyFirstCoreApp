@@ -933,18 +933,35 @@ public class InvoicesController : Controller
 
         // اطلاعات ردیف‌های فاکتور
         var itemsTable = new DataTable("Invoices");
-        itemsTable.Columns.Add("ProductName", typeof(string));
+        itemsTable.Columns.Add("RowNumber", typeof(int));
+        itemsTable.Columns.Add("ProductCode", typeof(string));
+        itemsTable.Columns.Add("Description", typeof(string));
         itemsTable.Columns.Add("Quantity", typeof(decimal));
+        itemsTable.Columns.Add("UnitName", typeof(string));
         itemsTable.Columns.Add("UnitPrice", typeof(decimal));
-        itemsTable.Columns.Add("LineTotal", typeof(decimal));
+        itemsTable.Columns.Add("GrossAmount", typeof(decimal));
+        itemsTable.Columns.Add("DiscountAmount", typeof(decimal));
+        itemsTable.Columns.Add("NetAmount", typeof(decimal));
+        itemsTable.Columns.Add("TaxAmount", typeof(decimal));
+        itemsTable.Columns.Add("TotalWithTax", typeof(decimal));
 
+        var rowNumber = 0;
         foreach (var item in invoice.Items)
         {
+            var grossAmount = item.Quantity * item.UnitPrice;
+            var netAmount = grossAmount - item.DiscountAmount;
             itemsTable.Rows.Add(
+                ++rowNumber,
+                item.Product?.Code ?? "",
                 item.Description ?? item.Product?.Name ?? "",
                 item.Quantity,
+                item.Product?.Unit?.Name ?? "",
                 item.UnitPrice,
-                item.LineTotal);
+                grossAmount,
+                item.DiscountAmount,
+                netAmount,
+                item.TaxAmount,
+                netAmount + item.TaxAmount);
         }
 
         var reportFileName = official ? "OfficialInvoice.mrt" : "Invoice.mrt";
