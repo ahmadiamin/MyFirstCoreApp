@@ -104,6 +104,9 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
             base.OnModelCreating(builder);
             builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
+            builder.Entity<Tenant>().Property(x => x.RegistrationNumber).HasMaxLength(30);
+            builder.Entity<Tenant>().Property(x => x.PostalCode).HasMaxLength(20);
+
             // سه نقش مستقل برای فایل‌های هویتی شرکت؛ حذف فایل پیوست نباید شرکت را حذف کند.
             builder.Entity<Tenant>()
                 .HasOne<Attachment>()
