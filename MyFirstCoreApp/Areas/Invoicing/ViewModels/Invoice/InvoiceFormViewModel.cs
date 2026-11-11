@@ -22,6 +22,10 @@ public class InvoiceFormViewModel
     [Display(Name = "نوع فاکتور")]
     public InvoiceType InvoiceType { get; set; } = InvoiceType.Sale;
 
+    [Display(Name = "شماره فاکتور فروشنده")]
+    [MaxLength(100, ErrorMessage = "شماره فاکتور فروشنده حداکثر ۱۰۰ کاراکتر است.")]
+    public string? SupplierInvoiceNumber { get; set; }
+
     [Display(Name = "طرف حساب")]
     public int? ContactId { get; set; }
 
