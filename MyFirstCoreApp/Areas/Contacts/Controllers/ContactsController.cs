@@ -138,6 +138,36 @@ public class ContactsController : Controller
             Notes = model.Notes?.Trim()
         };
 
+        foreach (var personModel in model.ContactPersons)
+        {
+            var person = new ContactPerson
+            {
+                TenantId = tenantId.Value,
+                Contact = entity,
+                Name = personModel.Name.Trim(),
+                Position = personModel.Position?.Trim(),
+                Email = personModel.Email?.Trim(),
+                Notes = personModel.Notes?.Trim(),
+                IsPrimary = personModel.IsPrimary,
+                IsActive = personModel.IsActive
+            };
+
+            foreach (var numberModel in personModel.Numbers.Where(x => !string.IsNullOrWhiteSpace(x.Number)))
+            {
+                person.Numbers.Add(new ContactPersonNumber
+                {
+                    TenantId = tenantId.Value,
+                    NumberType = numberModel.NumberType,
+                    Label = numberModel.Label?.Trim(),
+                    Number = numberModel.Number.Trim(),
+                    Extension = numberModel.Extension?.Trim(),
+                    IsPrimary = numberModel.IsPrimary
+                });
+            }
+
+            entity.ContactPersons.Add(person);
+        }
+
         _context.Contacts.Add(entity);
         await _context.SaveChangesAsync();
 
@@ -153,6 +183,8 @@ public class ContactsController : Controller
         if (!tenantId.HasValue) return Forbid();
 
         var entity = await _context.Contacts
+            .Include(x => x.ContactPersons)
+                .ThenInclude(x => x.Numbers)
             .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
 
         if (entity == null) return NotFound();
@@ -175,6 +207,31 @@ public class ContactsController : Controller
             CreditLimit = entity.CreditLimit,
             IsActive = entity.IsActive,
             Notes = entity.Notes,
+            ContactPersons = entity.ContactPersons
+                .OrderByDescending(x => x.IsPrimary)
+                .ThenBy(x => x.Name)
+                .Select(x => new ContactPersonFormViewModel
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Position = x.Position,
+                    Email = x.Email,
+                    Notes = x.Notes,
+                    IsPrimary = x.IsPrimary,
+                    IsActive = x.IsActive,
+                    Numbers = x.Numbers
+                        .OrderByDescending(n => n.IsPrimary)
+                        .ThenBy(n => n.NumberType)
+                        .Select(n => new ContactPersonNumberFormViewModel
+                        {
+                            Id = n.Id,
+                            NumberType = n.NumberType,
+                            Label = n.Label,
+                            Number = n.Number,
+                            Extension = n.Extension,
+                            IsPrimary = n.IsPrimary
+                        }).ToList()
+                }).ToList(),
             ContactTypeOptions = GetContactTypeOptions()
         };
 
@@ -202,6 +259,12 @@ public class ContactsController : Controller
             .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId.Value);
 
         if (entity == null) return NotFound();
+
+        if (!await SyncContactPersonsAsync(id, tenantId.Value, model.ContactPersons))
+        {
+            model.ContactTypeOptions = GetContactTypeOptions();
+            return View(model);
+        }
 
         entity.Name = model.Name.Trim();
         entity.Code = model.Code?.Trim();
@@ -353,6 +416,121 @@ public class ContactsController : Controller
             rows = items,
             lastRow = total
         });
+    }
+
+
+    private async Task<bool> SyncContactPersonsAsync(
+        int contactId,
+        int tenantId,
+        List<ContactPersonFormViewModel> submittedPeople)
+    {
+        submittedPeople ??= new List<ContactPersonFormViewModel>();
+
+        var existingPeople = await _context.ContactPersons
+            .Include(x => x.Numbers)
+            .Where(x => x.ContactId == contactId && x.TenantId == tenantId)
+            .ToListAsync();
+
+        var existingPeopleById = existingPeople.ToDictionary(x => x.Id);
+
+        // ابتدا تمام شناسه‌ها بررسی می‌شوند تا هیچ رکورد متعلق به طرف حساب یا شرکت دیگری تغییر نکند.
+        foreach (var personModel in submittedPeople.Where(x => x.Id > 0))
+        {
+            if (!existingPeopleById.TryGetValue(personModel.Id, out var existingPerson))
+            {
+                ModelState.AddModelError(nameof(ContactFormViewModel.ContactPersons),
+                    "یکی از اشخاص تماس معتبر نیست. صفحه را تازه‌سازی و دوباره تلاش کنید.");
+                return false;
+            }
+
+            var validNumberIds = existingPerson.Numbers.Select(x => x.Id).ToHashSet();
+            if (personModel.Numbers.Any(x => x.Id > 0 && !validNumberIds.Contains(x.Id)))
+            {
+                ModelState.AddModelError(nameof(ContactFormViewModel.ContactPersons),
+                    "یکی از شماره‌های تماس معتبر نیست. صفحه را تازه‌سازی و دوباره تلاش کنید.");
+                return false;
+            }
+        }
+
+        var submittedPersonIds = submittedPeople.Where(x => x.Id > 0).Select(x => x.Id).ToHashSet();
+
+        foreach (var existingPerson in existingPeople.Where(x => !submittedPersonIds.Contains(x.Id)))
+        {
+            existingPerson.IsDeleted = true;
+            existingPerson.DeletedAt = DateTime.UtcNow;
+            foreach (var number in existingPerson.Numbers)
+            {
+                number.IsDeleted = true;
+                number.DeletedAt = DateTime.UtcNow;
+            }
+        }
+
+        foreach (var personModel in submittedPeople)
+        {
+            ContactPerson person;
+            if (personModel.Id > 0)
+            {
+                person = existingPeopleById[personModel.Id];
+            }
+            else
+            {
+                person = new ContactPerson
+                {
+                    TenantId = tenantId,
+                    ContactId = contactId
+                };
+                _context.ContactPersons.Add(person);
+            }
+
+            person.Name = personModel.Name.Trim();
+            person.Position = personModel.Position?.Trim();
+            person.Email = personModel.Email?.Trim();
+            person.Notes = personModel.Notes?.Trim();
+            person.IsPrimary = personModel.IsPrimary;
+            person.IsActive = personModel.IsActive;
+            person.UpdatedAt = DateTime.UtcNow;
+
+            var existingNumbers = personModel.Id > 0
+                ? person.Numbers.ToDictionary(x => x.Id)
+                : new Dictionary<int, ContactPersonNumber>();
+            var submittedNumberIds = personModel.Numbers
+                .Where(x => x.Id > 0)
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            foreach (var oldNumber in existingNumbers.Values.Where(x => !submittedNumberIds.Contains(x.Id)))
+            {
+                oldNumber.IsDeleted = true;
+                oldNumber.DeletedAt = DateTime.UtcNow;
+            }
+
+            foreach (var numberModel in personModel.Numbers)
+            {
+                ContactPersonNumber number;
+                if (numberModel.Id > 0)
+                {
+                    number = existingNumbers[numberModel.Id];
+                }
+                else
+                {
+                    number = new ContactPersonNumber
+                    {
+                        TenantId = tenantId,
+                        ContactPerson = person
+                    };
+                    person.Numbers.Add(number);
+                }
+
+                number.NumberType = numberModel.NumberType;
+                number.Label = numberModel.Label?.Trim();
+                number.Number = numberModel.Number.Trim();
+                number.Extension = numberModel.Extension?.Trim();
+                number.IsPrimary = numberModel.IsPrimary;
+                number.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        return true;
     }
 
     // ---- Helper ----
