@@ -22,7 +22,7 @@
     <Relations isList="true" count="0" />
     <Report isRef="0" />
     <Resources isList="true" count="0" />
-    <Variables isList="true" count="18">
+    <Variables isList="true" count="20">
       <value>,DateTimeNow,DateTimeNow,,System.DateTime,_x0031__x002F_13_x002F_2016_x0020_8:39:22_x0020_PM,False,False,False,True</value>
       <value>,CompanyName,CompanyName,,System.String,,False,False,False,False</value>
       <value>,CompanyAddress,CompanyAddress,,System.String,,False,False,False,False</value>
@@ -41,6 +41,8 @@
       <value>,Description,Description,,System.String,,False,False,False,False</value>
       <value>,AmountInWords,AmountInWords,,System.String,,False,False,False,False</value>
       <value>,ACouplet,ACouplet,,System.String,,False,False,False,False</value>
+      <value>,SellerDetails,SellerDetails,,System.String,,False,False,False,False</value>
+      <value>,BuyerDetails,BuyerDetails,,System.String,,False,False,False,False</value>
     </Variables>
   </Dictionary>
   <EngineVersion>EngineV2</EngineVersion>
@@ -53,7 +55,7 @@
       <Components isList="true" count="12">
         <PageHeaderBand1 Ref="4" type="PageHeaderBand" isKey="true">
           <Brush>Transparent</Brush>
-          <ClientRectangle>0,0.4,21,4.2</ClientRectangle>
+          <ClientRectangle>0,0.4,29.7,5.3</ClientRectangle>
           <Components isList="true" count="13">
             <ImgLogo Ref="5" type="Image" isKey="true">
               <Brush>Transparent</Brush>
@@ -151,7 +153,7 @@
               <Border>All;Black;1;Solid;False;4;Black</Border>
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>6.4,2.4,14.2,0.8</ClientRectangle>
+              <ClientRectangle>0.4,2.4,28.9,1.2</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,14,Bold</Font>
               <GrowToHeight>True</GrowToHeight>
@@ -160,7 +162,7 @@
               <Name>txtFullName</Name>
               <Page isRef="3" />
               <Parent isRef="4" />
-              <Text>{BuyerOrSeller} : {ContactName}</Text>
+              <Text>{SellerDetails}</Text>
               <TextBrush>Black</TextBrush>
               <TextOptions>,,RightToLeft=True,,,A=0</TextOptions>
               <Type>Expression</Type>
@@ -170,7 +172,7 @@
               <Border>All;Black;1;Solid;False;4;Black</Border>
               <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,3.2,20.2,0.8</ClientRectangle>
+              <ClientRectangle>0.4,3.7,28.9,1.2</ClientRectangle>
               <Conditions isList="true" count="0" />
               <Font>Yalda Nazanin,12,Bold</Font>
               <GrowToHeight>True</GrowToHeight>
@@ -179,7 +181,7 @@
               <Name>txtAddress</Name>
               <Page isRef="3" />
               <Parent isRef="4" />
-              <Text>{ContactAddress}</Text>
+              <Text>{BuyerDetails}</Text>
               <TextBrush>Black</TextBrush>
               <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
               <Type>Expression</Type>
@@ -199,7 +201,7 @@
               <Name>txtTell</Name>
               <Page isRef="3" />
               <Parent isRef="4" />
-              <Text>{ContactPhone}</Text>
+              <Text></Text>
               <TextBrush>Black</TextBrush>
               <TextOptions>,,RightToLeft=True,,,A=0</TextOptions>
               <Type>Expression</Type>
@@ -259,7 +261,7 @@
         </PageHeaderBand1>
         <PageFooterBand1 Ref="20" type="PageFooterBand" isKey="true">
           <Brush>Transparent</Brush>
-          <ClientRectangle>0,28.3,21,1.4</ClientRectangle>
+          <ClientRectangle>0,19.6,29.7,1.4</ClientRectangle>
           <Components isList="true" count="4">
             <txtTenantAddress Ref="21" type="Text" isKey="true">
               <Brush>Transparent</Brush>
@@ -884,8 +886,8 @@
       <Guid>55e16cc1fe9546859918d7c0f1f89689</Guid>
       <Margins>0,0,0,0</Margins>
       <Name>Page1</Name>
-      <PageHeight>29.7</PageHeight>
-      <PageWidth>21</PageWidth>
+      <PageHeight>21</PageHeight>
+      <PageWidth>29.7</PageWidth>
       <PaperSize>A4</PaperSize>
       <Report isRef="0" />
       <RightToLeft>True</RightToLeft>
