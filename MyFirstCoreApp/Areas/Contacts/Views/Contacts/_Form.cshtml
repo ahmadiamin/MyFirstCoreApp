@@ -85,6 +85,261 @@
 
 <hr />
 
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="mb-0">
+        <i class="fa fa-users"></i> اشخاص و شماره‌های تماس
+    </h5>
+    <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddContactPerson">
+        <i class="fa fa-plus"></i> افزودن شخص
+    </button>
+</div>
+
+<div class="alert alert-light border">
+    برای هر طرف حساب می‌توانید اشخاصی مانند مدیرعامل، مدیر مالی یا کارشناس فروش تعریف کنید
+    و برای هر شخص چند شماره موبایل یا تلفن ثابت ثبت نمایید.
+</div>
+
+<div id="contactPersonsContainer">
+    @for (var i = 0; i < Model.ContactPersons.Count; i++)
+    {
+        var person = Model.ContactPersons[i];
+        <div class="contact-person-card card card-outline card-secondary mb-3" data-person-index="@i">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>شخص تماس</strong>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-person">
+                    <i class="fa fa-trash"></i> حذف شخص
+                </button>
+            </div>
+            <div class="card-body">
+                <input type="hidden" name="ContactPersons[@i].Id" value="@person.Id" />
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label>نام شخص</label>
+                        <input name="ContactPersons[@i].Name" value="@person.Name" class="form-control" maxlength="200" required />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label>سمت</label>
+                        <input name="ContactPersons[@i].Position" value="@person.Position" class="form-control" maxlength="100" placeholder="مثلاً مدیر مالی" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label>ایمیل</label>
+                        <input name="ContactPersons[@i].Email" value="@person.Email" type="email" class="form-control ltr" dir="ltr" maxlength="200" />
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="personPrimary_@i"
+                                   name="ContactPersons[@i].IsPrimary" value="true" checked="@person.IsPrimary" />
+                            <input type="hidden" name="ContactPersons[@i].IsPrimary" value="false" />
+                            <label class="custom-control-label" for="personPrimary_@i">شخص اصلی</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="personActive_@i"
+                                   name="ContactPersons[@i].IsActive" value="true" checked="@person.IsActive" />
+                            <input type="hidden" name="ContactPersons[@i].IsActive" value="false" />
+                            <label class="custom-control-label" for="personActive_@i">فعال</label>
+                        </div>
+                    </div>
+                    <div class="col-md-12 form-group">
+                        <label>یادداشت شخص</label>
+                        <textarea name="ContactPersons[@i].Notes" class="form-control" rows="2" maxlength="1000">@person.Notes</textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong><i class="fa fa-phone"></i> شماره‌های تماس</strong>
+                    <button type="button" class="btn btn-xs btn-outline-success btn-add-person-number">
+                        <i class="fa fa-plus"></i> افزودن شماره
+                    </button>
+                </div>
+                <div class="person-numbers-container">
+                    @for (var j = 0; j < person.Numbers.Count; j++)
+                    {
+                        var number = person.Numbers[j];
+                        <div class="person-number-row border rounded p-2 mb-2">
+                            <input type="hidden" name="ContactPersons[@i].Numbers[@j].Id" value="@number.Id" />
+                            <div class="row align-items-end">
+                                <div class="col-md-2 form-group">
+                                    <label>نوع</label>
+                                    <select name="ContactPersons[@i].Numbers[@j].NumberType" class="form-control">
+                                        <option value="1" selected="@(number.NumberType == MyFirstCoreApp.Domain.Enums.ContactPersonNumberType.Mobile)">موبایل</option>
+                                        <option value="2" selected="@(number.NumberType == MyFirstCoreApp.Domain.Enums.ContactPersonNumberType.Landline)">تلفن ثابت</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>عنوان / اپراتور</label>
+                                    <input name="ContactPersons[@i].Numbers[@j].Label" value="@number.Label" class="form-control" maxlength="50" placeholder="همراه اول، ایرانسل..." />
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>شماره</label>
+                                    <input name="ContactPersons[@i].Numbers[@j].Number" value="@number.Number" class="form-control ltr" dir="ltr" maxlength="30" required />
+                                </div>
+                                <div class="col-md-2 form-group">
+                                    <label>داخلی</label>
+                                    <input name="ContactPersons[@i].Numbers[@j].Extension" value="@number.Extension" class="form-control ltr" dir="ltr" maxlength="10" />
+                                </div>
+                                <div class="col-md-1 form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="numberPrimary_@(i)_@(j)"
+                                               name="ContactPersons[@i].Numbers[@j].IsPrimary" value="true" checked="@number.IsPrimary" />
+                                        <input type="hidden" name="ContactPersons[@i].Numbers[@j].IsPrimary" value="false" />
+                                        <label class="custom-control-label" for="numberPrimary_@(i)_@(j)">اصلی</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-1 form-group">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-number" title="حذف شماره">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<template id="contactPersonTemplate">
+    <div class="contact-person-card card card-outline card-secondary mb-3" data-person-index="__personIndex__">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>شخص تماس</strong>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-person">
+                <i class="fa fa-trash"></i> حذف شخص
+            </button>
+        </div>
+        <div class="card-body">
+            <input type="hidden" name="ContactPersons[__personIndex__].Id" value="0" />
+            <div class="row">
+                <div class="col-md-4 form-group">
+                    <label>نام شخص</label>
+                    <input name="ContactPersons[__personIndex__].Name" class="form-control" maxlength="200" required />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>سمت</label>
+                    <input name="ContactPersons[__personIndex__].Position" class="form-control" maxlength="100" placeholder="مثلاً مدیر مالی" />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>ایمیل</label>
+                    <input name="ContactPersons[__personIndex__].Email" type="email" class="form-control ltr" dir="ltr" maxlength="200" />
+                </div>
+                <div class="col-md-6 form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="personPrimary___personIndex__"
+                               name="ContactPersons[__personIndex__].IsPrimary" value="true" />
+                        <input type="hidden" name="ContactPersons[__personIndex__].IsPrimary" value="false" />
+                        <label class="custom-control-label" for="personPrimary___personIndex__">شخص اصلی</label>
+                    </div>
+                </div>
+                <div class="col-md-6 form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="personActive___personIndex__"
+                               name="ContactPersons[__personIndex__].IsActive" value="true" checked />
+                        <input type="hidden" name="ContactPersons[__personIndex__].IsActive" value="false" />
+                        <label class="custom-control-label" for="personActive___personIndex__">فعال</label>
+                    </div>
+                </div>
+                <div class="col-md-12 form-group">
+                    <label>یادداشت شخص</label>
+                    <textarea name="ContactPersons[__personIndex__].Notes" class="form-control" rows="2" maxlength="1000"></textarea>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong><i class="fa fa-phone"></i> شماره‌های تماس</strong>
+                <button type="button" class="btn btn-xs btn-outline-success btn-add-person-number">
+                    <i class="fa fa-plus"></i> افزودن شماره
+                </button>
+            </div>
+            <div class="person-numbers-container"></div>
+        </div>
+    </div>
+</template>
+
+<template id="contactPersonNumberTemplate">
+    <div class="person-number-row border rounded p-2 mb-2">
+        <input type="hidden" name="ContactPersons[__personIndex__].Numbers[__numberIndex__].Id" value="0" />
+        <div class="row align-items-end">
+            <div class="col-md-2 form-group">
+                <label>نوع</label>
+                <select name="ContactPersons[__personIndex__].Numbers[__numberIndex__].NumberType" class="form-control">
+                    <option value="1">موبایل</option>
+                    <option value="2">تلفن ثابت</option>
+                </select>
+            </div>
+            <div class="col-md-3 form-group">
+                <label>عنوان / اپراتور</label>
+                <input name="ContactPersons[__personIndex__].Numbers[__numberIndex__].Label" class="form-control" maxlength="50" placeholder="همراه اول، ایرانسل..." />
+            </div>
+            <div class="col-md-3 form-group">
+                <label>شماره</label>
+                <input name="ContactPersons[__personIndex__].Numbers[__numberIndex__].Number" class="form-control ltr" dir="ltr" maxlength="30" required />
+            </div>
+            <div class="col-md-2 form-group">
+                <label>داخلی</label>
+                <input name="ContactPersons[__personIndex__].Numbers[__numberIndex__].Extension" class="form-control ltr" dir="ltr" maxlength="10" />
+            </div>
+            <div class="col-md-1 form-group">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="numberPrimary___personIndex_____numberIndex__"
+                           name="ContactPersons[__personIndex__].Numbers[__numberIndex__].IsPrimary" value="true" />
+                    <input type="hidden" name="ContactPersons[__personIndex__].Numbers[__numberIndex__].IsPrimary" value="false" />
+                    <label class="custom-control-label" for="numberPrimary___personIndex_____numberIndex__">اصلی</label>
+                </div>
+            </div>
+            <div class="col-md-1 form-group">
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-number" title="حذف شماره">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    (function () {
+        const container = document.getElementById('contactPersonsContainer');
+        if (!container) return;
+
+        let personIndex = @Model.ContactPersons.Count;
+        const personTemplate = document.getElementById('contactPersonTemplate');
+        const numberTemplate = document.getElementById('contactPersonNumberTemplate');
+
+        document.getElementById('btnAddContactPerson').addEventListener('click', function () {
+            const html = personTemplate.innerHTML.replaceAll('__personIndex__', personIndex++);
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+        container.addEventListener('click', function (event) {
+            const removePerson = event.target.closest('.btn-remove-person');
+            if (removePerson) {
+                removePerson.closest('.contact-person-card').remove();
+                return;
+            }
+
+            const removeNumber = event.target.closest('.btn-remove-number');
+            if (removeNumber) {
+                removeNumber.closest('.person-number-row').remove();
+                return;
+            }
+
+            const addNumber = event.target.closest('.btn-add-person-number');
+            if (addNumber) {
+                const personCard = addNumber.closest('.contact-person-card');
+                const personNumber = personCard.dataset.personIndex;
+                const numbersContainer = personCard.querySelector('.person-numbers-container');
+                const numberIndex = numbersContainer.querySelectorAll('.person-number-row').length;
+                const html = numberTemplate.innerHTML
+                    .replaceAll('__personIndex__', personNumber)
+                    .replaceAll('__numberIndex__', numberIndex);
+                numbersContainer.insertAdjacentHTML('beforeend', html);
+            }
+        });
+    })();
+</script>
+
+<hr />
+
 <h5 class="mb-3">
     <i class="fa fa-id-card"></i> اطلاعات حقوقی
 </h5>
