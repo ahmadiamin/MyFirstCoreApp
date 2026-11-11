@@ -310,6 +310,22 @@
             container.insertAdjacentHTML('beforeend', html);
         });
 
+        // پس از حذف کارت‌ها، ایندکس‌ها پیوسته می‌شوند تا Model Binder همه‌ی ردیف‌ها را دریافت کند.
+        container.closest('form').addEventListener('submit', function () {
+            container.querySelectorAll('.contact-person-card').forEach(function (personCard, personPosition) {
+                personCard.dataset.personIndex = personPosition;
+                personCard.querySelectorAll('[name]').forEach(function (input) {
+                    input.name = input.name.replace(/ContactPersons\\[\\d+\\]/, 'ContactPersons[' + personPosition + ']');
+                });
+
+                personCard.querySelectorAll('.person-number-row').forEach(function (numberRow, numberPosition) {
+                    numberRow.querySelectorAll('[name]').forEach(function (input) {
+                        input.name = input.name.replace(/Numbers\\[\\d+\\]/, 'Numbers[' + numberPosition + ']');
+                    });
+                });
+            });
+        });
+
         container.addEventListener('click', function (event) {
             const removePerson = event.target.closest('.btn-remove-person');
             if (removePerson) {
