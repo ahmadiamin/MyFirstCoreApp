@@ -29,8 +29,7 @@
     <Relations isList="true" count="0" />
     <Report isRef="0" />
     <Resources isList="true" count="0" />
-    <Variables isList="true" count="20">
-      <value>,DateTimeNow,DateTimeNow,,System.DateTime,_x0031__x002F_13_x002F_2016_x0020_8:39:22_x0020_PM,False,False,False,True</value>
+    <Variables isList="true" count="32">      <value>,DateTimeNow,DateTimeNow,,System.DateTime,_x0031__x002F_13_x002F_2016_x0020_8:39:22_x0020_PM,False,False,False,True</value>
       <value>,CompanyName,CompanyName,,System.String,,False,False,False,False</value>
       <value>,CompanyAddress,CompanyAddress,,System.String,,False,False,False,False</value>
       <value>,CompanyPhone,CompanyPhone,,System.String,,False,False,False,False</value>
@@ -48,8 +47,20 @@
       <value>,Description,Description,,System.String,,False,False,False,False</value>
       <value>,AmountInWords,AmountInWords,,System.String,,False,False,False,False</value>
       <value>,ACouplet,ACouplet,,System.String,,False,False,False,False</value>
-      <value>,SellerDetails,SellerDetails,,System.String,,False,False,False,False</value>
-      <value>,BuyerDetails,BuyerDetails,,System.String,,False,False,False,False</value>
+      <value>,SellerName,SellerName,,System.String,,False,False,False,False</value>
+      <value>,BuyerName,BuyerName,,System.String,,False,False,False,False</value>
+      <value>,SellerNationalId,SellerNationalId,,System.String,,False,False,False,False</value>
+      <value>,BuyerNationalId,BuyerNationalId,,System.String,,False,False,False,False</value>
+      <value>,SellerEconomicCode,SellerEconomicCode,,System.String,,False,False,False,False</value>
+      <value>,BuyerEconomicCode,BuyerEconomicCode,,System.String,,False,False,False,False</value>
+      <value>,SellerRegistrationNumber,SellerRegistrationNumber,,System.String,,False,False,False,False</value>
+      <value>,BuyerRegistrationNumber,BuyerRegistrationNumber,,System.String,,False,False,False,False</value>
+      <value>,SellerAddress,SellerAddress,,System.String,,False,False,False,False</value>
+      <value>,BuyerAddress,BuyerAddress,,System.String,,False,False,False,False</value>
+      <value>,SellerPostalCode,SellerPostalCode,,System.String,,False,False,False,False</value>
+      <value>,BuyerPostalCode,BuyerPostalCode,,System.String,,False,False,False,False</value>
+      <value>,SellerPhone,SellerPhone,,System.String,,False,False,False,False</value>
+      <value>,BuyerPhone,BuyerPhone,,System.String,,False,False,False,False</value>
     </Variables>
   </Dictionary>
   <EngineVersion>EngineV2</EngineVersion>
@@ -63,7 +74,7 @@
         <PageHeaderBand1 Ref="4" type="PageHeaderBand" isKey="true">
           <Brush>Transparent</Brush>
           <ClientRectangle>0,0.4,29.7,5.0</ClientRectangle>
-          <Components isList="true" count="12">
+          <Components isList="true" count="24">
             <ImgLogo Ref="5" type="Image" isKey="true">
               <Brush>Transparent</Brush>
               <ClientRectangle>16.4,0.2,4.2,1.8</ClientRectangle>
@@ -156,44 +167,258 @@
               <Type>Expression</Type>
               <VertAlignment>Center</VertAlignment>
             </txtSubject>
-            <txtFullName Ref="11" type="Text" isKey="true">
-              <Border>All;Black;1;Solid;False;4;Black</Border>
-              <Brush>[250:250:250]</Brush>
+            <SellerNameText Ref="600" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>15.0,2.4,14.3,2.5</ClientRectangle>
+              <ClientRectangle>15,2.42,14.3,0.34</ClientRectangle>
               <Conditions isList="true" count="0" />
-              <Font>Yalda Nazanin,11</Font>
-              <GrowToHeight>True</GrowToHeight>
-              <Guid>b54b384378514a3bbbdb8db7f9267ed2</Guid>
-              <HorAlignment>Right</HorAlignment><Margins>0,0,0,0</Margins>
-              <Name>SellerDetailsBox</Name>
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000001</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>SellerNameText</Name>
               <Page isRef="3" />
               <Parent isRef="4" />
-              <Text>{SellerDetails}</Text>
+              <Text>نام: {SellerName}</Text>
               <TextBrush>Black</TextBrush>
               <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
               <Type>Expression</Type>
               <VertAlignment>Center</VertAlignment>
-            </txtFullName>
-            <txtAddress Ref="12" type="Text" isKey="true">
-              <Border>All;Black;1;Solid;False;4;Black</Border>
-              <Brush>[250:250:250]</Brush>
+            </SellerNameText>
+            <SellerNationalIdText Ref="601" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
               <CanGrow>True</CanGrow>
-              <ClientRectangle>0.4,2.4,14.3,2.5</ClientRectangle>
+              <ClientRectangle>15,2.77,14.3,0.34</ClientRectangle>
               <Conditions isList="true" count="0" />
-              <Font>Yalda Nazanin,11</Font>
-              <GrowToHeight>True</GrowToHeight>
-              <Guid>86f2d6213f92487c88a4965c6b5f932b</Guid>
-              <HorAlignment>Right</HorAlignment><Margins>0,0,0,0</Margins>
-              <Name>BuyerDetailsBox</Name>
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000002</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>SellerNationalIdText</Name>
               <Page isRef="3" />
               <Parent isRef="4" />
-              <Text>{BuyerDetails}</Text>
+              <Text>شناسه ملی: {SellerNationalId}</Text>
               <TextBrush>Black</TextBrush>
               <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
               <Type>Expression</Type>
               <VertAlignment>Center</VertAlignment>
-            </txtAddress>
+            </SellerNationalIdText>
+            <SellerEconomicCodeText Ref="602" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>15,3.12,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000003</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>SellerEconomicCodeText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>شماره اقتصادی: {SellerEconomicCode}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </SellerEconomicCodeText>
+            <SellerRegistrationNumberText Ref="603" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>15,3.4699999999999998,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000004</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>SellerRegistrationNumberText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>شماره ثبت: {SellerRegistrationNumber}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </SellerRegistrationNumberText>
+            <SellerAddressText Ref="604" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>15,3.82,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000005</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>SellerAddressText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>نشانی: {SellerAddress}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </SellerAddressText>
+            <SellerPostalCodeText Ref="605" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>15,4.17,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000006</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>SellerPostalCodeText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>کد پستی: {SellerPostalCode}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </SellerPostalCodeText>
+            <SellerPhoneText Ref="606" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>15,4.52,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000007</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>SellerPhoneText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>تلفن: {SellerPhone}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </SellerPhoneText>
+            <BuyerNameText Ref="607" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>0.4,2.42,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000008</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>BuyerNameText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>نام: {BuyerName}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </BuyerNameText>
+            <BuyerNationalIdText Ref="608" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>0.4,2.77,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>00000000000000000000000000000009</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>BuyerNationalIdText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>شناسه ملی: {BuyerNationalId}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </BuyerNationalIdText>
+            <BuyerEconomicCodeText Ref="609" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>0.4,3.12,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>0000000000000000000000000000000a</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>BuyerEconomicCodeText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>شماره اقتصادی: {BuyerEconomicCode}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </BuyerEconomicCodeText>
+            <BuyerRegistrationNumberText Ref="610" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>0.4,3.4699999999999998,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>0000000000000000000000000000000b</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>BuyerRegistrationNumberText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>شماره ثبت: {BuyerRegistrationNumber}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </BuyerRegistrationNumberText>
+            <BuyerAddressText Ref="611" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>0.4,3.82,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>0000000000000000000000000000000c</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>BuyerAddressText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>نشانی: {BuyerAddress}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </BuyerAddressText>
+            <BuyerPostalCodeText Ref="612" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>0.4,4.17,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>0000000000000000000000000000000d</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>BuyerPostalCodeText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>کد پستی: {BuyerPostalCode}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </BuyerPostalCodeText>
+            <BuyerPhoneText Ref="613" type="Text" isKey="true">
+              <Brush>Transparent</Brush>
+              <CanGrow>True</CanGrow>
+              <ClientRectangle>0.4,4.52,14.3,0.34</ClientRectangle>
+              <Conditions isList="true" count="0" />
+              <Font>Yalda Nazanin,9</Font>
+              <Guid>0000000000000000000000000000000e</Guid>
+              <HorAlignment>Right</HorAlignment>
+              <Margins>0,0,0,0</Margins>
+              <Name>BuyerPhoneText</Name>
+              <Page isRef="3" />
+              <Parent isRef="4" />
+              <Text>تلفن: {BuyerPhone}</Text>
+              <TextBrush>Black</TextBrush>
+              <TextOptions>,,RightToLeft=True,,WordWrap=True,A=0</TextOptions>
+              <Type>Expression</Type>
+              <VertAlignment>Center</VertAlignment>
+            </BuyerPhoneText>
             
             <TxtTenantName Ref="14" type="Text" isKey="true">
               <Brush>Transparent</Brush>
