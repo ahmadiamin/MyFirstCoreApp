@@ -375,7 +375,7 @@
         <div class="form-group">
             <label asp-for="EconomicCode"></label>
             <input asp-for="EconomicCode" class="form-control ltr input-mask-economic-code"
-                   placeholder="123456789012" />
+                   placeholder="12345678901234" maxlength="14" inputmode="numeric" />
             <span asp-validation-for="EconomicCode" class="text-danger"></span>
         </div>
     </div>
