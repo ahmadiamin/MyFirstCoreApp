@@ -74,6 +74,8 @@ public class InvoiceService : IInvoiceService
             ValidateRequest(request);
 
             var contactId = await ResolveContactAsync(request, tenantId);
+            var supplierInvoiceNumber = NormalizeSupplierInvoiceNumber(request);
+            await EnsureSupplierInvoiceNumberAvailableAsync(tenantId, contactId, supplierInvoiceNumber);
             var items = await BuildItemsAsync(request, tenantId);
 
             var invoice = new Invoice
@@ -84,6 +86,7 @@ public class InvoiceService : IInvoiceService
                 InvoiceType = request.InvoiceType,
                 DueDate = EffectiveDueDate(request),
                 ContactId = contactId,
+                SupplierInvoiceNumber = supplierInvoiceNumber,
                 Status = InvoiceStatus.Draft,
                 Description = request.Description?.Trim(),
                 Items = items,
@@ -120,10 +123,13 @@ public class InvoiceService : IInvoiceService
                 throw new InvalidOperationException("نوع فاکتور بعد از ثبت قابل تغییر نیست.");
 
             var contactId = await ResolveContactAsync(request, tenantId);
+            var supplierInvoiceNumber = NormalizeSupplierInvoiceNumber(request);
+            await EnsureSupplierInvoiceNumberAvailableAsync(tenantId, contactId, supplierInvoiceNumber, invoice.Id);
             var newItems = await BuildItemsAsync(request, tenantId);
 
             invoice.Date = request.Date;
             invoice.ContactId = contactId;
+            invoice.SupplierInvoiceNumber = supplierInvoiceNumber;
             invoice.Description = request.Description?.Trim();
             invoice.DueDate = EffectiveDueDate(request);
 
@@ -558,6 +564,32 @@ public class InvoiceService : IInvoiceService
     // اعتبارسنجی درخواست
     // ============================================
 
+    private static string? NormalizeSupplierInvoiceNumber(InvoiceRequest request)
+    {
+        if (request.InvoiceType != InvoiceType.Purchase)
+            return null;
+
+        var value = request.SupplierInvoiceNumber?.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    private async Task EnsureSupplierInvoiceNumberAvailableAsync(
+        int tenantId, int contactId, string? supplierInvoiceNumber, int? excludedInvoiceId = null)
+    {
+        if (string.IsNullOrWhiteSpace(supplierInvoiceNumber))
+            return;
+
+        var exists = await _context.Invoices.AnyAsync(x =>
+            x.TenantId == tenantId &&
+            x.InvoiceType == InvoiceType.Purchase &&
+            x.ContactId == contactId &&
+            x.SupplierInvoiceNumber == supplierInvoiceNumber &&
+            (!excludedInvoiceId.HasValue || x.Id != excludedInvoiceId.Value));
+
+        if (exists)
+            throw new InvalidOperationException("این شماره فاکتور قبلاً برای همین فروشنده در فاکتورهای خرید ثبت شده است.");
+    }
+
     private static void ValidateRequest(InvoiceRequest request)
     {
         if (request.Date == default)
@@ -583,6 +615,12 @@ public class InvoiceService : IInvoiceService
 
         if (!(request.ContactId is > 0) && string.IsNullOrWhiteSpace(request.NewContactName))
             throw new InvalidOperationException("لطفاً طرف حساب را انتخاب کنید.");
+
+        if (request.SupplierInvoiceNumber?.Trim().Length > 100)
+            throw new InvalidOperationException("شماره فاکتور فروشنده حداکثر ۱۰۰ کاراکتر است.");
+
+        if (request.InvoiceType != InvoiceType.Purchase && !string.IsNullOrWhiteSpace(request.SupplierInvoiceNumber))
+            throw new InvalidOperationException("شماره فاکتور فروشنده فقط برای فاکتور خرید قابل ثبت است.");
 
         if (request.Items.Count == 0)
             throw new InvalidOperationException("حداقل یک قلم با کالا و تعداد لازم است.");
