@@ -52,6 +52,19 @@
         </div>
     </div>
 
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="InvoiceImage"></label>
+            <input asp-for="InvoiceImage" type="file" class="form-control-file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+            <small class="form-text text-muted">تصویر فاکتور فروشنده؛ حداکثر ۵ مگابایت. انتخاب فایل جدید، تصویر قبلی را جایگزین می‌کند.</small>
+            @if (ViewBag.InvoiceImageExists == true)
+            {
+                <div class="mt-2"><a href="@Url.Action("InvoiceImage", "Invoices", new { area = "Invoicing", id = Model.Id })" target="_blank" rel="noopener">مشاهده تصویر فعلی فاکتور</a></div>
+            }
+            <span asp-validation-for="InvoiceImage" class="text-danger"></span>
+        </div>
+    </div>
+
     <div class="col-md-12">
         <div class="form-group">
             <label asp-for="Description"></label>
