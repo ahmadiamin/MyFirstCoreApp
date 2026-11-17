@@ -384,7 +384,6 @@
                   <Conditions isList="true" count="0" />
                   <Font>Yalda Nazanin,9</Font>
                   <Guid>817c518fe3434972b335fd2467c798e8</Guid>
-                  <HorAlignment>Right</HorAlignment>
                   <Margins>0,0,0,0</Margins>
                   <Name>BuyerPostalCodeText</Name>
                   <Page isRef="3" />
@@ -1228,10 +1227,10 @@
     <value>Stimulsoft.Report.Dll</value>
   </ReferencedAssemblies>
   <ReportAlias>Report</ReportAlias>
-  <ReportChanged>11/16/2026 5:17:47 PM</ReportChanged>
+  <ReportChanged>11/17/2026 9:23:57 AM</ReportChanged>
   <ReportCreated>1/12/2016 6:02:05 PM</ReportCreated>
   <ReportFile>D:\Amin\Projects\MyFirstCoreApp\MyFirstCoreApp\Reports\Invoice.mrt</ReportFile>
-  <ReportGuid>8d2a49ac9a09416195e7ccc82a5941fb</ReportGuid>
+  <ReportGuid>e793a4b6caa748c4a817d3406bec7984</ReportGuid>
   <ReportName>Report</ReportName>
   <ReportUnit>Centimeters</ReportUnit>
   <ReportVersion>2018.2.1.0</ReportVersion>
