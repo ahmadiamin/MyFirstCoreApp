@@ -43,14 +43,21 @@
         </div>
     </div>
 
+
     <div class="col-md-4">
         <div class="form-group">
             <label>طرف حساب</label>
             <div id="contactSelect"></div>
+
             <input type="hidden" name="ContactId" id="ContactId_Hidden" value="@(Model.ContactId ?? 0)" />
             <input type="hidden" name="ContactName" id="ContactName_Hidden" value="@(Model.ContactName ?? "")" />
+
+            <span id="contactValidationMessage"
+                  class="text-danger"
+                  role="alert"></span>
         </div>
     </div>
+
 
     <div class="col-md-6">
         <div class="form-group">

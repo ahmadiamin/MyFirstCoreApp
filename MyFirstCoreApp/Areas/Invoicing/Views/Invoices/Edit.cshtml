@@ -96,7 +96,7 @@
         // ============================================
         // 🆕 راه‌اندازی MagicSuggest کالا برای یه ردیف
         // ============================================
-                function initProductMagicSuggestForRow(index, initialId, initialName, initialTrackInventory) {
+        function initProductMagicSuggestForRow(index, initialId, initialName, initialTrackInventory) {
             var containerId = 'product_ms_' + index;
             var $container = $('.product-magicsuggest[data-index="' + index + '"]');
 
@@ -134,6 +134,13 @@
             var showStock = false;
             var ms = null;
             var currentQuery = '';
+            var isRestoringInitialSelection = false;
+
+            function getProductName(item) {
+                return (item && (item.name || item.searchText || ''))
+                    .toString()
+                    .trim();
+            }
 
             function updateStockDisplay(item) {
                 var $stock = $row.find('.product-stock');
@@ -193,7 +200,7 @@
                                 useCommaKey: false,
 
                                 selectionRenderer: function (item) {
-                                    return item.name;
+                                    return getProductName(item);
                                 },
 
                                 renderer: function (item) {
@@ -242,6 +249,8 @@
                                 if (selection && selection.length > 0) {
                                     var item = selection[0];
 
+                                    var productName = getProductName(item);
+
                                     var isNewProduct =
                                         item.isNewProduct === true ||
                                         item.trackInventory === undefined;
@@ -281,23 +290,25 @@
                                         }
 
                                         $('#ProductId_Hidden_' + index).val(item.id);
-                                        $('#ProductName_Hidden_' + index).val(item.name);
+                                        $('#ProductName_Hidden_' + index).val(productName);
 
-                                        if (item.salePrice !== undefined && item.salePrice !== null) {
-                                            $row.find('.price-input').val(
-                                                formatNumberWithComma(item.salePrice.toString())
-                                            );
-                                        }
+                                        if (!isRestoringInitialSelection) {
+                                            if (item.salePrice !== undefined && item.salePrice !== null) {
+                                                $row.find('.price-input').val(
+                                                    formatNumberWithComma(item.salePrice.toString())
+                                                );
+                                            }
 
-                                        if (item.taxRate !== undefined && item.taxRate !== null) {
-                                            $row.find('.tax-input').val(item.taxRate);
+                                            if (item.taxRate !== undefined && item.taxRate !== null) {
+                                                $row.find('.tax-input').val(item.taxRate);
+                                            }
                                         }
 
                                         updateStockDisplay(item);
                                         updateTotals();
                                     } else {
                                         $('#ProductId_Hidden_' + index).val('0');
-                                        $('#ProductName_Hidden_' + index).val(item.name);
+                                        $('#ProductName_Hidden_' + index).val(productName);
 
                                         updateStockDisplay(null);
                                     }
@@ -327,13 +338,19 @@
                                     initialTrackInventory === 'True' ||
                                     initialTrackInventory === '1';
 
-                                ms.addToSelection([
-                                    initialProduct || {
-                                        id: initialId,
-                                        name: initialName,
-                                        trackInventory: tracksInventory
-                                    }
-                                ]);
+                                isRestoringInitialSelection = true;
+
+                                try {
+                                    ms.addToSelection([
+                                        initialProduct || {
+                                            id: initialId,
+                                            name: initialName,
+                                            trackInventory: tracksInventory
+                                        }
+                                    ]);
+                                } finally {
+                                    isRestoringInitialSelection = false;
+                                }
                             }
 
                             // وضعیت خدماتی
@@ -758,7 +775,30 @@
             // ============================================
             // ۷. Submit
             // ============================================
-            $('#invoiceForm').on('submit', function () {
+            $('#invoiceForm').on('submit', function (e) {
+
+                // اعتبارسنجی طرف حساب قبل از ارسال فرم
+                var contactId = parseInt($('#ContactId_Hidden').val(), 10) || 0;
+                var contactName = ($('#ContactName_Hidden').val() || '').trim();
+
+                if (contactId <= 0 && contactName === '') {
+                    e.preventDefault();
+
+                    $('#contactValidationMessage').text(
+                        'لطفاً طرف حساب را انتخاب کنید.'
+                    );
+
+                    var inputEl = $('#contactSelect').find('input')[0];
+
+                    if (inputEl) {
+                        inputEl.focus();
+                    }
+
+                    return false;
+                }
+
+                $('#contactValidationMessage').text('');
+
                 $('.persian-number').each(function () {
                     const $input = $(this);
                     let val = $input.val();

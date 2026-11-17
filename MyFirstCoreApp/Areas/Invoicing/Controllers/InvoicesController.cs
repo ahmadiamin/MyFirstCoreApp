@@ -193,6 +193,11 @@ public class InvoicesController : Controller
     {
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
+        
+        if ((!model.ContactId.HasValue || model.ContactId.Value <= 0) && string.IsNullOrWhiteSpace(model.ContactName))
+        {
+            ModelState.AddModelError("", "لطفاً طرف حساب را انتخاب کنید.");
+        }
 
         if (!PersianDate.TryParse(model.Date, out var date))
             ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
@@ -314,6 +319,10 @@ public class InvoicesController : Controller
     {
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
+        if ((!model.ContactId.HasValue || model.ContactId.Value <= 0) && string.IsNullOrWhiteSpace(model.ContactName))
+        {
+            ModelState.AddModelError("", "لطفاً طرف حساب را انتخاب کنید.");
+        }
 
         if (id != model.Id) return BadRequest();
 
@@ -1115,11 +1124,9 @@ public class InvoicesController : Controller
                     l.Transaction.IsPosted &&
                     l.Transaction.Date <= invoice.Date);
 
-            var debit = await balanceQuery
-                .SumAsync(l => (decimal?)l.Debit) ?? 0;
+            var debit = await balanceQuery.SumAsync(l => (decimal?)l.Debit) ?? 0;
 
-            var credit = await balanceQuery
-                .SumAsync(l => (decimal?)l.Credit) ?? 0;
+            var credit = await balanceQuery.SumAsync(l => (decimal?)l.Credit) ?? 0;
 
             contactBalance = debit - credit;
         }
