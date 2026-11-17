@@ -104,9 +104,9 @@ $(document).ready(function () {
         showMaskOnHover: false
     });
 
-    // کد اقتصادی (12 رقم)
+    // کد اقتصادی (14 رقم)
     $('.input-mask-economic-code').inputmask({
-        mask: '999999999999',
+        mask: '99999999999999',
         placeholder: '',
         clearIncomplete: false,
         showMaskOnHover: false

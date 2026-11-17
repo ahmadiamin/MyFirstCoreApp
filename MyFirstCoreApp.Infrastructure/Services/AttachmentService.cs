@@ -234,6 +234,8 @@ public class AttachmentService : IAttachmentService
         AttachmentEntityType.Invoice => _context.Invoices.AnyAsync(x => x.Id == id, ct),
         AttachmentEntityType.Product => _context.Products.AnyAsync(x => x.Id == id, ct),
         AttachmentEntityType.Contact => _context.Contacts.AnyAsync(x => x.Id == id, ct),
+        // Tenant یک BaseEntity است، نه TenantEntity؛ مالک باید دقیقاً شرکت فعال باشد.
+        AttachmentEntityType.Tenant => _context.Tenants.AnyAsync(x => x.Id == id && x.Id == _currentTenant.TenantId && x.IsActive, ct),
         _ => Task.FromResult(false)
     };
 

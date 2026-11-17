@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using MyFirstCoreApp.Application.Attachments;
 using MyFirstCoreApp.Domain.Entities.Attachments;
 using MyFirstCoreApp.Domain.Entities.Contacts;
+using MyFirstCoreApp.Domain.Entities.Tenancy;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Infrastructure.Services;
@@ -66,6 +67,48 @@ public class AttachmentServiceTests : IDisposable
         Assert.Equal(PngBytes, memory.ToArray());
         Assert.Equal("image/png", file.ContentType);
         Assert.Equal(AttachmentEntityType.Contact, file.EntityType);
+    }
+
+    [Fact]
+    public async Task TenantBrandingAttachment_CanOnlyBeAddedToTheActiveTenant()
+    {
+        await using (var seed = _db.NewContext())
+        {
+            seed.Tenants.Add(new Tenant { Id = TenantA, Name = "شرکت الف", IsActive = true });
+            seed.Tenants.Add(new Tenant { Id = TenantB, Name = "شرکت ب", IsActive = true });
+            await seed.SaveChangesAsync();
+        }
+
+        await using (var context = _db.NewContext())
+        {
+            var info = await NewService(context).AddAsync(
+                AttachmentEntityType.Tenant,
+                TenantA,
+                new AttachmentUpload
+                {
+                    FileName = "logo.png",
+                    Length = PngBytes.Length,
+                    Content = new MemoryStream(PngBytes),
+                    Description = "Tenant logo"
+                });
+
+            Assert.Equal(AttachmentEntityType.Tenant, info.EntityType);
+            Assert.Equal(TenantA, info.EntityId);
+        }
+
+        await using (var context = _db.NewContext())
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                NewService(context).AddAsync(
+                    AttachmentEntityType.Tenant,
+                    TenantB,
+                    new AttachmentUpload
+                    {
+                        FileName = "foreign-logo.png",
+                        Length = PngBytes.Length,
+                        Content = new MemoryStream(PngBytes)
+                    }));
+        }
     }
 
     [Fact]

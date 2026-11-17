@@ -12,7 +12,7 @@
     </div>
 
     <form asp-area="Invoicing" asp-controller="Invoices" asp-action="Edit"
-          asp-route-id="@Model.Id" method="post" id="invoiceForm">
+          asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" id="invoiceForm">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="Number" />
@@ -173,6 +173,7 @@
                                 id: p.id,
                                 name: p.name,
                                 code: p.code,
+                                searchText: [p.name, p.code].filter(Boolean).join(' '),
                                 salePrice: p.salePrice,
                                 unitName: p.unitName,
                                 taxRate: p.taxRate,
@@ -185,7 +186,7 @@
                             ms = $('#' + containerId).magicSuggest({
                                 data: data,
                                 valueField: 'id',
-                                displayField: 'name',
+                                displayField: 'searchText',
                                 allowFreeEntries: true,
                                 maxSelection: 1,
                                 resultAsString: false,

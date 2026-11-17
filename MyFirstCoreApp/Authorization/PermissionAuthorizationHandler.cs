@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Application.Security;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using System.Security.Claims;
 
@@ -9,17 +12,32 @@ namespace MyFirstCoreApp.Authorization
         : AuthorizationHandler<PermissionRequirement>
     {
         private readonly ApplicationDbContext _context;
+        private readonly IPermissionEvaluator _evaluator;
+        private readonly ICurrentTenant _currentTenant;
 
         public PermissionAuthorizationHandler(
+            IPermissionEvaluator evaluator,
+            ICurrentTenant currentTenant,
             ApplicationDbContext context)
         {
+            _evaluator = evaluator;
             _context = context;
+            _currentTenant = currentTenant;
         }
 
         protected override async Task HandleRequirementAsync(
             AuthorizationHandlerContext context,
             PermissionRequirement requirement)
         {
+            var subject = new PermissionSubject(
+                IsAuthenticated: context.User.Identity?.IsAuthenticated == true,
+                IsSuperAdmin: context.User.IsInRole("SuperAdmin"),
+                UserId: context.User.FindFirstValue(ClaimTypes.NameIdentifier),
+                TenantId: _currentTenant.TenantId);
+
+            if (await _evaluator.HasAsync(subject, requirement.Permission))
+                context.Succeed(requirement);
+
             if (context.User.Identity?.IsAuthenticated != true)
                 return;
 

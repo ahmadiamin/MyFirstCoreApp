@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Common.Models;
+using MyFirstCoreApp.Application.Attachments;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Areas.Tenancy.ViewModels;
 using MyFirstCoreApp.Domain.Entities.Identity;
 using MyFirstCoreApp.Domain.Entities.Tenancy;
+using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using System.Security.Claims;
 
@@ -23,6 +25,7 @@ public class TenantController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantSmsSettingsService _smsSettings;
+    private readonly IAttachmentService _attachments;
 
     public TenantController(
         ApplicationDbContext context,
@@ -30,7 +33,8 @@ public class TenantController : Controller
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         ICurrentUser currentUser,
-        ITenantSmsSettingsService smsSettings)
+        ITenantSmsSettingsService smsSettings,
+        IAttachmentService attachments)
     {
         _context = context;
         _tenantService = tenantService;
@@ -38,6 +42,7 @@ public class TenantController : Controller
         _signInManager = signInManager;
         _currentUser = currentUser;
         _smsSettings = smsSettings;
+        _attachments = attachments;
     }
 
     // GET: /Tenancy/Tenant
@@ -69,6 +74,8 @@ public class TenantController : Controller
     [Authorize]
     public async Task<IActionResult> Create(CreateTenantViewModel model)
     {
+        model.EconomicCode = NormalizeMobileDigits(model.EconomicCode);
+
         if (!ModelState.IsValid)
             return View(model);
 
@@ -82,6 +89,8 @@ public class TenantController : Controller
             LegalName = model.LegalName?.Trim(),
             NationalId = model.NationalId?.Trim(),
             EconomicCode = model.EconomicCode?.Trim(),
+            RegistrationNumber = model.RegistrationNumber?.Trim(),
+            PostalCode = model.PostalCode?.Trim(),
             Phone = model.Phone?.Trim(),
             Address = model.Address?.Trim(),
             IsActive = true,
@@ -288,14 +297,20 @@ public class TenantController : Controller
             LegalName = entity.LegalName,
             NationalId = entity.NationalId,
             EconomicCode = entity.EconomicCode,
+            RegistrationNumber = entity.RegistrationNumber,
+            PostalCode = entity.PostalCode,
             Phone = entity.Phone,
             Address = entity.Address,
+            LogoAttachmentId = entity.LogoAttachmentId,
+            StampAttachmentId = entity.StampAttachmentId,
+            SignatureAttachmentId = entity.SignatureAttachmentId,
             SmsLineNumber = string.Empty,
         };
 
         await PopulateSmsSettingsSummaryAsync(id, model);
 
         ViewBag.TenantId = id;
+        ViewBag.IsCurrentTenant = _context.CurrentTenantId == id;
 
         return View(model);
     }
@@ -306,6 +321,8 @@ public class TenantController : Controller
     [Authorize]
     public async Task<IActionResult> Edit(int id, CreateTenantViewModel model)
     {
+        model.EconomicCode = NormalizeMobileDigits(model.EconomicCode);
+
         var userId = _currentUser.UserId;
         if (string.IsNullOrEmpty(userId))
             return Challenge();
@@ -332,6 +349,8 @@ public class TenantController : Controller
         if (!ModelState.IsValid)
         {
             ViewBag.TenantId = id;
+            ViewBag.IsCurrentTenant = _context.CurrentTenantId == id;
+            await PopulateBrandingSummaryAsync(id, model);
             await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
             return View(model);
         }
@@ -340,6 +359,8 @@ public class TenantController : Controller
         {
             ModelState.AddModelError(nameof(model.SmsApiKeyInput), "برای جایگزینی کلید، گزینهٔ پاک‌کردن را خالی بگذارید.");
             ViewBag.TenantId = id;
+            ViewBag.IsCurrentTenant = _context.CurrentTenantId == id;
+            await PopulateBrandingSummaryAsync(id, model);
             await PopulateSmsSettingsSummaryAsync(id, model, preserveReminderInput: true);
             return View(model);
         }
@@ -350,6 +371,8 @@ public class TenantController : Controller
         entity.LegalName = model.LegalName?.Trim();
         entity.NationalId = model.NationalId?.Trim();
         entity.EconomicCode = model.EconomicCode?.Trim();
+        entity.RegistrationNumber = model.RegistrationNumber?.Trim();
+        entity.PostalCode = model.PostalCode?.Trim();
         entity.Phone = model.Phone?.Trim();
         entity.Address = model.Address?.Trim();
         entity.UpdatedAt = DateTime.UtcNow;
@@ -379,6 +402,163 @@ public class TenantController : Controller
 
         TempData["Success"] = "اطلاعات شرکت با موفقیت ویرایش شد.";
         return RedirectToAction(nameof(Index));
+    }
+
+    // POST: /Tenancy/Tenant/UploadBranding
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<IActionResult> UploadBranding(int id, string kind, IFormFile? file)
+    {
+        var userId = _currentUser.UserId;
+        if (string.IsNullOrEmpty(userId))
+            return Challenge();
+
+        if (!User.IsInRole("SuperAdmin") && !await _tenantService.IsUserOwnerAsync(id, userId))
+            return Forbid();
+
+        // سرویس پیوست‌ها فقط روی شرکت فعال کار می‌کند؛ شناسه‌ی شرکت مقصد باید همان شرکت فعال باشد.
+        if (_context.CurrentTenantId != id)
+            return Forbid();
+
+        var tenant = await _tenantService.GetByIdAsync(id);
+        if (tenant == null)
+            return NotFound();
+
+        if (file == null || file.Length == 0)
+        {
+            TempData["Error"] = "لطفاً یک تصویر انتخاب کنید.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (extension is not (".jpg" or ".jpeg" or ".png"))
+        {
+            TempData["Error"] = "فقط تصاویر JPG و PNG مجاز هستند.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        int? oldAttachmentId;
+        switch (kind)
+        {
+            case "logo": oldAttachmentId = tenant.LogoAttachmentId; break;
+            case "stamp": oldAttachmentId = tenant.StampAttachmentId; break;
+            case "signature": oldAttachmentId = tenant.SignatureAttachmentId; break;
+            default: return BadRequest();
+        }
+
+        int newAttachmentId;
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var attachment = await _attachments.AddAsync(AttachmentEntityType.Tenant, id, new AttachmentUpload
+            {
+                FileName = file.FileName,
+                Length = file.Length,
+                Content = stream,
+                Description = $"Tenant {kind}"
+            });
+            newAttachmentId = attachment.Id;
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        switch (kind)
+        {
+            case "logo": tenant.LogoAttachmentId = newAttachmentId; break;
+            case "stamp": tenant.StampAttachmentId = newAttachmentId; break;
+            case "signature": tenant.SignatureAttachmentId = newAttachmentId; break;
+        }
+
+        try
+        {
+            tenant.UpdatedAt = DateTime.UtcNow;
+            await _tenantService.UpdateAsync(tenant);
+        }
+        catch
+        {
+            // اگر اتصال فایل جدید به شرکت ذخیره نشد، رکورد جدید را حذف نرم می‌کنیم.
+            await _attachments.DeleteAsync(newAttachmentId);
+            throw;
+        }
+
+        // فایل قبلی فقط پس از ثبت موفق شناسه‌ی جدید حذف نرم می‌شود.
+        if (oldAttachmentId.HasValue)
+        {
+            try
+            {
+                await _attachments.DeleteAsync(oldAttachmentId.Value);
+            }
+            catch (InvalidOperationException)
+            {
+                // ممکن است رکورد قبلی از قبل حذف شده باشد؛ فایل جدید معتبر باقی می‌ماند.
+            }
+        }
+
+        TempData["Success"] = "تصویر با موفقیت ذخیره شد.";
+
+        return RedirectToAction(nameof(Edit), new { id });
+    }
+
+    [HttpGet]
+    [Authorize]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> BrandingImage(int id, string kind)
+    {
+        var userId = _currentUser.UserId;
+        if (string.IsNullOrEmpty(userId))
+            return Challenge();
+
+        if (!User.IsInRole("SuperAdmin") && !await _tenantService.IsUserOwnerAsync(id, userId))
+            return Forbid();
+
+        if (_context.CurrentTenantId != id)
+            return Forbid();
+
+        var tenant = await _tenantService.GetByIdAsync(id);
+        if (tenant == null)
+            return NotFound();
+
+        var attachmentId = kind switch
+        {
+            "logo" => tenant.LogoAttachmentId,
+            "stamp" => tenant.StampAttachmentId,
+            "signature" => tenant.SignatureAttachmentId,
+            _ => null
+        };
+
+        if (!attachmentId.HasValue)
+            return NotFound();
+
+        try
+        {
+            var info = await _attachments.GetInfoAsync(attachmentId.Value);
+            if (info.EntityType != AttachmentEntityType.Tenant || info.EntityId != id ||
+                !info.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                return NotFound();
+
+            var file = await _attachments.OpenAsync(attachmentId.Value);
+            Response.Headers["X-Content-Type-Options"] = "nosniff";
+            return File(file.Content, file.ContentType);
+        }
+        catch (InvalidOperationException)
+        {
+            return NotFound();
+        }
+    }
+
+    private async Task PopulateBrandingSummaryAsync(int tenantId, CreateTenantViewModel model)
+    {
+        var tenant = await _tenantService.GetByIdAsync(tenantId);
+        if (tenant == null) return;
+
+        model.LogoAttachmentId = tenant.LogoAttachmentId;
+        model.StampAttachmentId = tenant.StampAttachmentId;
+        model.SignatureAttachmentId = tenant.SignatureAttachmentId;
     }
 
     private async Task PopulateSmsSettingsSummaryAsync(int tenantId, CreateTenantViewModel model,

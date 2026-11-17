@@ -1,0 +1,60 @@
+@model MyFirstCoreApp.Areas.Company.ViewModels.PositionFormViewModel
+
+<input type="hidden" asp-for="Id" />
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="form-group">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" class="form-control" placeholder="مثلاً کارشناس فروش" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <input asp-for="Description" class="form-control" />
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="form-group">
+            <label>&nbsp;</label>
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="IsActive" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                <label class="custom-control-label" for="IsActive">فعال</label>
+            </div>
+            <input type="hidden" name="IsActive" value="false" />
+        </div>
+    </div>
+</div>
+
+<h5 class="mt-2"><i class="fa fa-key"></i> دسترسی‌های این سمت</h5>
+<p class="text-muted small">هر کسی که این سمت را دارد فقط همین کارها را در شرکت شما می‌تواند انجام دهد.</p>
+
+<div class="row">
+    @foreach (var group in Model.Groups)
+    {
+        <div class="col-md-4">
+            <div class="card card-outline card-secondary">
+                <div class="card-header py-2">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input group-toggle" id="group_@group.GetHashCode()" />
+                        <label class="custom-control-label font-weight-bold" for="group_@group.GetHashCode()">@group.GroupName</label>
+                    </div>
+                </div>
+                <div class="card-body py-2">
+                    @foreach (var permission in group.Permissions)
+                    {
+                        var inputId = "perm_" + permission.Name.Replace('.', '_');
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input permission-box" id="@inputId"
+                                   name="SelectedPermissions" value="@permission.Name"
+                                   @(Model.SelectedPermissions.Contains(permission.Name, StringComparer.OrdinalIgnoreCase) ? "checked" : "") />
+                            <label class="custom-control-label" for="@inputId">@permission.DisplayName</label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

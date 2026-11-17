@@ -13,6 +13,9 @@ public class Invoice : TenantEntity
     /// </summary>
     public int Number { get; set; }
 
+    /// <summary>شماره درج‌شده روی فاکتور صادرشده توسط فروشنده (فقط برای خرید).</summary>
+    public string? SupplierInvoiceNumber { get; set; }
+
     /// <summary>
     /// تاریخ فاکتور (فقط تاریخ). مقدار پیش‌فرض ندارد؛ سازنده باید صراحتاً تعیین کند.
     /// (پیش‌فرض قبلی DateTime.Now به ساعت سرور میزبان وابسته بود.)

@@ -1,0 +1,72 @@
+@model IReadOnlyList<MyFirstCoreApp.Application.Security.TenantRoleSummary>
+@{
+    ViewData["Title"] = "سمت‌ها و دسترسی‌ها";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa fa-user-shield"></i> سمت‌های شرکت</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> سمت جدید</a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>سمت</th>
+                    <th>توضیحات</th>
+                    <th>تعداد دسترسی</th>
+                    <th>تعداد افراد</th>
+                    <th>وضعیت</th>
+                    <th style="width:180px">عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var role in Model)
+                {
+                    <tr>
+                        <td><b>@role.Name</b></td>
+                        <td>@role.Description</td>
+                        <td>@role.PermissionCount</td>
+                        <td>@role.MemberCount</td>
+                        <td>
+                            @if (role.IsActive) { <span class="badge badge-success">فعال</span> }
+                            else { <span class="badge badge-secondary">غیرفعال</span> }
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@role.Id" class="btn btn-sm btn-outline-primary"><i class="fa fa-edit"></i> ویرایش</a>
+                            <form asp-action="Delete" asp-route-id="@role.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('این سمت حذف شود؟ از همه‌ی افرادِ دارای آن برداشته می‌شود.');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted p-4">هنوز سمتی تعریف نشده است. مثلاً «کارشناس فروش»، «منشی» یا «مدیر فروشگاه» را بسازید.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-muted">
+        <i class="fa fa-info-circle"></i>
+        مالک شرکت همه‌ی دسترسی‌ها را دارد. دیگران فقط دسترسی‌های سمت‌هایی را دارند که در همین شرکت به آن‌ها داده‌اید.
+    </div>
+</div>

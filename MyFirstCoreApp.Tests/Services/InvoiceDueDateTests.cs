@@ -202,8 +202,14 @@ public class InvoiceDueDateTests : IDisposable
         Assert.Contains(expectedPart, ex.Message);
     }
 
-    private InvoiceService NewService(ApplicationDbContext context)
-        => new(new StockMovementService(context, new WarehouseService(context)), context, new TransactionService(context), new SystemAccountService(context), _db.User, _time);
+    private InvoiceService NewService(ApplicationDbContext context) =>
+        new(new StockMovementService(context,new WarehouseService(context)),
+            context,
+            new TransactionService(context),
+            new SystemAccountService(context),
+            _db.User,
+            _time,
+            new ProductCodeGenerator(context));
 
     private static InvoiceRequest NewRequest(InvoiceType type, int contactId, DateOnly? due)
         => new()

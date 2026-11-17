@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MyFirstCoreApp.Application.Attachments;
 using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Infrastructure.Security;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Infrastructure.Persistence.Interceptors;
 using MyFirstCoreApp.Infrastructure.Services;
@@ -72,12 +73,20 @@ public static class DependencyInjection
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddScoped<ILoanService, LoanService>();
 
+        // دسترسی چندشرکتی: نقش‌ها و افرادِ مخصوص هر شرکت
+        services.AddScoped<IPlatformPermissionChecker, PlatformPermissionChecker>();
         services.AddScoped<IStockBalanceService, StockBalanceService>();
         services.AddScoped<IStockMovementService, StockMovementService>();
         services.AddScoped<IInventoryAnalyticsService, InventoryAnalyticsService>();
+        services.AddScoped<IProductCodeGenerator, ProductCodeGenerator>();
         services.AddScoped<ICustomerPortalService, CustomerPortalService>();
         services.AddScoped<IWarehouseService, WarehouseService>();
         services.AddScoped<IPasswordResetOtpService, PasswordResetOtpService>();
+        services.AddScoped<ITenantAccessService, TenantAccessService>();
+        services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
+        services.AddScoped<ITenantSecurityService, TenantSecurityService>();
+        services.AddScoped<ITenantStaffService, TenantStaffService>();
+        services.AddScoped<IMenuTreeService, MenuTreeService>();
 
         return services;
     }
