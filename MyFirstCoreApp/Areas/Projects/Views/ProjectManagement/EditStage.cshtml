@@ -1,6 +1,95 @@
-﻿namespace MyFirstCoreApp.Areas.Projects.Views.ProjectManagement
-{
-    public class EditStage
-    {
-    }
+﻿@model MyFirstCoreApp.Areas.Projects.ViewModels.Project.ProjectStageFormViewModel
+
+@{
+    ViewData["Title"] = "ویرایش مرحله";
 }
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">ویرایش مرحله پروژه</h3>
+    </div>
+
+    <form asp-action="EditStage" method="post">
+        <div class="card-body">
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="ProjectId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="form-group">
+                <label asp-for="Title"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Description"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="SortOrder"></label>
+                        <input asp-for="SortOrder" type="number" class="form-control" />
+                        <span asp-validation-for="SortOrder" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="PlannedStartDate"></label>
+                        <input asp-for="PlannedStartDate" type="date" class="form-control" />
+                        <span asp-validation-for="PlannedStartDate" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="PlannedEndDate"></label>
+                        <input asp-for="PlannedEndDate" type="date" class="form-control" />
+                        <span asp-validation-for="PlannedEndDate" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="AssignedUserTenantId"></label>
+                <select asp-for="AssignedUserTenantId"
+                        asp-items="Model.UserOptions"
+                        class="form-control">
+                    <option value="">بدون مسئول</option>
+                </select>
+                <span asp-validation-for="AssignedUserTenantId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input asp-for="IsRequired" class="custom-control-input" />
+                    <label asp-for="IsRequired" class="custom-control-label"></label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Notes"></label>
+                <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                ذخیره تغییرات
+            </button>
+
+            <a asp-controller="Projects"
+               asp-action="Details"
+               asp-route-id="@Model.ProjectId"
+               class="btn btn-secondary">
+                انصراف
+            </a>
+        </div>
+    </form>
+</div>

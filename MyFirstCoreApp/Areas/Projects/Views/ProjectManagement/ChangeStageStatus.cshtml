@@ -1,6 +1,69 @@
-﻿namespace MyFirstCoreApp.Areas.Projects.Views.ProjectManagement
-{
-    public class ChangeStageStatus
-    {
-    }
+﻿@model MyFirstCoreApp.Areas.Projects.ViewModels.Project.ProjectStageStatusFormViewModel
+
+@using MyFirstCoreApp.Domain.Enums
+
+@{
+    ViewData["Title"] = "تغییر وضعیت مرحله";
 }
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">تغییر وضعیت مرحله</h3>
+    </div>
+
+    <form asp-action="ChangeStageStatus" method="post">
+        <div class="card-body">
+            <input asp-for="ProjectId" type="hidden" />
+            <input asp-for="ProjectStageId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="form-group">
+                <label asp-for="NewStatus"></label>
+                <select asp-for="NewStatus"
+                        asp-items="Html.GetEnumSelectList<ProjectStageStatus>()"
+                        class="form-control">
+                </select>
+                <span asp-validation-for="NewStatus" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Description"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <hr />
+
+            <p class="text-muted">
+                در صورت انتخاب وضعیت «در انتظار»، ثبت علت انتظار و تاریخ پیگیری الزامی است.
+            </p>
+
+            <div class="form-group">
+                <label asp-for="WaitingReason"></label>
+                <textarea asp-for="WaitingReason" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="WaitingReason" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NextFollowUpDate"></label>
+                <input asp-for="NextFollowUpDate" type="date" class="form-control" />
+                <span asp-validation-for="NextFollowUpDate" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-exchange-alt"></i>
+                ثبت وضعیت جدید
+            </button>
+
+            <a asp-controller="Projects"
+               asp-action="Details"
+               asp-route-id="@Model.ProjectId"
+               class="btn btn-secondary">
+                انصراف
+            </a>
+        </div>
+    </form>
+</div>

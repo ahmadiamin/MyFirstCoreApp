@@ -390,6 +390,16 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "Loan.Create", DisplayName = "ثبت قرض",         GroupName = "Accounting", IsActive = true },
                 new Permission { Name = "Loan.Edit",   DisplayName = "ثبت بازپرداخت قرض", GroupName = "Accounting", IsActive = true },
                 new Permission { Name = "Loan.Delete", DisplayName = "حذف قرض و بازپرداخت", GroupName = "Accounting", IsActive = true },
+            
+                // Projects
+                new Permission { Name = "Project.View", DisplayName = "مشاهده پروژه‌ها", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "Project.Create", DisplayName = "ایجاد پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "Project.Edit", DisplayName = "ویرایش پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "Project.Delete", DisplayName = "حذف پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "Project.Status.Change", DisplayName = "تغییر وضعیت پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "ProjectMember.Manage", DisplayName = "مدیریت اعضای پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "ProjectStage.Manage", DisplayName = "مدیریت مراحل پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "ProjectStage.Status.Change", DisplayName = "تغییر وضعیت مراحل پروژه", GroupName = "Projects", IsActive = true },
             };
 
             foreach (var permission in permissions)
@@ -558,7 +568,8 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "گزارشات", Url = null, Icon = "fa-solid fa-chart-bar", Permission = null, SortOrder = 6, IsActive = true },
                 new Menu { Title = "فاکتورها", Url = null, Icon = "fa-solid fa-file-invoice", Permission = null, SortOrder = 7, IsActive = true },
                 new Menu { Title = "امور بانکی", Url = null, Icon = "fa-solid fa-building-columns", Permission = null, SortOrder = 8, IsActive = true },
-                new Menu { Title = "مدیریت سامانه", Url = null, Icon = "fa-solid fa-server", Permission = null, SortOrder = 9, IsActive = true }
+                new Menu { Title = "مدیریت سامانه", Url = null, Icon = "fa-solid fa-server", Permission = null, SortOrder = 9, IsActive = true },
+                new Menu {Title = "مدیریت پروژه‌ها", Url = null, Icon = "fa-solid fa-diagram-project", Permission = null, SortOrder = 10, IsActive = true }
             };
 
             foreach (var parent in parents)
@@ -580,7 +591,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
             var invoicingParent = await context.Menus.FirstAsync(x => x.Title == "فاکتورها" && x.ParentId == null);
             var bankingParent = await context.Menus.FirstAsync(x => x.Title == "امور بانکی" && x.ParentId == null);
             var systemParent = await context.Menus.FirstAsync(x => x.Title == "مدیریت سامانه" && x.ParentId == null);
-
+            var projectsParent = await context.Menus.FirstAsync(x => x.Title == "مدیریت پروژه‌ها" && x.ParentId == null);
             // ============================================
             // ۳. زیرمنوها
             // ============================================
@@ -661,7 +672,19 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "چک‌های دریافتنی", Url = "/Banking/Cheques?direction=1", Icon = "fa-solid fa-money-check-dollar", Permission = "Cheque.View", ParentId = bankingParent.Id, SortOrder = 1, IsActive = true },
                 new Menu { Title = "چک‌های پرداختنی", Url = "/Banking/Cheques?direction=2", Icon = "fa-solid fa-money-check", Permission = "Cheque.View", ParentId = bankingParent.Id, SortOrder = 2, IsActive = true },
                 new Menu { Title = "دریافت‌ها", Url = "/Banking/Payments?paymentType=1", Icon = "fa-solid fa-hand-holding-dollar", Permission = "Payment.View", ParentId = bankingParent.Id, SortOrder = 3, IsActive = true },
-                new Menu { Title = "پرداخت‌ها", Url = "/Banking/Payments?paymentType=2", Icon = "fa-solid fa-credit-card", Permission = "Payment.View", ParentId = bankingParent.Id, SortOrder = 4, IsActive = true }
+                new Menu { Title = "پرداخت‌ها", Url = "/Banking/Payments?paymentType=2", Icon = "fa-solid fa-credit-card", Permission = "Payment.View", ParentId = bankingParent.Id, SortOrder = 4, IsActive = true },
+            
+                // Projects
+                new Menu
+                {
+                    Title = "لیست پروژه‌ها",
+                    Url = "/Projects/Projects",
+                    Icon = "fa-solid fa-list-check",
+                    Permission = "Project.View",
+                    ParentId = projectsParent.Id,
+                    SortOrder = 1,
+                    IsActive = true
+                },
             };
 
             foreach (var child in children)

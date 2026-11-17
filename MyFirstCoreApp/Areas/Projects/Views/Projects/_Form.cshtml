@@ -1,5 +1,74 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿@model MyFirstCoreApp.Areas.Projects.ViewModels.Project.ProjectFormViewModel
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Title"></label>
+            <input asp-for="Title" class="form-control" placeholder="عنوان پروژه" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="Code"></label>
+            <input asp-for="Code" class="form-control ltr" placeholder="کد پروژه" />
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="ContactId"></label>
+            <select asp-for="ContactId" asp-items="Model.ContactOptions"
+                    class="form-control select2">
+                <option value="">-- بدون طرف حساب --</option>
+            </select>
+            <span asp-validation-for="ContactId" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="ProjectManagerUserTenantId"></label>
+            <select asp-for="ProjectManagerUserTenantId"
+                    asp-items="Model.ProjectManagerOptions"
+                    class="form-control select2">
+                <option value="">-- انتخاب مدیر پروژه --</option>
+            </select>
+            <span asp-validation-for="ProjectManagerUserTenantId" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="StartDate"></label>
+            <input asp-for="StartDate" type="date" class="form-control ltr" />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <label asp-for="PlannedEndDate"></label>
+            <input asp-for="PlannedEndDate" type="date" class="form-control ltr" />
+            <span asp-validation-for="PlannedEndDate" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <label asp-for="Address"></label>
+            <textarea asp-for="Address" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Address" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+    </div>
+</div>

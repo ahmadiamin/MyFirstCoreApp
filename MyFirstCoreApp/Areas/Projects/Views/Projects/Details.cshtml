@@ -1,5 +1,190 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model MyFirstCoreApp.Application.Projects.ProjectDetailsDto
+
 @{
+    ViewData["Title"] = "جزئیات پروژه";
+
+    string GetStatusName(MyFirstCoreApp.Domain.Enums.ProjectStatus status)
+    {
+        return status switch
+        {
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Draft => "پیش‌نویس",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Active => "در حال اجرا",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.OnHold => "متوقف",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Completed => "تکمیل‌شده",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Cancelled => "لغوشده",
+            _ => "نامشخص"
+        };
+    }
 }
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa fa-folder-open"></i>
+            جزئیات پروژه: @Model.Title
+        </h3>
+
+        <div class="card-tools">
+            <a asp-action="Edit" asp-route-id="@Model.Id"
+               class="btn btn-primary btn-sm">
+                <i class="fa fa-edit"></i> ویرایش
+            </a>
+
+            <a asp-action="Index" class="btn btn-secondary btn-sm">
+                <i class="fa fa-list"></i> بازگشت به فهرست
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <strong>عنوان پروژه:</strong>
+                @Model.Title
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <strong>کد پروژه:</strong>
+                <span dir="ltr">@(Model.Code ?? "-")</span>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <strong>طرف حساب:</strong>
+                @(Model.ContactName ?? "-")
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <strong>مدیر پروژه:</strong>
+                @(Model.ProjectManagerName ?? "-")
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <strong>وضعیت:</strong>
+                @GetStatusName(Model.Status)
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <strong>تاریخ شروع:</strong>
+                @(Model.StartDate?.ToString("yyyy/MM/dd") ?? "-")
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <strong>پایان برنامه‌ریزی‌شده:</strong>
+                @(Model.PlannedEndDate?.ToString("yyyy/MM/dd") ?? "-")
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <strong>تاریخ پایان واقعی:</strong>
+                @(Model.ActualEndDate?.ToString("yyyy/MM/dd") ?? "-")
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <strong>آدرس:</strong>
+                <p>@(Model.Address ?? "-")</p>
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <strong>توضیحات:</strong>
+                <p>@(Model.Description ?? "-")</p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.HoldReason))
+            {
+                <div class="col-md-12 mb-3">
+                    <strong>علت توقف:</strong>
+                    <p>@Model.HoldReason</p>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.CancellationReason))
+            {
+                <div class="col-md-12 mb-3">
+                    <strong>علت لغو:</strong>
+                    <p>@Model.CancellationReason</p>
+                </div>
+            }
+        </div>
+
+        <hr />
+
+        <h5>
+            <i class="fa fa-users"></i>
+            اعضای پروژه
+        </h5>
+
+        @if (Model.Members.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>نام عضو</th>
+                            <th>عنوان شغلی</th>
+                            <th>نقش در پروژه</th>
+                            <th>توضیحات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var member in Model.Members)
+                        {
+                            <tr>
+                                <td>@member.UserName</td>
+                                <td>@(member.JobTitle ?? "-")</td>
+                                <td>@(member.RoleTitle ?? "-")</td>
+                                <td>@(member.Notes ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">هنوز عضوی برای این پروژه ثبت نشده است.</p>
+        }
+
+        <hr />
+
+        <h5>
+            <i class="fa fa-list-check"></i>
+            مراحل پروژه
+        </h5>
+
+        @if (Model.Stages.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>ترتیب</th>
+                            <th>عنوان مرحله</th>
+                            <th>مسئول</th>
+                            <th>وضعیت</th>
+                            <th>شروع برنامه‌ریزی‌شده</th>
+                            <th>پایان برنامه‌ریزی‌شده</th>
+                            <th>الزامی</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var stage in Model.Stages)
+                        {
+                            <tr>
+                                <td>@stage.SortOrder</td>
+                                <td>@stage.Title</td>
+                                <td>@(stage.AssignedUserName ?? "-")</td>
+                                <td>@stage.Status</td>
+                                <td>@(stage.PlannedStartDate?.ToString("yyyy/MM/dd") ?? "-")</td>
+                                <td>@(stage.PlannedEndDate?.ToString("yyyy/MM/dd") ?? "-")</td>
+                                <td>@(stage.IsRequired ? "بله" : "خیر")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">هنوز مرحله‌ای برای این پروژه تعریف نشده است.</p>
+        }
+    </div>
+</div>

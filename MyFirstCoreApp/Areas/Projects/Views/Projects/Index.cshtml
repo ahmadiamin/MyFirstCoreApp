@@ -1,5 +1,169 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model List<MyFirstCoreApp.Application.Projects.ProjectListItemDto>
+
 @{
+    ViewData["Title"] = "مدیریت پروژه‌ها";
+
+    string GetStatusName(MyFirstCoreApp.Domain.Enums.ProjectStatus status)
+    {
+        return status switch
+        {
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Draft => "پیش‌نویس",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Active => "در حال اجرا",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.OnHold => "متوقف",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Completed => "تکمیل‌شده",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Cancelled => "لغوشده",
+            _ => "نامشخص"
+        };
+    }
+
+    string GetStatusClass(MyFirstCoreApp.Domain.Enums.ProjectStatus status)
+    {
+        return status switch
+        {
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Draft => "badge-secondary",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Active => "badge-success",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.OnHold => "badge-warning",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Completed => "badge-primary",
+            MyFirstCoreApp.Domain.Enums.ProjectStatus.Cancelled => "badge-danger",
+            _ => "badge-secondary"
+        };
+    }
 }
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-diagram-project"></i>
+            لیست پروژه‌ها
+        </h3>
+
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fa fa-plus"></i> پروژه جدید
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="row mb-3">
+            <div class="col-md-5 mb-2">
+                <input type="text" name="search" value="@ViewBag.Search"
+                       class="form-control"
+                       placeholder="جستجو در عنوان، کد یا طرف حساب..." />
+            </div>
+
+            <div class="col-md-3 mb-2">
+                <select name="status" class="form-control">
+                    <option value="">همه وضعیت‌ها</option>
+                    @foreach (var status in Enum.GetValues<MyFirstCoreApp.Domain.Enums.ProjectStatus>())
+                    {
+                        <option value="@((int)status)"
+                                selected="@(ViewBag.Status != null && (int)ViewBag.Status == (int)status)">
+                            @GetStatusName(status)
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2 mb-2">
+                <button type="submit" class="btn btn-info btn-block">
+                    <i class="fa fa-search"></i> جستجو
+                </button>
+            </div>
+
+            <div class="col-md-2 mb-2">
+                <a asp-action="Index" class="btn btn-secondary btn-block">
+                    پاک کردن فیلتر
+                </a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th style="width:50px">ردیف</th>
+                        <th>عنوان پروژه</th>
+                        <th>کد</th>
+                        <th>طرف حساب</th>
+                        <th>مدیر پروژه</th>
+                        <th>وضعیت</th>
+                        <th>پیشرفت مراحل</th>
+                        <th>تاریخ شروع</th>
+                        <th>پایان برنامه‌ریزی‌شده</th>
+                        <th style="width:130px">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        var index = 1;
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@index</td>
+                                <td>@item.Title</td>
+                                <td dir="ltr">@item.Code</td>
+                                <td>@(item.ContactName ?? "-")</td>
+                                <td>@(item.ProjectManagerName ?? "-")</td>
+                                <td>
+                                    <span class="badge @GetStatusClass(item.Status)">
+                                        @GetStatusName(item.Status)
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (item.StageCount > 0)
+                                    {
+                                        <span>
+                                            @item.CompletedStageCount از @item.StageCount
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">بدون مرحله</span>
+                                    }
+                                </td>
+                                <td>@item.StartDate?.ToString("yyyy/MM/dd")</td>
+                                <td>@item.PlannedEndDate?.ToString("yyyy/MM/dd")</td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-info" title="جزئیات">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+
+                                    <a asp-action="Edit" asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-primary" title="ویرایش">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">
+                                پروژه‌ای برای نمایش وجود ندارد.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-footer text-muted">
+        تعداد پروژه‌ها: @Model.Count
+    </div>
+</div>

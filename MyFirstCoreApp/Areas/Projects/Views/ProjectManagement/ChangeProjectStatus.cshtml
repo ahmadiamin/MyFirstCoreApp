@@ -1,6 +1,61 @@
-﻿namespace MyFirstCoreApp.Areas.Projects.Views.ProjectManagement
-{
-    public class ChangeProjectStatus
-    {
-    }
+﻿@model MyFirstCoreApp.Areas.Projects.ViewModels.Project.ProjectStatusFormViewModel
+
+@using MyFirstCoreApp.Domain.Enums
+
+@{
+    ViewData["Title"] = "تغییر وضعیت پروژه";
 }
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">تغییر وضعیت پروژه</h3>
+    </div>
+
+    <form asp-action="ChangeProjectStatus" method="post">
+        <div class="card-body">
+            <input asp-for="ProjectId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="form-group">
+                <label asp-for="NewStatus"></label>
+                <select asp-for="NewStatus"
+                        asp-items="Html.GetEnumSelectList<ProjectStatus>()"
+                        class="form-control">
+                </select>
+                <span asp-validation-for="NewStatus" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="HoldReason"></label>
+                <textarea asp-for="HoldReason" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="HoldReason" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="CancellationReason"></label>
+                <textarea asp-for="CancellationReason" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="CancellationReason" class="text-danger"></span>
+            </div>
+
+            <div class="alert alert-info">
+                برای انتقال پروژه به وضعیت «متوقف» یا «لغو شده»، علت مربوطه را وارد کنید.
+                تکمیل پروژه نیز منوط به تعیین تکلیف تمام مراحل الزامی است.
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                ثبت وضعیت
+            </button>
+
+            <a asp-controller="Projects"
+               asp-action="Details"
+               asp-route-id="@Model.ProjectId"
+               class="btn btn-secondary">
+                انصراف
+            </a>
+        </div>
+    </form>
+</div>
