@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Domain.Common;
@@ -10,7 +9,9 @@ using MyFirstCoreApp.Domain.Entities.Contacts;
 using MyFirstCoreApp.Domain.Entities.Identity;
 using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Domain.Entities.Invoicing;
+using MyFirstCoreApp.Domain.Entities.Projects;
 using MyFirstCoreApp.Domain.Entities.Tenancy;
+using System.Reflection;
 
 namespace MyFirstCoreApp.Infrastructure.Persistence
 {
@@ -59,6 +60,12 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         public DbSet<ContactPerson> ContactPersons { get; set; }
         public DbSet<ContactPersonNumber> ContactPersonNumbers { get; set; }
         public DbSet<CustomerPortalShare> CustomerPortalShares { get; set; }
+
+        // Projects
+        public DbSet<Project> Projects { get; set; }
+        public DbSet<ProjectMember> ProjectMembers { get; set; }
+        public DbSet<ProjectStage> ProjectStages { get; set; }
+        public DbSet<ProjectStageHistory> ProjectStageHistories { get; set; }
 
         // Inventory
         public DbSet<Unit> Units { get; set; }

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <Compile Remove="Persistence\Configurations\Banking\PaymentConfiguration.cs" />
+    <Compile Remove="Services\ProjectService.Core.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,6 +50,7 @@
 
   <ItemGroup>
     <None Include="Persistence\Configurations\Banking\PaymentConfiguration.cs" />
+    <None Include="Services\ProjectService.Core.cs" />
   </ItemGroup>
 
   <PropertyGroup>
