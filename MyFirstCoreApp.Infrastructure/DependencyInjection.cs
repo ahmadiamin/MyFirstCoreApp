@@ -86,6 +86,7 @@ public static class DependencyInjection
         services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
         services.AddScoped<ITenantSecurityService, TenantSecurityService>();
         services.AddScoped<ITenantStaffService, TenantStaffService>();
+        services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IMenuTreeService, MenuTreeService>();
 
         return services;
