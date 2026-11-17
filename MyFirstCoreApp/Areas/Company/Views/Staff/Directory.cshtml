@@ -1,0 +1,39 @@
+@model IReadOnlyList<MyFirstCoreApp.Application.Security.TenantMemberInfo>
+@{
+    ViewData["Title"] = "دفترچه‌ی تلفن داخلی";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa fa-phone"></i> دفترچه‌ی تلفن داخلی</h3>
+        <div class="card-tools" style="width:260px">
+            <input type="text" id="directorySearch" class="form-control form-control-sm" placeholder="جستجو در نام، عنوان یا داخلی..." autocomplete="off" />
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0" id="directoryTable">
+            <thead><tr><th>نام و نام خانوادگی</th><th>عنوان شغلی</th><th>تلفن داخلی</th></tr></thead>
+            <tbody>
+                @foreach (var member in Model.OrderBy(m => m.DisplayName))
+                {
+                    <tr>
+                        <td>@member.DisplayName</td>
+                        <td>@member.JobTitle</td>
+                        <td dir="ltr" class="text-right font-weight-bold">@member.InternalPhone</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('#directorySearch').on('input', function () {
+            var term = this.value.toLowerCase();
+            $('#directoryTable tbody tr').each(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(term) !== -1);
+            });
+        });
+    </script>
+}

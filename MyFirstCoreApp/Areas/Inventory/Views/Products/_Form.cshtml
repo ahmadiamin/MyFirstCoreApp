@@ -13,8 +13,15 @@
     <div class="col-md-6">
         <div class="form-group">
             <label asp-for="Code"></label>
-            <input asp-for="Code" class="form-control" placeholder="1001" />
+            <input asp-for="Code" class="form-control ltr" placeholder="کد کالا" />
+            <input asp-for="SuggestedCode" type="hidden" />
             <span asp-validation-for="Code" class="text-danger"></span>
+            @if (Model.Id == 0)
+            {
+                <small class="form-text text-muted">
+                    کد به‌صورت خودکار پیشنهاد داده شده است و می‌توانید آن را تغییر دهید.
+                </small>
+            }
         </div>
     </div>
 

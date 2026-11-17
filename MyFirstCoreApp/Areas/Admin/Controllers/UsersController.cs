@@ -13,6 +13,7 @@ using System.Text.Encodings.Web;
 namespace MyFirstCoreApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "SuperAdmin")]      // فقط مدیر سیستم؛ شرکت‌ها از ناحیه‌ی Company استفاده می‌کنند
     public class UsersController : Controller
     {
         private readonly IUserService _userService;

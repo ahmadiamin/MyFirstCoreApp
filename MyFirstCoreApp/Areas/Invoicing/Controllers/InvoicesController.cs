@@ -124,8 +124,8 @@ public class InvoicesController : Controller
 
         // تاریخ شمسی و نام‌ها سمت سرور؛ مانده فقط از InvoiceBalance
         // (قبلاً مانده بدون تخفیف تسویه حساب می‌شد)
-        var today = _timeProvider.Today(); 
-        
+        var today = _timeProvider.Today();
+
         var items = rows.Select(x => new
         {
             id = x.Id,
@@ -319,7 +319,7 @@ public class InvoicesController : Controller
 
         if (!PersianDate.TryParse(model.Date, out var date))
             ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
-        
+
         var dueDate = ParseDueDate(model);
 
         if (!ModelState.IsValid)
@@ -1054,11 +1054,11 @@ public class InvoicesController : Controller
         report["InvoiceNumber"] = invoice.Number.ToString();
         report["InvoiceDate"] = PersianDate.Format(invoice.Date);
 
-        report["ContactName"] = invoice.Contact?.Name ?? "";       
+        report["ContactName"] = invoice.Contact?.Name ?? "";
         report["ContactAddress"] = string.IsNullOrWhiteSpace(invoice.Contact?.Address)
             ? ""
             : $"آدرس: {invoice.Contact.Address}";
-        report["ContactPhone"] = invoice.Contact?.Mobile ?? invoice.Contact?.Phone ?? "";
+        report["ContactPhone"] = invoice.Contact?.Mobile?.Replace("-", "") ?? invoice.Contact?.Phone?.Replace("-", "") ?? "";
 
         report["TotalAmount"] = invoice.TotalAmount;
         var printSettings = await _context.InvoicePrintSettings
@@ -1130,7 +1130,7 @@ public class InvoicesController : Controller
             < 0 => "مانده بستانکاری ",
             _ => "حساب تسویه است"
         };
-        
+
         report["ContactBalanceTitle"] = balanceTitle;
         report["AmountInWords"] = NumToChar.NumToStr(invoice.TotalAmount.ToString()) + " ریال";
         report["Description"] = invoice.InvoiceType switch

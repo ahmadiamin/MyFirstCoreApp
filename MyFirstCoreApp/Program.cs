@@ -188,6 +188,9 @@ try
             }
 
             await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+
+            // منوهای مدیریت شرکت (کارکنان، سمت‌ها، دفترچه‌ی تلفن)؛ idempotent
+            await CompanyMenuSeeder.SeedAsync(context);
         }
         catch (Exception ex)
         {

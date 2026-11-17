@@ -37,6 +37,9 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         public DbSet<UserTenant> UserTenants { get; set; }
         public DbSet<TenantSmsSetting> TenantSmsSettings { get; set; }
         public DbSet<SystemSmsSetting> SystemSmsSettings { get; set; }
+        public DbSet<TenantRole> TenantRoles { get; set; }
+        public DbSet<TenantRolePermission> TenantRolePermissions { get; set; }
+        public DbSet<UserTenantRole> UserTenantRoles { get; set; }
 
         //Attachment
         public DbSet<Attachment> Attachments { get; set; }

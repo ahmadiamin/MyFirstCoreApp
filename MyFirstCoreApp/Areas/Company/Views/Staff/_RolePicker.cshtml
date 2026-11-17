@@ -1,0 +1,27 @@
+@model MyFirstCoreApp.Areas.Company.ViewModels.RolePickerViewModel
+
+<h5 class="mt-3"><i class="fa fa-user-shield"></i> سمت‌ها (تعیین‌کننده‌ی دسترسی)</h5>
+
+@if (!Model.RoleOptions.Any())
+{
+    <div class="alert alert-warning">
+        هنوز سمتی تعریف نشده است. ابتدا از بخش
+        <a asp-controller="Positions" asp-action="Create">سمت‌ها</a> یک سمت بسازید.
+    </div>
+}
+
+<div class="row">
+    @foreach (var role in Model.RoleOptions)
+    {
+        var inputId = "role_" + role.Id;
+        <div class="col-md-4">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="@inputId" name="SelectedRoleIds" value="@role.Id"
+                       @(Model.SelectedRoleIds.Contains(role.Id) ? "checked" : "") />
+                <label class="custom-control-label" for="@inputId">
+                    @role.Name <small class="text-muted">(@role.PermissionCount دسترسی)</small>
+                </label>
+            </div>
+        </div>
+    }
+</div>

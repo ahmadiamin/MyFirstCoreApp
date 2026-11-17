@@ -1,0 +1,29 @@
+@model MyFirstCoreApp.Areas.Company.ViewModels.PositionFormViewModel
+@{
+    ViewData["Title"] = "ویرایش سمت";
+}
+
+<div class="card card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fa fa-edit"></i> @ViewData["Title"]</h3></div>
+    <form asp-area="Company" asp-controller="Positions" asp-action="Edit" asp-route-id="@Model.Id" method="post">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <partial name="_Form" model="Model" />
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> ذخیره</button>
+            <a asp-action="Index" class="btn btn-secondary"><i class="fa fa-arrow-right"></i> انصراف</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // انتخاب/لغو همه‌ی دسترسی‌های یک گروه
+        $('.group-toggle').on('change', function () {
+            $(this).closest('.card').find('.permission-box').prop('checked', this.checked);
+        });
+    </script>
+}

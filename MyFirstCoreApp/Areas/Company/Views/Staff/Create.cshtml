@@ -1,0 +1,42 @@
+@model MyFirstCoreApp.Areas.Company.ViewModels.StaffCreateViewModel
+@{
+    ViewData["Title"] = "فرد جدید";
+}
+
+<div class="card card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fa fa-user-plus"></i> @ViewData["Title"]</h3></div>
+    <form asp-area="Company" asp-controller="Staff" asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row">
+                <div class="col-md-3"><div class="form-group"><label asp-for="FirstName"></label><input asp-for="FirstName" class="form-control" /><span asp-validation-for="FirstName" class="text-danger"></span></div></div>
+                <div class="col-md-3"><div class="form-group"><label asp-for="LastName"></label><input asp-for="LastName" class="form-control" /><span asp-validation-for="LastName" class="text-danger"></span></div></div>
+                <div class="col-md-3"><div class="form-group"><label asp-for="JobTitle"></label><input asp-for="JobTitle" class="form-control" placeholder="مثلاً منشی" /></div></div>
+                <div class="col-md-3"><div class="form-group"><label asp-for="InternalPhone"></label><input asp-for="InternalPhone" class="form-control" dir="ltr" placeholder="مثلاً 101" /><span asp-validation-for="InternalPhone" class="text-danger"></span></div></div>
+            </div>
+            <div class="row">
+                <div class="col-md-4"><div class="form-group"><label asp-for="Email"></label><input asp-for="Email" class="form-control" dir="ltr" autocomplete="off" /><span asp-validation-for="Email" class="text-danger"></span></div></div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="Password"></label>
+                        <input asp-for="Password" class="form-control" dir="ltr" autocomplete="new-password" />
+                        <small class="form-text text-muted">فقط برای حساب «جدید». اگر این ایمیل از قبل حساب دارد، رمز و نامِ حسابش تغییر نمی‌کند.</small>
+                    </div>
+                </div>
+                <div class="col-md-4"><div class="form-group"><label asp-for="PhoneNumber"></label><input asp-for="PhoneNumber" class="form-control" dir="ltr" /></div></div>
+            </div>
+
+            <partial name="_RolePicker" model="@(new MyFirstCoreApp.Areas.Company.ViewModels.RolePickerViewModel { RoleOptions = Model.RoleOptions, SelectedRoleIds = Model.SelectedRoleIds })" />
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> ثبت</button>
+            <a asp-action="Index" class="btn btn-secondary"><i class="fa fa-arrow-right"></i> انصراف</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

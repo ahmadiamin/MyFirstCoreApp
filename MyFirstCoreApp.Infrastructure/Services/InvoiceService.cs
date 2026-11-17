@@ -31,6 +31,7 @@ public class InvoiceService : IInvoiceService
     private readonly ITransactionService _transactionService;
     private readonly ISystemAccountService _systemAccounts;
     private readonly ICurrentUser _currentUser;
+    private readonly IProductCodeGenerator _productCodeGenerator;
     private readonly TimeProvider _timeProvider;
     public InvoiceService(
         IStockMovementService stockMovementService,
@@ -38,15 +39,17 @@ public class InvoiceService : IInvoiceService
         ITransactionService transactionService,
         ISystemAccountService systemAccounts,
         ICurrentUser currentUser,
-        TimeProvider timeProvider)
-    {
-        _stockMovementService = stockMovementService;
-        _context = context;
-        _transactionService = transactionService;
-        _systemAccounts = systemAccounts;
-        _currentUser = currentUser;
-        _timeProvider = timeProvider;
-    }
+        TimeProvider timeProvider,
+        IProductCodeGenerator productCodeGenerator)
+        {
+            _stockMovementService = stockMovementService;
+            _context = context;
+            _transactionService = transactionService;
+            _systemAccounts = systemAccounts;
+            _currentUser = currentUser;
+            _timeProvider = timeProvider;
+            _productCodeGenerator = productCodeGenerator;
+        }
 
     // ============================================
     // شماره‌گذاری
@@ -69,7 +72,7 @@ public class InvoiceService : IInvoiceService
 
     public Task<Invoice> CreateAsync(InvoiceRequest request, int tenantId)
     {
-        return _context.ExecuteInTransactionAsync(async () =>
+        return _context.ExecuteInTransactionAsync(IsolationLevel.Serializable, async () =>
         {
             ValidateRequest(request);
 
@@ -751,6 +754,7 @@ public class InvoiceService : IInvoiceService
                 {
                     TenantId = tenantId,
                     Name = item.NewProductName!.Trim(),
+                    Code = await _productCodeGenerator.GenerateNextCodeAsync(tenantId),
                     UnitId = defaultUnit.Id,
                     SalePrice = item.UnitPrice,
                     LastPurchasePrice = 0,

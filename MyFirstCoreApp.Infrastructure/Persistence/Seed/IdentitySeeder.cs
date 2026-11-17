@@ -16,7 +16,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-            await context.Database.MigrateAsync();
+            //await context.Database.MigrateAsync();
             await SeedRolesAsync(roleManager);
             await SeedTenantOwnerUsersAsync(context, userManager, roleManager);
             await SeedPermissionsAsync(context);
@@ -41,7 +41,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
             {
                 if (!await roleManager.RoleExistsAsync(roleName))
                 {
-                    var result = await roleManager.CreateAsync(                        new IdentityRole(roleName));
+                    var result = await roleManager.CreateAsync(new IdentityRole(roleName));
                     if (!result.Succeeded)
                     {
                         throw new Exception(
@@ -487,8 +487,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 string.IsNullOrWhiteSpace(password) ||
                 string.IsNullOrWhiteSpace(fullName))
             {
-                throw new Exception(
-                    "اطلاعات SeedAdmin در User Secrets تنظیم نشده است.");
+                throw new InvalidOperationException("اطلاعات SeedAdmin در تنظیمات برنامه تعریف نشده است. " + "مقادیر Email، Password و FullName را بررسی کنید.");
             }
 
             var adminRole = await roleManager.FindByNameAsync("SuperAdmin");
@@ -596,7 +595,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
 
                 // اطلاعات پایه
                 new Menu { Title = "شرکت‌ها", Url = "/Tenancy/Tenant", Icon = "fa-solid fa-building", Permission = "Tenancy.View", ParentId = baseParent.Id, SortOrder = 1, IsActive = true },
-
+                
                 // حسابداری
                 new Menu { Title = "دسته‌بندی حساب‌ها", Url = "/Accounting/AccountCategories", Icon = "fa-solid fa-folder", Permission = "AccountCategory.View", ParentId = accountingParent.Id, SortOrder = 1, IsActive = true },
                 new Menu { Title = "حساب‌ها", Url = "/Accounting/Accounts", Icon = "fa-solid fa-building-columns", Permission = "Account.View", ParentId = accountingParent.Id, SortOrder = 2, IsActive = true },

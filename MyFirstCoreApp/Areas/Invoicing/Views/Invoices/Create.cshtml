@@ -121,6 +121,7 @@
             var InvoiceType = @((int)(Model.InvoiceType));
             var showStock = false;
             var ms = null;
+            var currentQuery = '';
 
             function updateStockDisplay(item) {
                 var $stock = $row.find('.product-stock');
@@ -139,13 +140,14 @@
                 );
             }
 
-            function loadProducts() {
+            function loadProducts(query) {
                 var selectedWarehouseId = $row.find('.warehouse-select').val();
 
                 $.ajax({
                     url: '/Invoicing/Invoices/SearchProducts',
                     type: 'GET',
                     data: {
+                        q: query || '',
                         invoiceType: InvoiceType,
                         warehouseId: selectedWarehouseId || null
                     },
@@ -159,6 +161,7 @@
                                 id: p.id,
                                 name: p.name,
                                 code: p.code,
+                                searchText: [p.name, p.code].filter(Boolean).join(' '),
                                 salePrice: p.salePrice,
                                 unitName: p.unitName,
                                 taxRate: p.taxRate,
@@ -183,7 +186,7 @@
                             ms = $('#' + containerId).magicSuggest({
                                 data: data,
                                 valueField: 'id',
-                                displayField: 'name',
+                                displayField: 'searchText',
                                 allowFreeEntries: true,
                                 maxSelection: 1,
                                 resultAsString: false,
@@ -318,6 +321,25 @@
                                     updateStockDisplay(null);
                                 }
                             });
+                            
+                            // جست‌وجوی پویا با متن تایپ‌شده
+                            var searchTimeout;
+
+                            $(ms).on('keyup', function (e) {
+                                if (e.key === 'Enter' || e.keyCode === 13) return;
+
+                                clearTimeout(searchTimeout);
+
+                                searchTimeout = setTimeout(function () {
+                                    var inputEl = $('#' + containerId).find('input')[0];
+
+                                    currentQuery = inputEl && inputEl.value
+                                        ? inputEl.value.trim()
+                                        : '';
+
+                                    loadProducts(currentQuery);
+                                }, 300);
+                            });
 
                             // نمایش موجودی کالای اولیه در حالت ویرایش
                             if (initialId && initialId > 0) {
@@ -341,21 +363,21 @@
 
                                     updateStockDisplay(null);
                                 } else {
-                                    loadProducts();
+                                    loadProducts(currentQuery);
                                 }
                             });
 
                             // با تغییر انبار، موجودی کالاها مجدداً دریافت می‌شود.
                             $row.off('change.productStock', '.warehouse-select');
                             $row.on('change.productStock', '.warehouse-select', function () {
-                                loadProducts();
+                                loadProducts(currentQuery);
                             });
                         }
                     }
                 });
             }
 
-            loadProducts();
+            loadProducts(currentQuery);
         }
         $(document).ready(function () {
 

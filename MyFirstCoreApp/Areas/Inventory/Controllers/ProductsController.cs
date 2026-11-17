@@ -11,7 +11,6 @@ using System.Data;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Application.Inventory;
 using MyFirstCoreApp.Domain.Enums;
-using MyFirstCoreApp.Application.Common.Utilities;
 namespace MyFirstCoreApp.Areas.Inventory.Controllers;
 
 [Area("Inventory")]
@@ -21,15 +20,18 @@ public class ProductsController : Controller
     private readonly ApplicationDbContext _context;
     private readonly ICurrentTenant _currentTenant;
     private readonly IStockMovementService _stockMovementService;
+    private readonly IProductCodeGenerator _productCodeGenerator;
 
     public ProductsController(
         ApplicationDbContext context,
         ICurrentTenant currentTenant,
-        IStockMovementService stockMovementService  )
+        IStockMovementService stockMovementService,
+        IProductCodeGenerator productCodeGenerator)
     {
         _context = context;
         _currentTenant = currentTenant;
         _stockMovementService = stockMovementService;
+        _productCodeGenerator = productCodeGenerator;
     }
 
     // GET: /Inventory/Products
@@ -85,10 +87,21 @@ public class ProductsController : Controller
     }
 
     // GET: /Inventory/Products/Create
+    [Authorize(Policy = "Product.Create")]
     public async Task<IActionResult> Create()
     {
+        var tenantId = _currentTenant.TenantId;
+
+        if (!tenantId.HasValue)
+            return Forbid();
+
+        var suggestedCode =
+            await _productCodeGenerator.GenerateNextCodeAsync(tenantId.Value);
+
         var model = new ProductFormViewModel
         {
+            Code = suggestedCode,
+            SuggestedCode = suggestedCode,
             UnitOptions = await GetUnitOptionsAsync(),
             CategoryOptions = await GetCategoryOptionsAsync(),
             WarehouseOptions = await GetWarehouseOptionsAsync()
@@ -107,6 +120,7 @@ public class ProductsController : Controller
 
         if (!tenantId.HasValue)
             return Forbid();
+        model.Code = string.IsNullOrWhiteSpace(model.Code) ? null : model.Code.Trim();
 
         // اعتبارسنجی موجودی اولیه
         if (!model.TrackInventory && model.OpeningQuantity > 0)
@@ -138,7 +152,7 @@ public class ProductsController : Controller
             model.UnitOptions = await GetUnitOptionsAsync();
             model.CategoryOptions = await GetCategoryOptionsAsync();
             model.WarehouseOptions = await GetWarehouseOptionsAsync();
-
+            model.SuggestedCode = await _productCodeGenerator.GenerateNextCodeAsync(tenantId.Value);
             return View(model);
         }
 
@@ -146,7 +160,7 @@ public class ProductsController : Controller
         {
             TenantId = tenantId.Value,
             Name = model.Name.Trim(),
-            Code = model.Code?.Trim(),
+            Code = null,
             Barcode = model.Barcode?.Trim(),
             Description = model.Description?.Trim(),
             UnitId = model.UnitId,
@@ -161,10 +175,30 @@ public class ProductsController : Controller
 
         try
         {
-            await _context.ExecuteInTransactionAsync(
-                IsolationLevel.Serializable,
-                async () =>
+            await _context.ExecuteInTransactionAsync(IsolationLevel.Serializable, async () =>
                 {
+                    // تولید کد خودکار یا بررسی کد دستی
+                    var code = model.Code;
+
+                    // اگر کد خالی باشد یا کاربر کد پیشنهادی را تغییر نداده باشد
+                    if (string.IsNullOrWhiteSpace(code) ||
+                        string.Equals(code, model.SuggestedCode, StringComparison.Ordinal))
+                    {
+                        code = await _productCodeGenerator.GenerateNextCodeAsync(tenantId.Value);
+                    }
+
+                    // بررسی تکراری نبودن کد، حتی در کالاهای حذف‌شده
+                    if (await _context.Products
+                        .IgnoreQueryFilters()
+                        .AnyAsync(x =>
+                            x.TenantId == tenantId.Value &&
+                            x.Code == code))
+                    {
+                        throw new InvalidOperationException("این کد کالا قبلاً ثبت شده است. لطفاً کد دیگری وارد کنید.");
+                    }
+
+                    entity.Code = code;
+
                     // 1. ثبت کالا
                     _context.Products.Add(entity);
 
@@ -177,41 +211,28 @@ public class ProductsController : Controller
                         var movementRequest = new StockMovementRequest
                         {
                             Date = DateOnly.FromDateTime(DateTime.Today),
-
                             MovementType = (int)StockMovementType.Opening,
-
                             SourceWarehouseId = null,
-
-                            DestinationWarehouseId =
-                                model.OpeningWarehouseId,
-
-                            Description =
-                                $"موجودی اولیه هنگام تعریف کالا: {entity.Name}",
-
+                            DestinationWarehouseId = model.OpeningWarehouseId,
+                            Description = $"موجودی اولیه هنگام تعریف کالا: {entity.Name}",
                             ReferenceInvoiceId = null,
-
                             Items = new List<StockMovementItemRequest>
                             {
-                            new()
-                            {
-                                ProductId = entity.Id,
-                                Quantity = model.OpeningQuantity,
-                                UnitCost = model.OpeningUnitCost,
-                                Description = "موجودی افتتاحیه"
-                            }
+                                new()
+                                {
+                                    ProductId = entity.Id,
+                                    Quantity = model.OpeningQuantity,
+                                    UnitCost = model.OpeningUnitCost,
+                                    Description = "موجودی افتتاحیه"
+                                }
                             }
                         };
 
                         // ایجاد سند پیش‌نویس
-                        var movementId =
-                            await _stockMovementService.CreateAsync(
-                                movementRequest,
-                                tenantId.Value);
+                        var movementId = await _stockMovementService.CreateAsync(movementRequest, tenantId.Value);
 
                         // قطعی کردن سند
-                        await _stockMovementService.PostAsync(
-                            movementId,
-                            tenantId.Value);
+                        await _stockMovementService.PostAsync(movementId, tenantId.Value);
                     }
                 });
 
@@ -223,14 +244,10 @@ public class ProductsController : Controller
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(
-                string.Empty,
-                ex.Message);
-
+            ModelState.AddModelError(string.Empty, ex.Message);
             model.UnitOptions = await GetUnitOptionsAsync();
             model.CategoryOptions = await GetCategoryOptionsAsync();
             model.WarehouseOptions = await GetWarehouseOptionsAsync();
-
             return View(model);
         }
     }
@@ -278,6 +295,19 @@ public class ProductsController : Controller
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
         if (id != model.Id) return BadRequest();
+
+        model.Code = string.IsNullOrWhiteSpace(model.Code) ? null : model.Code.Trim();
+
+        if (model.Code != null &&
+            await _context.Products
+                .IgnoreQueryFilters()
+                .AnyAsync(x =>
+                    x.TenantId == tenantId.Value &&
+                    x.Id != id &&
+                    x.Code == model.Code))
+        {
+            ModelState.AddModelError(nameof(model.Code), "این کد کالا قبلاً برای کالای دیگری ثبت شده است.");
+        }
 
         if (!ModelState.IsValid)
         {

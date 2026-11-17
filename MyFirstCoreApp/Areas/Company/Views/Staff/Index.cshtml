@@ -1,0 +1,87 @@
+@model IReadOnlyList<MyFirstCoreApp.Application.Security.TenantMemberInfo>
+@{
+    ViewData["Title"] = "کارکنان";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa fa-users"></i> کارکنان شرکت</h3>
+        <div class="card-tools">
+            <a asp-action="Directory" class="btn btn-outline-secondary btn-sm"><i class="fa fa-phone"></i> دفترچه‌ی تلفن داخلی</a>
+            <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> فرد جدید</a>
+        </div>
+    </div>
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>نام و نام خانوادگی</th>
+                    <th>عنوان شغلی</th>
+                    <th>تلفن داخلی</th>
+                    <th>موبایل</th>
+                    <th>ایمیل</th>
+                    <th>سمت‌ها (دسترسی)</th>
+                    <th style="width:170px">عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var member in Model)
+                {
+                    <tr class="@(member.UserIsActive ? "" : "text-muted")">
+                        <td>
+                            <b>@member.DisplayName</b>
+                            @if (member.IsOwner) { <span class="badge badge-success">مالک</span> }
+                            @if (!member.UserIsActive) { <span class="badge badge-secondary">غیرفعال</span> }
+                        </td>
+                        <td>@member.JobTitle</td>
+                        <td dir="ltr" class="text-right">@member.InternalPhone</td>
+                        <td dir="ltr" class="text-right">@member.PhoneNumber</td>
+                        <td dir="ltr" class="text-right">@member.Email</td>
+                        <td>
+                            @if (member.IsOwner)
+                            {
+                                <span class="text-muted">همه‌ی دسترسی‌ها</span>
+                            }
+                            else if (!member.Roles.Any())
+                            {
+                                <span class="text-danger small">بدون سمت (هیچ دسترسی‌ای ندارد)</span>
+                            }
+                            else
+                            {
+                                foreach (var role in member.Roles)
+                                {
+                                    <span class="badge badge-info">@role.RoleName</span>
+                                }
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@member.UserId" class="btn btn-sm btn-outline-primary"><i class="fa fa-edit"></i> ویرایش</a>
+                            @if (!member.IsOwner)
+                            {
+                                <form asp-action="Remove" asp-route-id="@member.UserId" method="post" class="d-inline"
+                                      onsubmit="return confirm('این فرد از شرکت حذف شود؟ حساب کاربری‌اش باقی می‌ماند.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa fa-user-minus"></i></button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -570,8 +570,15 @@ public class InvoiceServiceTests : IDisposable
     // Arrange / Helpers
     // ---------------------------------------------------------------
 
-    private InvoiceService NewService(ApplicationDbContext context) =>
-        new(new StockMovementService(context, new WarehouseService(context)), context, new TransactionService(context), new SystemAccountService(context), _db.User, _time); 
+    private InvoiceService NewService(ApplicationDbContext context) 
+        => new(new StockMovementService(context,new WarehouseService(context)),
+            context,
+            new TransactionService(context),
+            new SystemAccountService(context),
+            _db.User,
+            _time,
+            new ProductCodeGenerator(context));
+
     private async Task<Invoice> CreateAsync(InvoiceRequest request)
     {
         await using var context = _db.NewContext();

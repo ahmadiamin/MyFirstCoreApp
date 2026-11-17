@@ -70,4 +70,6 @@ public class ProductFormViewModel
     public decimal OpeningUnitCost { get; set; }
 
     public List<SelectListItem> WarehouseOptions { get; set; } = new();
+    [MaxLength(50)]
+    public string? SuggestedCode { get; set; }
 }

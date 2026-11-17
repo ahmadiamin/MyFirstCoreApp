@@ -1,4 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MyFirstCoreApp.Application.Common.Interfaces;
+using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Application.Security;
 using MyFirstCoreApp.Domain.Entities.Identity;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Services.Interfaces;
@@ -9,76 +12,46 @@ namespace MyFirstCoreApp.Authorization
     public class PermissionService : IPermissionService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IPermissionEvaluator _evaluator;
+        private readonly ICurrentTenant _currentTenant;
+        private readonly ITenantSecurityService _tenantSecurity;
 
-        private HashSet<string>? _permissions;
-
-        public PermissionService(ApplicationDbContext context)
+        public PermissionService(
+            ApplicationDbContext context,
+            IPermissionEvaluator evaluator,
+            ICurrentTenant currentTenant,
+            ITenantSecurityService tenantSecurity)
         {
             _context = context;
+            _evaluator = evaluator;
+            _currentTenant = currentTenant;
+            _tenantSecurity = tenantSecurity;
         }
 
         // =========================
         // Authorization
         // =========================
 
-        public async Task<bool> HasPermissionAsync(
+        /// <summary>
+        /// همان تصمیمِ Policyها (IPermissionEvaluator): مدیر سیستم / سطح حساب / سراسری (نقش‌های سراسری) /
+        /// سطح شرکت (مالک یا سمت‌های کاربر «در شرکت فعال»). قبلاً فقط نقش‌های سراسری خوانده می‌شد و برای
+        /// اعضای دارای سمت، دکمه‌ها و بخش‌های Viewها اشتباه پنهان می‌شد.
+        /// </summary>
+        public Task<bool> HasPermissionAsync(
             ClaimsPrincipal user,
             string permission)
         {
-            if (user.Identity?.IsAuthenticated != true)
-                return false;
+            var subject = new PermissionSubject(
+                IsAuthenticated: user.Identity?.IsAuthenticated == true,
+                IsSuperAdmin: user.IsInRole("SuperAdmin"),
+                UserId: user.FindFirstValue(ClaimTypes.NameIdentifier),
+                TenantId: _currentTenant.TenantId);
 
-            if (user.IsInRole("SuperAdmin"))
-                return true;
-
-            await LoadPermissionsAsync(user);
-
-            return _permissions!.Contains(permission);
-        }
-
-        private async Task LoadPermissionsAsync(
-            ClaimsPrincipal user)
-        {
-            // اگر قبلاً در همین Request خوانده شده،
-            // دوباره از دیتابیس نخوان
-            if (_permissions != null)
-                return;
-
-            _permissions = new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase);
-
-            var userId = user.FindFirstValue(
-                ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userId))
-                return;
-
-            var permissions = await _context.UserRoles
-                .Where(x => x.UserId == userId)
-                .Join(
-                    _context.RolePermissions,
-                    userRole => userRole.RoleId,
-                    rolePermission => rolePermission.RoleId,
-                    (userRole, rolePermission) =>
-                        rolePermission.PermissionId)
-                .Join(
-                    _context.Permissions,
-                    permissionId => permissionId,
-                    permission => permission.Id,
-                    (permissionId, permission) => permission)
-                .Where(x => x.IsActive)
-                .Select(x => x.Name)
-                .Distinct()
-                .ToListAsync();
-
-            foreach (var item in permissions)
-            {
-                _permissions.Add(item);
-            }
+            return _evaluator.HasAsync(subject, permission);
         }
 
         // =========================
-        // Permission Management
+        // Permission Management (کاتالوگ سراسری؛ فقط مدیر سیستم)
         // =========================
 
         public async Task<List<Permission>> GetAllAsync()
@@ -132,7 +105,24 @@ namespace MyFirstCoreApp.Authorization
                 throw new KeyNotFoundException(
                     "Permission پیدا نشد.");
 
-            existing.Name = permission.Name.Trim();
+            var newName = permission.Name.Trim();
+
+            // نکته: کنترلر معمولاً نام را «روی همین نمونه‌ی ردیابی‌شده» عوض کرده و بعد UpdateAsync را صدا می‌زند؛
+            // پس existing.Name همان مقدار جدید است. نامِ قبلی را باید از «مقدار اصلی در دیتابیس» خواند.
+            var originalName = _context.Entry(existing).Property(p => p.Name).OriginalValue;
+
+            // سمت‌های شرکت‌ها دسترسی را با «نام» نگه می‌دارند. تغییر نامِ دسترسیِ مورداستفاده،
+            // دسترسی همه‌ی افرادِ آن سمت‌ها را بی‌صدا قطع می‌کرد؛ پس رد می‌شود.
+            // (نام نمایشی، گروه و فعال/غیرفعال بودن آزاد است؛ غیرفعال کردن هم همه‌جا فوراً اثر دارد.)
+            if (!string.Equals(originalName, newName, StringComparison.Ordinal)
+                && await _tenantSecurity.IsPermissionInUseAsync(originalName))
+            {
+                throw new InvalidOperationException(
+                    $"دسترسی «{originalName}» در سمت‌های شرکت‌ها استفاده شده و تغییر نام ندارد. " +
+                    "برای جایگزینی، دسترسی جدید بسازید و این را غیرفعال کنید.");
+            }
+
+            existing.Name = newName;
 
             existing.DisplayName =
                 permission.DisplayName?.Trim();

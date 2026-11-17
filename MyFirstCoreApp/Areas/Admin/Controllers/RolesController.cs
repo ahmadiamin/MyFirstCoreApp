@@ -7,6 +7,7 @@ using MyFirstCoreApp.Services.Interfaces;
 namespace MyFirstCoreApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "SuperAdmin")]      // فقط مدیر سیستم؛ شرکت‌ها از ناحیه‌ی Company استفاده می‌کنند
     public class RolesController : Controller
     {
         private readonly IRoleService _roleService;

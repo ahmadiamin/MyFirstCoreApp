@@ -5,6 +5,7 @@ using MyFirstCoreApp.Services.Interfaces;
 
 namespace MyFirstCoreApp.Areas.Admin.Controllers
 {
+    /// <summary>کاتالوگ سراسری دسترسی‌ها (فقط مدیر سیستم؛ دسترسی‌های Permission.* سراسری‌اند).</summary>
     [Area("Admin")]
     public class PermissionsController : Controller
     {
@@ -109,7 +110,17 @@ namespace MyFirstCoreApp.Areas.Admin.Controllers
             permission.GroupName = model.GroupName;
             permission.IsActive = model.IsActive;
 
-            await _permissionService.UpdateAsync(permission);
+            try
+            {
+                await _permissionService.UpdateAsync(permission);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // مثلاً تغییر نامِ دسترسیِ در‌حال‌استفاده در سمت‌های شرکت‌ها
+                ModelState.AddModelError(nameof(model.Name), ex.Message);
+
+                return View(model);
+            }
 
             return RedirectToAction(nameof(Index));
         }
