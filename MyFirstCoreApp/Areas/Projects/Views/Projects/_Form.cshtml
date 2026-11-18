@@ -43,7 +43,11 @@
     <div class="col-md-6">
         <div class="form-group">
             <label asp-for="StartDate"></label>
-            <input asp-for="StartDate" type="date" class="form-control ltr" />
+            <input asp-for="StartDate"
+                   class="form-control datepicker"
+                   placeholder="۱۴۰۵/۰۱/۱۵"
+                   autocomplete="off"
+                   dir="ltr" />
             <span asp-validation-for="StartDate" class="text-danger"></span>
         </div>
     </div>
@@ -51,7 +55,11 @@
     <div class="col-md-6">
         <div class="form-group">
             <label asp-for="PlannedEndDate"></label>
-            <input asp-for="PlannedEndDate" type="date" class="form-control ltr" />
+            <input asp-for="PlannedEndDate"
+                   class="form-control datepicker"
+                   placeholder="۱۴۰۵/۰۱/۱۵"
+                   autocomplete="off"
+                   dir="ltr" />
             <span asp-validation-for="PlannedEndDate" class="text-danger"></span>
         </div>
     </div>

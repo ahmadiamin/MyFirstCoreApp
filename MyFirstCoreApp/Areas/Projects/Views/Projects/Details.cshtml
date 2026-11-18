@@ -1,190 +1,547 @@
 ﻿@model MyFirstCoreApp.Application.Projects.ProjectDetailsDto
+@using MyFirstCoreApp.Application.Common.Utilities
+@using MyFirstCoreApp.Domain.Enums
+@using System.Text.Json
+
+@inject Microsoft.AspNetCore.Authorization.IAuthorizationService AuthorizationService
 
 @{
     ViewData["Title"] = "جزئیات پروژه";
 
-    string GetStatusName(MyFirstCoreApp.Domain.Enums.ProjectStatus status)
+    string GetProjectStatusName(ProjectStatus status) => status switch
     {
-        return status switch
-        {
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Draft => "پیش‌نویس",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Active => "در حال اجرا",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.OnHold => "متوقف",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Completed => "تکمیل‌شده",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Cancelled => "لغوشده",
-            _ => "نامشخص"
-        };
-    }
+        ProjectStatus.Draft => "پیش‌نویس",
+        ProjectStatus.Active => "در حال اجرا",
+        ProjectStatus.OnHold => "متوقف",
+        ProjectStatus.Completed => "تکمیل‌شده",
+        ProjectStatus.Cancelled => "لغوشده",
+        _ => "نامشخص"
+    };
+
+    var canEditProject = (await AuthorizationService.AuthorizeAsync(User, null, "Project.Edit")).Succeeded;
+    var canChangeProjectStatus = (await AuthorizationService.AuthorizeAsync(User, null, "Project.Status.Change")).Succeeded;
+    var canManageMembers = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectMember.Manage")).Succeeded;
+    var canManageStages = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectStage.Manage")).Succeeded;
+    var canChangeStageStatus = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectStage.Status.Change")).Succeeded;
+
+    var membersJson = JsonSerializer.Serialize(Model.Members, new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+
+    var stagesJson = JsonSerializer.Serialize(Model.Stages, new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
 }
 
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <h3 class="card-title mb-2 mb-md-0">
             <i class="fa fa-folder-open"></i>
             جزئیات پروژه: @Model.Title
         </h3>
 
-        <div class="card-tools">
-            <a asp-action="Edit" asp-route-id="@Model.Id"
-               class="btn btn-primary btn-sm">
-                <i class="fa fa-edit"></i> ویرایش
-            </a>
-
-            <a asp-action="Index" class="btn btn-secondary btn-sm">
+        <div class="card-tools d-flex flex-wrap">
+            @if (canEditProject)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-sm ml-1 mb-1">
+                    <i class="fa fa-edit"></i> ویرایش
+                </a>
+            }
+            @if (canChangeProjectStatus)
+            {
+                <a asp-controller="ProjectManagement" asp-action="ChangeProjectStatus"
+                   asp-route-projectId="@Model.Id" class="btn btn-warning btn-sm ml-1 mb-1">
+                    <i class="fa fa-exchange-alt"></i> تغییر وضعیت پروژه
+                </a>
+            }
+            <a asp-action="Index" class="btn btn-secondary btn-sm mb-1">
                 <i class="fa fa-list"></i> بازگشت به فهرست
             </a>
         </div>
     </div>
 
     <div class="card-body">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Success"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="بستن"><span aria-hidden="true">&times;</span></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="بستن"><span aria-hidden="true">&times;</span></button>
+            </div>
+        }
+
         <div class="row">
-            <div class="col-md-6 mb-3">
-                <strong>عنوان پروژه:</strong>
-                @Model.Title
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <strong>کد پروژه:</strong>
-                <span dir="ltr">@(Model.Code ?? "-")</span>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <strong>طرف حساب:</strong>
-                @(Model.ContactName ?? "-")
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <strong>مدیر پروژه:</strong>
-                @(Model.ProjectManagerName ?? "-")
-            </div>
-
+            <div class="col-md-6 mb-3"><strong>عنوان پروژه:</strong> @Model.Title</div>
+            <div class="col-md-6 mb-3"><strong>کد پروژه:</strong> <span dir="ltr">@(Model.Code ?? "-")</span></div>
+            <div class="col-md-6 mb-3"><strong>طرف حساب:</strong> @(Model.ContactName ?? "-")</div>
+            <div class="col-md-6 mb-3"><strong>مدیر پروژه:</strong> @(Model.ProjectManagerName ?? "-")</div>
             <div class="col-md-6 mb-3">
                 <strong>وضعیت:</strong>
-                @GetStatusName(Model.Status)
+                <span class="badge badge-info">@GetProjectStatusName(Model.Status)</span>
             </div>
-
-            <div class="col-md-6 mb-3">
-                <strong>تاریخ شروع:</strong>
-                @(Model.StartDate?.ToString("yyyy/MM/dd") ?? "-")
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <strong>پایان برنامه‌ریزی‌شده:</strong>
-                @(Model.PlannedEndDate?.ToString("yyyy/MM/dd") ?? "-")
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <strong>تاریخ پایان واقعی:</strong>
-                @(Model.ActualEndDate?.ToString("yyyy/MM/dd") ?? "-")
-            </div>
-
-            <div class="col-md-12 mb-3">
-                <strong>آدرس:</strong>
-                <p>@(Model.Address ?? "-")</p>
-            </div>
-
-            <div class="col-md-12 mb-3">
-                <strong>توضیحات:</strong>
-                <p>@(Model.Description ?? "-")</p>
-            </div>
+            <div class="col-md-6 mb-3"><strong>تاریخ شروع:</strong> @(PersianDate.Format(Model.StartDate) ?? "-")</div>
+            <div class="col-md-6 mb-3"><strong>پایان برنامه‌ریزی‌شده:</strong> @(PersianDate.Format(Model.PlannedEndDate) ?? "-")</div>
+            <div class="col-md-6 mb-3"><strong>تاریخ پایان واقعی:</strong> @(PersianDate.Format(Model.ActualEndDate) ?? "-")</div>
+            <div class="col-md-12 mb-3"><strong>آدرس:</strong><p class="mb-0">@(Model.Address ?? "-")</p></div>
+            <div class="col-md-12 mb-3"><strong>توضیحات:</strong><p class="mb-0">@(Model.Description ?? "-")</p></div>
 
             @if (!string.IsNullOrWhiteSpace(Model.HoldReason))
             {
-                <div class="col-md-12 mb-3">
-                    <strong>علت توقف:</strong>
-                    <p>@Model.HoldReason</p>
-                </div>
+                <div class="col-md-12 mb-3"><strong>علت توقف:</strong><p class="mb-0">@Model.HoldReason</p></div>
             }
-
             @if (!string.IsNullOrWhiteSpace(Model.CancellationReason))
             {
-                <div class="col-md-12 mb-3">
-                    <strong>علت لغو:</strong>
-                    <p>@Model.CancellationReason</p>
-                </div>
+                <div class="col-md-12 mb-3"><strong>علت لغو:</strong><p class="mb-0">@Model.CancellationReason</p></div>
             }
         </div>
 
         <hr />
 
-        <h5>
-            <i class="fa fa-users"></i>
-            اعضای پروژه
-        </h5>
-
-        @if (Model.Members.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>نام عضو</th>
-                            <th>عنوان شغلی</th>
-                            <th>نقش در پروژه</th>
-                            <th>توضیحات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var member in Model.Members)
-                        {
-                            <tr>
-                                <td>@member.UserName</td>
-                                <td>@(member.JobTitle ?? "-")</td>
-                                <td>@(member.RoleTitle ?? "-")</td>
-                                <td>@(member.Notes ?? "-")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <section class="mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+                <h5 class="mb-2 mb-md-0"><i class="fa fa-users"></i> اعضای پروژه</h5>
+                @if (canManageMembers)
+                {
+                    <a asp-controller="ProjectManagement" asp-action="AddMember"
+                       asp-route-projectId="@Model.Id" class="btn btn-primary btn-sm">
+                        <i class="fa fa-user-plus"></i> افزودن عضو
+                    </a>
+                }
             </div>
-        }
-        else
-        {
-            <p class="text-muted">هنوز عضوی برای این پروژه ثبت نشده است.</p>
-        }
+            <div id="memberCount" class="text-muted small mb-2"></div>
+            <div id="membersGrid" class="ag-theme-alpine d-none d-md-block" style="width:100%;height:320px;"></div>
+            <div id="mobileMembers" class="d-md-none"></div>
+        </section>
 
         <hr />
 
-        <h5>
-            <i class="fa fa-list-check"></i>
-            مراحل پروژه
-        </h5>
-
-        @if (Model.Stages.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th>ترتیب</th>
-                            <th>عنوان مرحله</th>
-                            <th>مسئول</th>
-                            <th>وضعیت</th>
-                            <th>شروع برنامه‌ریزی‌شده</th>
-                            <th>پایان برنامه‌ریزی‌شده</th>
-                            <th>الزامی</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var stage in Model.Stages)
-                        {
-                            <tr>
-                                <td>@stage.SortOrder</td>
-                                <td>@stage.Title</td>
-                                <td>@(stage.AssignedUserName ?? "-")</td>
-                                <td>@stage.Status</td>
-                                <td>@(stage.PlannedStartDate?.ToString("yyyy/MM/dd") ?? "-")</td>
-                                <td>@(stage.PlannedEndDate?.ToString("yyyy/MM/dd") ?? "-")</td>
-                                <td>@(stage.IsRequired ? "بله" : "خیر")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <section>
+            <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+                <h5 class="mb-2 mb-md-0"><i class="fa fa-list-check"></i> مراحل پروژه</h5>
+                @if (canManageStages)
+                {
+                    <a asp-controller="ProjectManagement" asp-action="CreateStage"
+                       asp-route-projectId="@Model.Id" class="btn btn-primary btn-sm">
+                        <i class="fa fa-plus"></i> افزودن مرحله
+                    </a>
+                }
             </div>
-        }
-        else
-        {
-            <p class="text-muted">هنوز مرحله‌ای برای این پروژه تعریف نشده است.</p>
-        }
+            <div id="stageCount" class="text-muted small mb-2"></div>
+            <div id="stagesGrid" class="ag-theme-alpine d-none d-md-block" style="width:100%;height:420px;"></div>
+            <div id="mobileStages" class="d-md-none"></div>
+        </section>
     </div>
 </div>
+
+@Html.AntiForgeryToken()
+
+<style>
+    .detail-mobile-card {
+        border: 1px solid #e3e6ea;
+        border-radius: 7px;
+        background: #fff;
+        margin-bottom: 10px;
+        padding: 12px;
+        overflow-wrap: anywhere;
+    }
+
+        .detail-mobile-card .detail-line {
+            color: #626b73;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .detail-mobile-card .detail-card-title {
+            font-weight: 600;
+            color: #343a40;
+        }
+
+    .stage-history {
+        border-top: 1px solid #eee;
+        margin-top: 10px;
+        padding-top: 8px;
+    }
+
+    .stage-history-item {
+        background: #f8f9fa;
+        border-radius: 5px;
+        padding: 8px;
+        margin-top: 6px;
+        font-size: 12px;
+    }
+
+    .detail-actions .btn, .detail-mobile-card .btn {
+        margin: 2px;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const projectId = @Model.Id;
+            const memberRows = @Html.Raw(membersJson);
+            const stageRows = @Html.Raw(stagesJson);
+
+            const permissions = {
+                manageMembers: @(canManageMembers ? "true" : "false"),
+                manageStages: @(canManageStages ? "true" : "false"),
+                changeStageStatus: @(canChangeStageStatus ? "true" : "false")
+            };
+
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            const projectManagementBase = '/Projects/ProjectManagement';
+
+            function esc(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function persianNumber(value) {
+                if (window.AgGridHelper && typeof AgGridHelper.toPersianNumber === 'function') {
+                    return AgGridHelper.toPersianNumber(value);
+                }
+                return String(value ?? '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+            }
+
+            function formatDate(value) {
+                if (!value) return '-';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return '-';
+                return new Intl.DateTimeFormat('fa-IR', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    calendar: 'persian'
+                }).format(date);
+            }
+
+            function projectStageStatusName(status) {
+                return ({
+                    1: 'شروع‌نشده',
+                    2: 'در حال انجام',
+                    3: 'در انتظار',
+                    4: 'تکمیل‌شده',
+                    5: 'رد شده',
+                    6: 'لغوشده'
+                })[status] || 'نامشخص';
+            }
+
+            function projectStageStatusClass(status) {
+                return ({
+                    1: 'secondary',
+                    2: 'primary',
+                    3: 'warning',
+                    4: 'success',
+                    5: 'info',
+                    6: 'danger'
+                })[status] || 'secondary';
+            }
+
+            function statusBadge(status) {
+                return `<span class="badge badge-${projectStageStatusClass(status)}">${projectStageStatusName(status)}</span>`;
+            }
+
+                    function postForm(action, fields, confirmMessage) {
+            function submitForm() {
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.action = action;
+                form.style.display = 'none';
+
+                const allFields = {
+                    ...fields,
+                    __RequestVerificationToken: token
+                };
+
+                Object.keys(allFields).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = allFields[key] ?? '';
+                    form.appendChild(input);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+
+            if (window.Swal) {
+                Swal.fire({
+                    title: 'آیا مطمئن هستید؟',
+                    text: confirmMessage || 'این عملیات انجام شود؟',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'بله، حذف شود',
+                    cancelButtonText: 'انصراف',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        submitForm();
+                    }
+                });
+            } else {
+                if (window.confirm(confirmMessage || 'این عملیات انجام شود؟')) {
+                    submitForm();
+                }
+            }
+        }
+
+            function memberActions(member) {
+                if (!permissions.manageMembers) return '';
+                return `<button type="button" class="btn btn-sm btn-outline-danger"
+                            onclick="removeProjectMember(${Number(member.id)})" title="حذف عضو">
+                            <i class="fa fa-trash"></i>
+                        </button>`;
+            }
+
+            window.removeProjectMember = function (memberId) {
+                postForm(projectManagementBase + '/RemoveMember',
+                    { memberId: memberId, projectId: projectId },
+                    'عضو از پروژه حذف شود؟');
+            };
+
+            function renderMembersMobile() {
+                const host = $('#mobileMembers');
+                if (!memberRows.length) {
+                    host.html('<div class="text-center text-muted py-3">هنوز عضوی برای این پروژه ثبت نشده است.</div>');
+                    return;
+                }
+
+                host.html(memberRows.map((member, index) => `
+                    <div class="detail-mobile-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="detail-card-title">
+                                <span class="badge badge-secondary">${persianNumber(index + 1)}</span>
+                                ${esc(member.userName)}
+                            </div>
+                            <div>${memberActions(member)}</div>
+                        </div>
+                        <div class="detail-line">عنوان شغلی: ${esc(member.jobTitle || '-')}</div>
+                        <div class="detail-line">نقش در پروژه: ${esc(member.roleTitle || '-')}</div>
+                        <div class="detail-line">توضیحات: ${esc(member.notes || '-')}</div>
+                    </div>`).join(''));
+            }
+
+            function buildMembersGrid() {
+                const columns = [
+                    { headerName: '#', width: 70, sortable: false,
+                      valueGetter: p => persianNumber(p.node.rowIndex + 1) },
+                    { field: 'userName', headerName: 'نام عضو', minWidth: 150, flex: 1 },
+                    { field: 'jobTitle', headerName: 'عنوان شغلی', minWidth: 130, flex: 1,
+                      valueFormatter: p => p.value || '-' },
+                    { field: 'roleTitle', headerName: 'نقش در پروژه', minWidth: 130, flex: 1,
+                      valueFormatter: p => p.value || '-' },
+                    { field: 'notes', headerName: 'توضیحات', minWidth: 180, flex: 2,
+                      valueFormatter: p => p.value || '-' }
+                ];
+
+                if (permissions.manageMembers) {
+                    columns.push({
+                        headerName: 'عملیات', width: 90, sortable: false, filter: false,
+                        cellRenderer: p => memberActions(p.data)
+                    });
+                }
+
+                agGrid.createGrid(document.getElementById('membersGrid'), {
+                    columnDefs: columns,
+                    rowData: memberRows,
+                    enableRtl: true,
+                    rowHeight: 45,
+                    headerHeight: 45,
+                    defaultColDef: {
+                        sortable: true, resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' }
+                    },
+                    pagination: true,
+                    paginationPageSize: 10,
+                    paginationPageSizeSelector: [5, 10, 20],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از',
+                        next: 'بعدی', last: 'آخر', first: 'اول', previous: 'قبلی',
+                        noRowsToShow: 'عضوی برای نمایش وجود ندارد',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    }
+                });
+            }
+
+            function stageActions(stage) {
+                let html = '';
+                if (permissions.changeStageStatus) {
+                    html += `<a class="btn btn-sm btn-outline-warning"
+                        href="${projectManagementBase}/ChangeStageStatus?id=${stage.id}&projectId=${projectId}"
+                        title="تغییر وضعیت"><i class="fa fa-exchange-alt"></i></a>`;
+                }
+                if (permissions.manageStages) {
+                    html += `<a class="btn btn-sm btn-outline-primary"
+                        href="${projectManagementBase}/EditStage?id=${stage.id}&projectId=${projectId}"
+                        title="ویرایش"><i class="fa fa-edit"></i></a>`;
+                    html += `<button type="button" class="btn btn-sm btn-outline-danger"
+                        onclick="deleteProjectStage(${Number(stage.id)})" title="حذف">
+                        <i class="fa fa-trash"></i></button>`;
+                }
+                return html;
+            }
+
+            window.deleteProjectStage = function (stageId) {
+                postForm(projectManagementBase + '/DeleteStage',
+                    { id: stageId, projectId: projectId },
+                    'این مرحله حذف شود؟');
+            };
+
+            function renderHistory(stage) {
+                const histories = stage.histories || [];
+                if (!histories.length) return '<div class="text-muted small mt-2">تاریخچه‌ای ثبت نشده است.</div>';
+
+                return `<div class="stage-history">
+                    <details>
+                        <summary class="text-primary" style="cursor:pointer">مشاهده تاریخچه (${persianNumber(histories.length)})</summary>
+                        ${histories.map(item => `
+                            <div class="stage-history-item">
+                                <div><strong>وضعیت:</strong>
+                                    ${item.previousStatus ? projectStageStatusName(item.previousStatus) + ' ← ' : ''}
+                                    ${projectStageStatusName(item.newStatus)}
+                                </div>
+                                <div><strong>تاریخ:</strong> ${esc(formatDate(item.changedAt))}</div>
+                                <div><strong>توضیحات:</strong> ${esc(item.description || '-')}</div>
+                            </div>`).join('')}
+                    </details>
+                </div>`;
+            }
+
+            function renderStagesMobile() {
+                const host = $('#mobileStages');
+                if (!stageRows.length) {
+                    host.html('<div class="text-center text-muted py-3">هنوز مرحله‌ای برای این پروژه تعریف نشده است.</div>');
+                    return;
+                }
+
+                host.html(stageRows.slice().sort((a, b) => a.sortOrder - b.sortOrder).map(stage => `
+                    <div class="detail-mobile-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="detail-card-title">
+                                <span class="badge badge-secondary">${persianNumber(stage.sortOrder)}</span>
+                                ${esc(stage.title)}
+                            </div>
+                            <div class="detail-actions">${stageActions(stage)}</div>
+                        </div>
+                        <div class="detail-line">مسئول: ${esc(stage.assignedUserName || '-')}</div>
+                        <div class="detail-line">وضعیت: ${statusBadge(stage.status)}</div>
+                        <div class="detail-line">شروع برنامه‌ریزی‌شده: ${esc(formatDate(stage.plannedStartDate))}</div>
+                        <div class="detail-line">پایان برنامه‌ریزی‌شده: ${esc(formatDate(stage.plannedEndDate))}</div>
+                        <div class="detail-line">مرحله الزامی: ${stage.isRequired ? 'بله' : 'خیر'}</div>
+                        ${stage.waitingReason ? `<div class="detail-line">علت انتظار: ${esc(stage.waitingReason)}</div>` : ''}
+                        ${stage.nextFollowUpDate ? `<div class="detail-line">تاریخ پیگیری: ${esc(formatDate(stage.nextFollowUpDate))}</div>` : ''}
+                        ${stage.notes ? `<div class="detail-line">یادداشت: ${esc(stage.notes)}</div>` : ''}
+                        ${renderHistory(stage)}
+                    </div>`).join(''));
+            }
+
+            function buildStagesGrid() {
+                const columns = [
+                    { headerName: 'ترتیب', field: 'sortOrder', width: 90,
+                      valueFormatter: p => persianNumber(p.value) },
+                    { field: 'title', headerName: 'عنوان مرحله', minWidth: 170, flex: 1 },
+                    { field: 'assignedUserName', headerName: 'مسئول', minWidth: 130, flex: 1,
+                      valueFormatter: p => p.value || '-' },
+                    { field: 'status', headerName: 'وضعیت', width: 125,
+                      cellRenderer: p => statusBadge(p.value) },
+                    { field: 'plannedStartDate', headerName: 'شروع برنامه‌ریزی‌شده', width: 155,
+                      valueFormatter: p => formatDate(p.value) },
+                    { field: 'plannedEndDate', headerName: 'پایان برنامه‌ریزی‌شده', width: 155,
+                      valueFormatter: p => formatDate(p.value) },
+                    { field: 'isRequired', headerName: 'الزامی', width: 90,
+                      valueFormatter: p => p.value ? 'بله' : 'خیر' },
+                    { field: 'waitingReason', headerName: 'علت انتظار', minWidth: 150, flex: 1,
+                      valueFormatter: p => p.value || '-' },
+                    { field: 'nextFollowUpDate', headerName: 'تاریخ پیگیری', width: 130,
+                      valueFormatter: p => formatDate(p.value) },
+                    { headerName: 'تاریخچه', width: 115, sortable: false,
+                      cellRenderer: p => {
+                          const count = (p.data.histories || []).length;
+                          if (!count) return '-';
+                          return `<button type="button" class="btn btn-xs btn-outline-info"
+                              onclick="showStageHistory(${Number(p.data.id)})">
+                              تاریخچه (${persianNumber(count)})</button>`;
+                      }}
+                ];
+
+                if (permissions.manageStages || permissions.changeStageStatus) {
+                    columns.push({
+                        headerName: 'عملیات', width: 145, sortable: false, filter: false,
+                        cellRenderer: p => stageActions(p.data)
+                    });
+                }
+
+                agGrid.createGrid(document.getElementById('stagesGrid'), {
+                    columnDefs: columns,
+                    rowData: stageRows.slice().sort((a, b) => a.sortOrder - b.sortOrder),
+                    enableRtl: true,
+                    rowHeight: 48,
+                    headerHeight: 48,
+                    defaultColDef: {
+                        sortable: true, resizable: true,
+                        cellStyle: { textAlign: 'right', direction: 'rtl' }
+                    },
+                    pagination: true,
+                    paginationPageSize: 10,
+                    paginationPageSizeSelector: [5, 10, 20],
+                    localeText: {
+                        page: 'صفحه', to: 'تا', of: 'از',
+                        next: 'بعدی', last: 'آخر', first: 'اول', previous: 'قبلی',
+                        noRowsToShow: 'مرحله‌ای برای نمایش وجود ندارد',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    }
+                });
+            }
+
+            window.showStageHistory = function (stageId) {
+                const stage = stageRows.find(x => Number(x.id) === Number(stageId));
+                if (!stage) return;
+
+                const historyHtml = renderHistory(stage);
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = historyHtml;
+                const details = wrapper.querySelector('details');
+                if (details) details.open = true;
+
+                const content = details ? details.parentElement.innerHTML : '<div>تاریخچه‌ای ثبت نشده است.</div>';
+
+                if (window.Swal) {
+                    Swal.fire({
+                        title: 'تاریخچه مرحله',
+                        html: content,
+                        confirmButtonText: 'بستن',
+                        width: 650
+                    });
+                } else {
+                    window.alert((stage.histories || []).map(h =>
+                        `${projectStageStatusName(h.newStatus)} - ${h.description || ''}`
+                    ).join('\n') || 'تاریخچه‌ای ثبت نشده است.');
+                }
+            };
+
+            $('#memberCount').text('تعداد اعضا: ' + persianNumber(memberRows.length));
+            $('#stageCount').text('تعداد مراحل: ' + persianNumber(stageRows.length));
+
+            renderMembersMobile();
+            renderStagesMobile();
+
+            if (window.matchMedia('(min-width: 768px)').matches) {
+                buildMembersGrid();
+                buildStagesGrid();
+            }
+        });
+    </script>
+}

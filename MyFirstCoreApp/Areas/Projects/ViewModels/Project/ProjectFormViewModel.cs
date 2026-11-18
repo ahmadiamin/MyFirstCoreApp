@@ -31,10 +31,9 @@ public class ProjectFormViewModel
     public string? Description { get; set; }
 
     [Display(Name = "تاریخ شروع")]
-    public DateOnly? StartDate { get; set; }
-
+    public string? StartDate { get; set; }
     [Display(Name = "تاریخ پایان برنامه‌ریزی‌شده")]
-    public DateOnly? PlannedEndDate { get; set; }
+    public string? PlannedEndDate { get; set; }
 
     public List<SelectListItem> ContactOptions { get; set; } = new();
 

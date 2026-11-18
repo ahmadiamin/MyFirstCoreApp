@@ -8,7 +8,7 @@ using MyFirstCoreApp.Application.Projects;
 using MyFirstCoreApp.Areas.Projects.ViewModels.Project;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
-
+using MyFirstCoreApp.Application.Common.Utilities;
 namespace MyFirstCoreApp.Areas.Projects.Controllers;
 
 [Area("Projects")]
@@ -150,17 +150,19 @@ public class ProjectManagementController : Controller
     [Authorize(Policy = "ProjectStage.Manage")]
     public async Task<IActionResult> CreateStage(ProjectStageFormViewModel model)
     {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Forbid();
+        var plannedStartDate = ParseOptionalPersianDate(model.PlannedStartDate, nameof(model.PlannedStartDate));
+        var plannedEndDate = ParseOptionalPersianDate(model.PlannedEndDate, nameof(model.PlannedEndDate));
 
-        if (model.PlannedStartDate.HasValue &&
-            model.PlannedEndDate.HasValue &&
-            model.PlannedEndDate < model.PlannedStartDate)
+        if (plannedStartDate.HasValue &&
+            plannedEndDate.HasValue &&
+            plannedEndDate < plannedStartDate)
         {
             ModelState.AddModelError(
                 nameof(model.PlannedEndDate),
                 "تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
         }
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
 
         if (!ModelState.IsValid)
         {
@@ -179,8 +181,8 @@ public class ProjectManagementController : Controller
                     SortOrder = model.SortOrder,
                     IsRequired = model.IsRequired,
                     AssignedUserTenantId = model.AssignedUserTenantId,
-                    PlannedStartDate = model.PlannedStartDate,
-                    PlannedEndDate = model.PlannedEndDate,
+                    PlannedStartDate = plannedStartDate,
+                    PlannedEndDate = plannedEndDate,
                     Notes = model.Notes
                 },
                 tenantId.Value);
@@ -219,8 +221,8 @@ public class ProjectManagementController : Controller
             SortOrder = stage.SortOrder,
             IsRequired = stage.IsRequired,
             AssignedUserTenantId = stage.AssignedUserTenantId,
-            PlannedStartDate = stage.PlannedStartDate,
-            PlannedEndDate = stage.PlannedEndDate,
+            PlannedStartDate = PersianDate.Format(stage.PlannedStartDate),
+            PlannedEndDate = PersianDate.Format(stage.PlannedEndDate),
             Notes = stage.Notes
         };
 
@@ -234,17 +236,19 @@ public class ProjectManagementController : Controller
     [Authorize(Policy = "ProjectStage.Manage")]
     public async Task<IActionResult> EditStage(ProjectStageFormViewModel model)
     {
-        var tenantId = _currentTenant.TenantId;
-        if (!tenantId.HasValue) return Forbid();
+        var plannedStartDate = ParseOptionalPersianDate(model.PlannedStartDate, nameof(model.PlannedStartDate));
+        var plannedEndDate = ParseOptionalPersianDate(model.PlannedEndDate, nameof(model.PlannedEndDate));
 
-        if (model.PlannedStartDate.HasValue &&
-            model.PlannedEndDate.HasValue &&
-            model.PlannedEndDate < model.PlannedStartDate)
+        if (plannedStartDate.HasValue &&
+            plannedEndDate.HasValue &&
+            plannedEndDate < plannedStartDate)
         {
             ModelState.AddModelError(
                 nameof(model.PlannedEndDate),
                 "تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
         }
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
 
         if (!ModelState.IsValid)
         {
@@ -264,8 +268,8 @@ public class ProjectManagementController : Controller
                     SortOrder = model.SortOrder,
                     IsRequired = model.IsRequired,
                     AssignedUserTenantId = model.AssignedUserTenantId,
-                    PlannedStartDate = model.PlannedStartDate,
-                    PlannedEndDate = model.PlannedEndDate,
+                    PlannedStartDate = plannedStartDate,
+                    PlannedEndDate = plannedEndDate,
                     Notes = model.Notes
                 },
                 tenantId.Value);
@@ -324,7 +328,8 @@ public class ProjectManagementController : Controller
         {
             ProjectId = projectId,
             ProjectStageId = id,
-            NewStatus = stage.Status
+            NewStatus = stage.Status,
+            NextFollowUpDate = PersianDate.Format(stage.NextFollowUpDate)
         });
     }
 
@@ -336,7 +341,21 @@ public class ProjectManagementController : Controller
     {
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
+        DateOnly? nextFollowUpDate = null;
 
+        if (!string.IsNullOrWhiteSpace(model.NextFollowUpDate))
+        {
+            if (PersianDate.TryParse(model.NextFollowUpDate, out var parsedDate))
+            {
+                nextFollowUpDate = parsedDate;
+            }
+            else
+            {
+                ModelState.AddModelError(
+                    nameof(model.NextFollowUpDate),
+                    "تاریخ شمسی نامعتبر است. نمونه صحیح: ۱۴۰۵/۰۱/۱۵");
+            }
+        }
         if (model.NewStatus == ProjectStageStatus.Waiting)
         {
             if (string.IsNullOrWhiteSpace(model.WaitingReason))
@@ -346,7 +365,7 @@ public class ProjectManagementController : Controller
                     "برای وضعیت در انتظار، علت انتظار الزامی است.");
             }
 
-            if (!model.NextFollowUpDate.HasValue)
+            if (!nextFollowUpDate.HasValue)
             {
                 ModelState.AddModelError(
                     nameof(model.NextFollowUpDate),
@@ -366,7 +385,7 @@ public class ProjectManagementController : Controller
                     NewStatus = model.NewStatus,
                     Description = model.Description,
                     WaitingReason = model.WaitingReason,
-                    NextFollowUpDate = model.NextFollowUpDate
+                    NextFollowUpDate = nextFollowUpDate
                 },
                 tenantId.Value);
 
@@ -440,7 +459,20 @@ public class ProjectManagementController : Controller
     // ============================================
     // Helpers
     // ============================================
+    private DateOnly? ParseOptionalPersianDate(string? value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
 
+        if (PersianDate.TryParse(value, out var date))
+            return date;
+
+        ModelState.AddModelError(
+            fieldName,
+            "تاریخ شمسی نامعتبر است. نمونه صحیح: ۱۴۰۵/۰۱/۱۵");
+
+        return null;
+    }
     private IActionResult RedirectToProjectDetails(int projectId)
     {
         return RedirectToAction(

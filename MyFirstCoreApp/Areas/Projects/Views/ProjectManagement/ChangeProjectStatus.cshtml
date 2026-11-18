@@ -19,9 +19,12 @@
 
             <div class="form-group">
                 <label asp-for="NewStatus"></label>
-                <select asp-for="NewStatus"
-                        asp-items="Html.GetEnumSelectList<ProjectStatus>()"
-                        class="form-control">
+                <select asp-for="NewStatus" class="form-control">
+                    <option value="1">پیش‌نویس</option>
+                    <option value="2">در حال اجرا</option>
+                    <option value="3">متوقف</option>
+                    <option value="4">تکمیل‌شده</option>
+                    <option value="5">لغوشده</option>
                 </select>
                 <span asp-validation-for="NewStatus" class="text-danger"></span>
             </div>

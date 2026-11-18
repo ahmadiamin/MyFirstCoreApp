@@ -20,11 +20,14 @@
 
             <div class="form-group">
                 <label asp-for="NewStatus"></label>
-                <select asp-for="NewStatus"
-                        asp-items="Html.GetEnumSelectList<ProjectStageStatus>()"
-                        class="form-control">
-                </select>
-                <span asp-validation-for="NewStatus" class="text-danger"></span>
+                <select asp-for="NewStatus" class="form-control select2">
+                    <option value="1">شروع‌نشده</option>
+                    <option value="2">در حال انجام</option>
+                    <option value="3">در انتظار</option>
+                    <option value="4">تکمیل‌شده</option>
+                    <option value="5">ردشده / انجام‌نشده</option>
+                    <option value="6">لغوشده</option>
+                </select>                <span asp-validation-for="NewStatus" class="text-danger"></span>
             </div>
 
             <div class="form-group">
@@ -47,7 +50,11 @@
 
             <div class="form-group">
                 <label asp-for="NextFollowUpDate"></label>
-                <input asp-for="NextFollowUpDate" type="date" class="form-control" />
+                <input asp-for="NextFollowUpDate"
+                       type="text"
+                       class="form-control persian-datepicker"
+                       autocomplete="off"
+                       placeholder="۱۴۰۵/۰۱/۱۵" />
                 <span asp-validation-for="NextFollowUpDate" class="text-danger"></span>
             </div>
         </div>
@@ -67,3 +74,38 @@
         </div>
     </form>
 </div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+            $('.select2').select2({
+                width: '100%',
+                dir: 'rtl',
+                language: 'fa',
+                placeholder: 'انتخاب کنید',
+                allowClear: true
+            });
+
+            $('.persian-datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                initialValueType: 'persian',
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                },
+                toolbox: {
+                    calendarSwitch: {
+                        enabled: false
+                    }
+                }
+            });
+        });
+    </script>
+}

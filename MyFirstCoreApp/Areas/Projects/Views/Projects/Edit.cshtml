@@ -48,5 +48,25 @@
                 allowClear: true
             });
         });
+
+        $('.datepicker').persianDatepicker({
+            format: 'YYYY/MM/DD',
+            initialValue: true,
+            initialValueType: 'persian',
+            autoClose: true,
+            observer: true,
+            calendar: {
+                persian: {
+                    locale: 'fa',
+                    showHint: true,
+                    leapYearMode: 'algorithmic'
+                }
+            },
+            toolbox: {
+                calendarSwitch: {
+                    enabled: false
+                }
+            }
+        });
     </script>
 }

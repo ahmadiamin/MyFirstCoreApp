@@ -40,7 +40,11 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label asp-for="PlannedStartDate"></label>
-                        <input asp-for="PlannedStartDate" type="date" class="form-control" />
+                        <input asp-for="PlannedStartDate"
+                               type="text"
+                               class="form-control persian-datepicker"
+                               autocomplete="off"
+                               placeholder="۱۴۰۵/۰۱/۱۵" />
                         <span asp-validation-for="PlannedStartDate" class="text-danger"></span>
                     </div>
                 </div>
@@ -48,7 +52,11 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label asp-for="PlannedEndDate"></label>
-                        <input asp-for="PlannedEndDate" type="date" class="form-control" />
+                        <input asp-for="PlannedEndDate"
+                               type="text"
+                               class="form-control persian-datepicker"
+                               autocomplete="off"
+                               placeholder="۱۴۰۵/۰۱/۱۵" />
                         <span asp-validation-for="PlannedEndDate" class="text-danger"></span>
                     </div>
                 </div>
@@ -93,3 +101,39 @@
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+            $('.select2').select2({
+                width: '100%',
+                dir: 'rtl',
+                language: 'fa',
+                placeholder: 'انتخاب کنید',
+                allowClear: true
+            });
+
+            $('.persian-datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                initialValueType: 'persian',
+                autoClose: true,
+                observer: true,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                },
+                toolbox: {
+                    calendarSwitch: {
+                        enabled: false
+                    }
+                }
+            });
+        });
+    </script>
+}

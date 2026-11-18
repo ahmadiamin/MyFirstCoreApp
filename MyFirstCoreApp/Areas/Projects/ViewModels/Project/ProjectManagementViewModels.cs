@@ -50,10 +50,10 @@ public class ProjectStageFormViewModel
     public int? AssignedUserTenantId { get; set; }
 
     [Display(Name = "شروع برنامه‌ریزی‌شده")]
-    public DateOnly? PlannedStartDate { get; set; }
+    public string? PlannedStartDate { get; set; }
 
     [Display(Name = "پایان برنامه‌ریزی‌شده")]
-    public DateOnly? PlannedEndDate { get; set; }
+    public string? PlannedEndDate { get; set; }
 
     [Display(Name = "توضیحات تکمیلی")]
     [MaxLength(2000)]
@@ -80,7 +80,7 @@ public class ProjectStageStatusFormViewModel
     public string? WaitingReason { get; set; }
 
     [Display(Name = "تاریخ پیگیری بعدی")]
-    public DateOnly? NextFollowUpDate { get; set; }
+    public string? NextFollowUpDate { get; set; }
 }
 
 public class ProjectStatusFormViewModel

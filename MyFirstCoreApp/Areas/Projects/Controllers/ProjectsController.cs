@@ -8,6 +8,8 @@ using MyFirstCoreApp.Application.Projects;
 using MyFirstCoreApp.Areas.Projects.ViewModels.Project;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
+using MyFirstCoreApp.Application.Common.Utilities;
+using MyFirstCoreApp.Application.Common.Models;
 
 namespace MyFirstCoreApp.Areas.Projects.Controllers;
 
@@ -31,26 +33,87 @@ public class ProjectsController : Controller
 
     // GET: /Projects/Projects
     [Authorize(Policy = "Project.View")]
-    public async Task<IActionResult> Index(
-        string? search = null,
-        ProjectStatus? status = null)
+    public IActionResult Index()
+    {
+        return View();
+    }
+    // POST: /Projects/Projects/GetData
+    // POST: /Projects/Projects/GetData
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Project.View")]
+    public async Task<IActionResult> GetData([FromBody] AgGridRequest request, ProjectStatus? status = null)
     {
         var tenantId = _currentTenant.TenantId;
+
         if (!tenantId.HasValue)
             return Forbid();
+
+        request ??= new AgGridRequest();
 
         var items = await _projectService.GetListAsync(
             tenantId.Value,
             status,
-            search);
+            request.Search);
 
-        ViewBag.Search = search;
-        ViewBag.Status = status;
+        var total = items.Count;
 
-        return View(items);
+        // مرتب‌سازی
+        items = request.SortBy switch
+        {
+            "title" => request.SortDir == "desc"
+                ? items.OrderByDescending(x => x.Title).ToList()
+                : items.OrderBy(x => x.Title).ToList(),
+
+            "code" => request.SortDir == "desc"
+                ? items.OrderByDescending(x => x.Code).ToList()
+                : items.OrderBy(x => x.Code).ToList(),
+
+            "contactName" => request.SortDir == "desc"
+                ? items.OrderByDescending(x => x.ContactName).ToList()
+                : items.OrderBy(x => x.ContactName).ToList(),
+
+            "projectManagerName" => request.SortDir == "desc"
+                ? items.OrderByDescending(x => x.ProjectManagerName).ToList()
+                : items.OrderBy(x => x.ProjectManagerName).ToList(),
+
+            "startDate" => request.SortDir == "desc"
+                ? items.OrderByDescending(x => x.StartDate).ToList()
+                : items.OrderBy(x => x.StartDate).ToList(),
+
+            "plannedEndDate" => request.SortDir == "desc"
+                ? items.OrderByDescending(x => x.PlannedEndDate).ToList()
+                : items.OrderBy(x => x.PlannedEndDate).ToList(),
+
+            _ => items.OrderByDescending(x => x.Id).ToList()
+        };
+
+        var rows = items
+            .Skip(Math.Max(0, request.StartRow))
+            .Take(Math.Max(0, request.EndRow - request.StartRow))
+            .Select(x => new
+            {
+                id = x.Id,
+                title = x.Title,
+                code = x.Code,
+                contactName = x.ContactName,
+                projectManagerName = x.ProjectManagerName,
+                status = (int)x.Status,
+                stageCount = x.StageCount,
+                completedStageCount = x.CompletedStageCount,
+                startDate = x.StartDate?.ToString("yyyy/MM/dd"),
+                plannedEndDate = x.PlannedEndDate?.ToString("yyyy/MM/dd")
+            })
+            .ToList();
+
+        return Json(new
+        {
+            success = true,
+            rows,
+            lastRow = total
+        });
     }
 
-    // GET: /Projects/Projects/Details/5
     [Authorize(Policy = "Project.View")]
     public async Task<IActionResult> Details(int id)
     {
@@ -98,7 +161,22 @@ public class ProjectsController : Controller
             await PopulateOptionsAsync(model, tenantId.Value);
             return View(model);
         }
+        var startDate = ParseOptionalPersianDate(
+    model.StartDate,
+    nameof(model.StartDate));
 
+        var plannedEndDate = ParseOptionalPersianDate(
+            model.PlannedEndDate,
+            nameof(model.PlannedEndDate));
+
+        if (startDate.HasValue &&
+            plannedEndDate.HasValue &&
+            plannedEndDate.Value < startDate.Value)
+        {
+            ModelState.AddModelError(
+                nameof(model.PlannedEndDate),
+                "تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
+        }
         try
         {
             var request = new ProjectRequest
@@ -109,8 +187,8 @@ public class ProjectsController : Controller
                 ProjectManagerUserTenantId = model.ProjectManagerUserTenantId,
                 Address = model.Address,
                 Description = model.Description,
-                StartDate = model.StartDate,
-                PlannedEndDate = model.PlannedEndDate
+                StartDate = startDate,
+                PlannedEndDate = plannedEndDate
             };
 
             var id = await _projectService.CreateAsync(
@@ -154,8 +232,8 @@ public class ProjectsController : Controller
             ProjectManagerUserTenantId = project.ProjectManagerUserTenantId,
             Address = project.Address,
             Description = project.Description,
-            StartDate = project.StartDate,
-            PlannedEndDate = project.PlannedEndDate
+            StartDate = PersianDate.Format(project.StartDate),
+            PlannedEndDate = PersianDate.Format(project.PlannedEndDate)
         };
 
         await PopulateOptionsAsync(model, tenantId.Value);
@@ -183,7 +261,22 @@ public class ProjectsController : Controller
             await PopulateOptionsAsync(model, tenantId.Value);
             return View(model);
         }
+        var startDate = ParseOptionalPersianDate(
+    model.StartDate,
+    nameof(model.StartDate));
 
+        var plannedEndDate = ParseOptionalPersianDate(
+            model.PlannedEndDate,
+            nameof(model.PlannedEndDate));
+
+        if (startDate.HasValue &&
+            plannedEndDate.HasValue &&
+            plannedEndDate.Value < startDate.Value)
+        {
+            ModelState.AddModelError(
+                nameof(model.PlannedEndDate),
+                "تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
+        }
         try
         {
             var request = new ProjectRequest
@@ -195,8 +288,8 @@ public class ProjectsController : Controller
                 ProjectManagerUserTenantId = model.ProjectManagerUserTenantId,
                 Address = model.Address,
                 Description = model.Description,
-                StartDate = model.StartDate,
-                PlannedEndDate = model.PlannedEndDate
+                StartDate = startDate,
+                PlannedEndDate = plannedEndDate
             };
 
             await _projectService.UpdateAsync(
@@ -286,5 +379,20 @@ public class ProjectsController : Controller
                     ).Trim()
             })
             .ToListAsync();
+    }
+
+    private DateOnly? ParseOptionalPersianDate(string? value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        if (PersianDate.TryParse(value, out var date))
+            return date;
+
+        ModelState.AddModelError(
+            fieldName,
+            "تاریخ شمسی نامعتبر است. نمونه صحیح: ۱۴۰۵/۰۱/۱۵");
+
+        return null;
     }
 }

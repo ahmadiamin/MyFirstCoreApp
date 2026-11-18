@@ -1,40 +1,73 @@
-﻿@model List<MyFirstCoreApp.Application.Projects.ProjectListItemDto>
-
-@{
+﻿@{
     ViewData["Title"] = "مدیریت پروژه‌ها";
-
-    string GetStatusName(MyFirstCoreApp.Domain.Enums.ProjectStatus status)
-    {
-        return status switch
-        {
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Draft => "پیش‌نویس",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Active => "در حال اجرا",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.OnHold => "متوقف",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Completed => "تکمیل‌شده",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Cancelled => "لغوشده",
-            _ => "نامشخص"
-        };
-    }
-
-    string GetStatusClass(MyFirstCoreApp.Domain.Enums.ProjectStatus status)
-    {
-        return status switch
-        {
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Draft => "badge-secondary",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Active => "badge-success",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.OnHold => "badge-warning",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Completed => "badge-primary",
-            MyFirstCoreApp.Domain.Enums.ProjectStatus.Cancelled => "badge-danger",
-            _ => "badge-secondary"
-        };
-    }
 }
+
+<style>
+    #projectsGrid.ag-theme-alpine {
+        --ag-font-size: 13px;
+        width: 100%;
+    }
+
+    .project-action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .project-action-buttons .btn {
+            padding: 3px 7px;
+            line-height: 1;
+        }
+
+    .ag-right-aligned-header .ag-header-cell-label {
+        justify-content: flex-end;
+    }
+
+    .project-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        background: #fff;
+        margin-bottom: 8px;
+        padding: 12px;
+    }
+
+        .project-card .project-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .project-card .row-line {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .project-card .actions {
+            margin-top: 10px;
+        }
+
+    @@media (max-width: 767.98px) {
+        #projectsGrid.ag-theme-alpine {
+            --ag-font-size: 12px;
+        }
+    }
+</style>
 
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible">
         <button type="button" class="close" data-dismiss="alert">&times;</button>
         <i class="fa fa-check"></i> @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-exclamation-triangle"></i> @TempData["Error"]
     </div>
 }
 
@@ -55,115 +88,426 @@
     </div>
 
     <div class="card-body">
-        <form method="get" asp-action="Index" class="row mb-3">
+        <div class="row mb-3">
             <div class="col-md-5 mb-2">
-                <input type="text" name="search" value="@ViewBag.Search"
-                       class="form-control"
-                       placeholder="جستجو در عنوان، کد یا طرف حساب..." />
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">
+                            <i class="fa fa-search"></i>
+                        </span>
+                    </div>
+                    <input type="text" id="txtSearch" class="form-control"
+                           placeholder="جستجو در عنوان، کد یا طرف حساب..." />
+                </div>
             </div>
 
             <div class="col-md-3 mb-2">
-                <select name="status" class="form-control">
+                <select id="statusFilter" class="form-control">
                     <option value="">همه وضعیت‌ها</option>
-                    @foreach (var status in Enum.GetValues<MyFirstCoreApp.Domain.Enums.ProjectStatus>())
-                    {
-                        <option value="@((int)status)"
-                                selected="@(ViewBag.Status != null && (int)ViewBag.Status == (int)status)">
-                            @GetStatusName(status)
-                        </option>
-                    }
+                    <option value="1">پیش‌نویس</option>
+                    <option value="2">در حال اجرا</option>
+                    <option value="3">متوقف</option>
+                    <option value="4">تکمیل‌شده</option>
+                    <option value="5">لغوشده</option>
                 </select>
             </div>
 
-            <div class="col-md-2 mb-2">
-                <button type="submit" class="btn btn-info btn-block">
-                    <i class="fa fa-search"></i> جستجو
-                </button>
+            <div class="col-md-4 mb-2 text-left">
+                <span class="text-muted" id="lblCount"></span>
             </div>
-
-            <div class="col-md-2 mb-2">
-                <a asp-action="Index" class="btn btn-secondary btn-block">
-                    پاک کردن فیلتر
-                </a>
-            </div>
-        </form>
-
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <th style="width:50px">ردیف</th>
-                        <th>عنوان پروژه</th>
-                        <th>کد</th>
-                        <th>طرف حساب</th>
-                        <th>مدیر پروژه</th>
-                        <th>وضعیت</th>
-                        <th>پیشرفت مراحل</th>
-                        <th>تاریخ شروع</th>
-                        <th>پایان برنامه‌ریزی‌شده</th>
-                        <th style="width:130px">عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model.Any())
-                    {
-                        var index = 1;
-                        foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>@index</td>
-                                <td>@item.Title</td>
-                                <td dir="ltr">@item.Code</td>
-                                <td>@(item.ContactName ?? "-")</td>
-                                <td>@(item.ProjectManagerName ?? "-")</td>
-                                <td>
-                                    <span class="badge @GetStatusClass(item.Status)">
-                                        @GetStatusName(item.Status)
-                                    </span>
-                                </td>
-                                <td>
-                                    @if (item.StageCount > 0)
-                                    {
-                                        <span>
-                                            @item.CompletedStageCount از @item.StageCount
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">بدون مرحله</span>
-                                    }
-                                </td>
-                                <td>@item.StartDate?.ToString("yyyy/MM/dd")</td>
-                                <td>@item.PlannedEndDate?.ToString("yyyy/MM/dd")</td>
-                                <td>
-                                    <a asp-action="Details" asp-route-id="@item.Id"
-                                       class="btn btn-sm btn-outline-info" title="جزئیات">
-                                        <i class="fa fa-eye"></i>
-                                    </a>
-
-                                    <a asp-action="Edit" asp-route-id="@item.Id"
-                                       class="btn btn-sm btn-outline-primary" title="ویرایش">
-                                        <i class="fa fa-edit"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            index++;
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="10" class="text-center text-muted py-4">
-                                پروژه‌ای برای نمایش وجود ندارد.
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
         </div>
-    </div>
 
-    <div class="card-footer text-muted">
-        تعداد پروژه‌ها: @Model.Count
+        <div id="projectsGrid" class="ag-theme-alpine d-none d-md-block"
+             style="height: 600px; width: 100%;">
+        </div>
+
+        <div id="mobileProjects" class="d-md-none"></div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            var gridApi = null;
+            var allRows = [];
+
+            function getStatusName(status) {
+                switch (Number(status)) {
+                    case 1: return 'پیش‌نویس';
+                    case 2: return 'در حال اجرا';
+                    case 3: return 'متوقف';
+                    case 4: return 'تکمیل‌شده';
+                    case 5: return 'لغوشده';
+                    default: return 'نامشخص';
+                }
+            }
+
+            function getStatusClass(status) {
+                switch (Number(status)) {
+                    case 1: return 'badge-secondary';
+                    case 2: return 'badge-success';
+                    case 3: return 'badge-warning';
+                    case 4: return 'badge-primary';
+                    case 5: return 'badge-danger';
+                    default: return 'badge-secondary';
+                }
+            }
+
+            function toPersianDigits(value) {
+                return String(value ?? '').replace(/\d/g, function (d) {
+                    return '۰۱۲۳۴۵۶۷۸۹'[d];
+                });
+            }
+
+            function formatPersianDate(value) {
+                if (!value) return '-';
+
+                var parts = String(value).split('/');
+                if (parts.length !== 3) return value;
+
+                var date = new Date(
+                    Number(parts[0]),
+                    Number(parts[1]) - 1,
+                    Number(parts[2])
+                );
+
+                if (isNaN(date.getTime())) return value;
+
+                return toPersianDigits(
+                    new Intl.DateTimeFormat('fa-IR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    }).format(date)
+                );
+            }
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function buildActionButtons(d) {
+                return `
+                    <div class="project-action-buttons">
+                        <a href="/Projects/Projects/Details/${d.id}"
+                           class="btn btn-sm btn-outline-info"
+                           title="جزئیات">
+                            <i class="fa fa-eye"></i>
+                        </a>
+                        <a href="/Projects/Projects/Edit/${d.id}"
+                           class="btn btn-sm btn-outline-primary"
+                           title="ویرایش">
+                            <i class="fa fa-edit"></i>
+                        </a>
+                    </div>`;
+            }
+
+            const columnDefs = [
+                {
+                    headerName: '#',
+                    colId: 'rowNumber',
+                    width: 65,
+                    sortable: false,
+                    filter: false,
+                    valueGetter: function (params) {
+                        return toPersianDigits(params.node.rowIndex + 1);
+                    },
+                    cellStyle: {
+                        textAlign: 'center',
+                        direction: 'ltr'
+                    }
+                },
+                {
+                    field: 'title',
+                    headerName: 'عنوان پروژه',
+                    flex: 2,
+                    minWidth: 180
+                },
+                {
+                    field: 'code',
+                    headerName: 'کد',
+                    width: 110,
+                    cellStyle: {
+                        direction: 'ltr',
+                        textAlign: 'right'
+                    }
+                },
+                {
+                    field: 'contactName',
+                    headerName: 'طرف حساب',
+                    minWidth: 140,
+                    flex: 1
+                },
+                {
+                    field: 'projectManagerName',
+                    headerName: 'مدیر پروژه',
+                    minWidth: 140,
+                    flex: 1
+                },
+                {
+                    field: 'status',
+                    headerName: 'وضعیت',
+                    width: 120,
+                    valueFormatter: function (p) {
+                        return getStatusName(p.value);
+                    },
+                    cellRenderer: function (p) {
+                        return `<span class="badge ${getStatusClass(p.value)}">
+                            ${getStatusName(p.value)}
+                        </span>`;
+                    }
+                },
+                {
+                    headerName: 'پیشرفت مراحل',
+                    colId: 'progress',
+                    width: 130,
+                    sortable: false,
+                    valueGetter: function (p) {
+                        var d = p.data;
+                        if (!d || !d.stageCount) return 'بدون مرحله';
+
+                        return toPersianDigits(d.completedStageCount) +
+                            ' از ' + toPersianDigits(d.stageCount);
+                    },
+                    cellStyle: {
+                        textAlign: 'center'
+                    }
+                },
+                {
+                    field: 'startDate',
+                    headerName: 'تاریخ شروع',
+                    width: 125,
+                    valueFormatter: function (p) {
+                        return formatPersianDate(p.value);
+                    },
+                    cellStyle: {
+                        textAlign: 'center'
+                    }
+                },
+                {
+                    field: 'plannedEndDate',
+                    headerName: 'پایان برنامه‌ریزی‌شده',
+                    width: 155,
+                    valueFormatter: function (p) {
+                        return formatPersianDate(p.value);
+                    },
+                    cellStyle: {
+                        textAlign: 'center'
+                    }
+                },
+                {
+                    headerName: 'عملیات',
+                    colId: 'actions',
+                    width: 115,
+                    sortable: false,
+                    filter: false,
+                    pinned: 'left',
+                    cellRenderer: function (p) {
+                        if (!p.data) return '';
+                        return buildActionButtons(p.data);
+                    }
+                }
+            ];
+
+            function buildGrid() {
+                if (gridApi) return;
+
+                var gridOptions = {
+                    columnDefs: columnDefs,
+                    enableRtl: true,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: false,
+                        resizable: true,
+                        cellStyle: {
+                            textAlign: 'right',
+                            direction: 'rtl'
+                        },
+                        headerClass: 'ag-right-aligned-header'
+                    },
+                    pagination: true,
+                    paginationPageSize: 20,
+                    paginationPageSizeSelector: [10, 20, 50, 100],
+                    localeText: {
+                        page: 'صفحه',
+                        to: 'تا',
+                        of: 'از',
+                        next: 'بعدی',
+                        last: 'آخر',
+                        first: 'اول',
+                        previous: 'قبلی',
+                        loadingOoo: 'در حال بارگذاری...',
+                        noRowsToShow: 'پروژه‌ای برای نمایش وجود ندارد',
+                        pageSizeSelectorLabel: 'تعداد در صفحه:'
+                    }
+                };
+
+                gridApi = agGrid.createGrid(
+                    document.getElementById('projectsGrid'),
+                    gridOptions
+                );
+
+                loadData();
+            }
+
+            function loadData() {
+                var request = {
+                    startRow: 0,
+                    endRow: 10000,
+                    search: ($('#txtSearch').val() || '').trim(),
+                    sortBy: null,
+                    sortDir: null
+                };
+
+                if (gridApi) {
+                    var state = gridApi.getColumnState() || [];
+                    var sorted = state.filter(function (c) {
+                        return c.sort;
+                    });
+
+                    if (sorted.length) {
+                        request.sortBy = sorted[0].colId;
+                        request.sortDir = sorted[0].sort;
+                    }
+                }
+
+                var status = $('#statusFilter').val();
+                var url = '/Projects/Projects/GetData';
+
+                if (status) {
+                    url += '?status=' + encodeURIComponent(status);
+                }
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken':
+                            $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    data: JSON.stringify(request),
+                    success: function (result) {
+                        var rows = result && Array.isArray(result.rows)
+                            ? result.rows
+                            : [];
+
+                        allRows = rows;
+
+                        if (gridApi) {
+                            gridApi.setGridOption('rowData', allRows);
+                        }
+
+                        $('#lblCount').text(
+                            'تعداد پروژه‌ها: ' + toPersianDigits(result.lastRow || 0)
+                        );
+
+                        if (isMobile()) {
+                            renderMobileList(allRows);
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('GetData error:', xhr.status, xhr.responseText);
+                        $('#lblCount').text('خطا در بارگذاری اطلاعات');
+                    }
+                });
+            }
+
+            var searchTimer = null;
+
+            $('#txtSearch').on('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(loadData, 350);
+            });
+
+            $('#statusFilter').on('change', loadData);
+
+            function renderMobileList(rows) {
+                var container = document.getElementById('mobileProjects');
+
+                if (!rows || !rows.length) {
+                    container.innerHTML =
+                        '<div class="text-center text-muted py-4">' +
+                        'پروژه‌ای برای نمایش وجود ندارد.</div>';
+                    return;
+                }
+
+                var html = '';
+
+                rows.forEach(function (d, index) {
+                    var progress = d.stageCount > 0
+                        ? toPersianDigits(d.completedStageCount) +
+                            ' از ' + toPersianDigits(d.stageCount)
+                        : 'بدون مرحله';
+
+                    html += `
+                        <div class="project-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="project-title">
+                                    <span class="badge badge-secondary ml-1">
+                                        ${toPersianDigits(index + 1)}
+                                    </span>
+                                    ${escapeHtml(d.title)}
+                                </div>
+                                <span class="badge ${getStatusClass(d.status)}">
+                                    ${getStatusName(d.status)}
+                                </span>
+                            </div>
+
+                            ${d.code ? `<div class="row-line">کد: <span dir="ltr">${escapeHtml(d.code)}</span></div>` : ''}
+                            ${d.contactName ? `<div class="row-line">طرف حساب: ${escapeHtml(d.contactName)}</div>` : ''}
+                            ${d.projectManagerName ? `<div class="row-line">مدیر پروژه: ${escapeHtml(d.projectManagerName)}</div>` : ''}
+
+                            <div class="row-line">پیشرفت مراحل: ${progress}</div>
+                            <div class="row-line">تاریخ شروع: ${formatPersianDate(d.startDate)}</div>
+                            <div class="row-line">پایان برنامه‌ریزی‌شده: ${formatPersianDate(d.plannedEndDate)}</div>
+
+                            <div class="actions">
+                                ${buildActionButtons(d)}
+                            </div>
+                        </div>`;
+                });
+
+                container.innerHTML = html;
+            }
+
+            function isMobile() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            function applyLayout() {
+                var gridDiv = document.getElementById('projectsGrid');
+                var mobileDiv = document.getElementById('mobileProjects');
+
+                if (isMobile()) {
+                    gridDiv.classList.add('d-none');
+                    mobileDiv.classList.remove('d-md-none');
+
+                    if (!allRows.length) {
+                        loadData();
+                    } else {
+                        renderMobileList(allRows);
+                    }
+                } else {
+                    gridDiv.classList.remove('d-none');
+                    mobileDiv.classList.add('d-md-none');
+
+                    if (!gridApi) {
+                        buildGrid();
+                    }
+                }
+            }
+
+            applyLayout();
+
+            window.matchMedia('(max-width: 767.98px)')
+                .addEventListener('change', applyLayout);
+        });
+    </script>
+}
