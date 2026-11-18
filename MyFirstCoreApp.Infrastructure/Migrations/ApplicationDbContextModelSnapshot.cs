@@ -2362,6 +2362,10 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("AppliedCreditAmount")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
                     b.Property<DateTime?>("ApprovedDate")
                         .HasColumnType("datetime2");
 
@@ -2545,6 +2549,61 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("InvoiceBehaviorSettings", (string)null);
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceCreditAllocation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CreditInvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TargetInvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditInvoiceId");
+
+                    b.HasIndex("TargetInvoiceId");
+
+                    b.ToTable("InvoiceCreditAllocations", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceHistory", b =>
@@ -3931,6 +3990,25 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("Transaction");
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceCreditAllocation", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", "CreditInvoice")
+                        .WithMany("IssuedCreditAllocations")
+                        .HasForeignKey("CreditInvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", "TargetInvoice")
+                        .WithMany("ReceivedCreditAllocations")
+                        .HasForeignKey("TargetInvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreditInvoice");
+
+                    b.Navigation("TargetInvoice");
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceHistory", b =>
                 {
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", "Invoice")
@@ -4203,7 +4281,11 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                 {
                     b.Navigation("Histories");
 
+                    b.Navigation("IssuedCreditAllocations");
+
                     b.Navigation("Items");
+
+                    b.Navigation("ReceivedCreditAllocations");
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.Project", b =>

@@ -83,5 +83,32 @@ public interface IInvoiceService
     Task<Invoice> CreateReturnAsync(
         InvoiceReturnRequest request,
         int tenantId);
+    // ============================================
+    // اعتبار برگشت از خرید
+    // ============================================
 
+    /// <summary>
+    /// دریافت فهرست اعتبارهای آزاد حاصل از برگشت خرید یک فروشنده.
+    /// </summary>
+    Task<List<InvoiceAvailableCreditDto>> GetAvailableCreditsAsync(
+        int contactId,
+        int tenantId);
+
+    /// <summary>
+    /// تخصیص دستی اعتبار یک برگشت خرید به یک فاکتور خرید قطعی.
+    /// این عملیات سند حسابداری جدید ایجاد نمی‌کند.
+    /// </summary>
+    Task AllocateCreditAsync(
+        int creditInvoiceId,
+        int targetInvoiceId,
+        decimal amount,
+        int tenantId,
+        string? description = null);
+
+    /// <summary>
+    /// لغو تخصیص اعتبار و آزادسازی مجدد اعتبار منبع.
+    /// </summary>
+    Task CancelCreditAllocationAsync(
+        int allocationId,
+        int tenantId);
 }

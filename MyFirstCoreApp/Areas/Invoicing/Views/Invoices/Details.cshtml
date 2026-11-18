@@ -8,7 +8,7 @@
     var canCreateReturn = Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted
         && (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Sale
             || Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase);
-    var remaining = Model.TotalAmount - Model.PaidAmount - Model.SettlementDiscount;
+    var remaining = Model.RemainingAmount;
 }
 
 <style>
@@ -435,6 +435,65 @@
             </div>
         }
 
+        @{
+            var creditAllocations = ViewBag.CreditAllocations
+            as List<MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceCreditAllocation>
+            ?? new List<MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceCreditAllocation>();
+        }
+
+        @if (creditAllocations.Any())
+        {
+            <div class="card card-outline card-success mt-3">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fa-solid fa-money-bill-transfer ml-1"></i>
+                        سوابق تخصیص اعتبار برگشت خرید
+                    </h3>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>شماره برگشت</th>
+                                    <th>تاریخ برگشت</th>
+                                    <th>مبلغ تخصیص (ریال)</th>
+                                    <th>توضیحات</th>
+                                    <th style="width: 100px;">عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var allocation in creditAllocations)
+                                {
+                                    <tr>
+                                        <td>@allocation.CreditInvoice.Number</td>
+                                        <td>@PersianDate.Format(allocation.CreditInvoice.Date)</td>
+                                        <td class="text-left">
+                                            @allocation.Amount.ToString("N0")
+                                        </td>
+                                        <td>
+                                            @(string.IsNullOrWhiteSpace(allocation.Description)
+                                                                                ? "-"
+                                                                                : allocation.Description)
+                                </td>
+                                <td class="text-center">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger btnCancelCreditAllocation"
+                                            data-id="@allocation.Id">
+                                        <i class="fa-solid fa-rotate-left"></i>
+                                        لغو
+                                    </button>
+                                </td>
+                            </tr>
+                                                        }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- ==========================================
              تاریخچه
              ========================================== -->
@@ -602,6 +661,15 @@
                 <i class="fa-solid fa-percent"></i> تسویه با تخفیف
             </button>
         }
+        @if (Model.InvoiceType == MyFirstCoreApp.Domain.Enums.InvoiceType.Purchase
+                && Model.Status == MyFirstCoreApp.Domain.Enums.InvoiceStatus.Posted
+                && remaining > 0)
+        {
+            <button type="button" class="btn btn-outline-success" id="btnAllocateCredit">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                تخصیص اعتبار برگشت خرید
+            </button>
+        }
     </div>
 
     @Html.AntiForgeryToken()
@@ -634,6 +702,225 @@
             // مقدار باقی‌مانده (server-side)
             // ============================================
             const remainingAmount = @remaining.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            // ============================================
+            // دریافت و تخصیص اعتبارهای آزاد فروشنده
+            // ============================================
+            $('#btnAllocateCredit').on('click', function () {
+
+                const button = $(this);
+
+                button.prop('disabled', true);
+
+                $.ajax({
+                    url: '/Invoicing/Invoices/GetAvailableCredits',
+                    type: 'GET',
+                    data: {
+                        contactId: @Model.ContactId
+                    },
+                    success: function (r) {
+
+                        button.prop('disabled', false);
+
+                        if (!r.success) {
+                            ModalHelper.error(r.message);
+                            return;
+                        }
+
+                        const credits = r.data || [];
+
+                        if (credits.length === 0) {
+                            ModalHelper.info('این فروشنده اعتبار آزاد حاصل از برگشت خرید ندارد.');
+                            return;
+                        }
+
+                        let rows = '';
+
+                        credits.forEach(function (credit, index) {
+                            rows += `
+                                <tr>
+                                    <td class="text-center">
+                                        <input type="radio"
+                                               name="selectedCredit"
+                                               value="${credit.creditInvoiceId}"
+                                               data-available="${credit.availableAmount}"
+                                               ${index === 0 ? 'checked' : ''}>
+                                    </td>
+                                    <td>${credit.creditInvoiceNumber}</td>
+                                    <td>${credit.creditInvoiceDate}</td>
+                                    <td class="text-left">
+                                        ${Number(credit.availableAmount).toLocaleString('en-US')}
+                                    </td>
+                                </tr>
+                            `;
+                        });
+
+                        const bodyHtml = `
+                            <div class="alert alert-info">
+                                اعتبار موردنظر را انتخاب و مبلغی را که می‌خواهید به فاکتور خرید فعلی تخصیص دهید وارد کنید.
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>انتخاب</th>
+                                            <th>شماره برگشت</th>
+                                            <th>تاریخ</th>
+                                            <th>اعتبار آزاد (ریال)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${rows}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="form-group mt-3">
+                                <label for="creditAllocationAmount">مبلغ تخصیص (ریال)</label>
+                                <input type="text"
+                                       id="creditAllocationAmount"
+                                       class="form-control text-left"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       placeholder="مبلغ را وارد کنید">
+                                <small class="form-text text-muted">
+                                    حداکثر مبلغ قابل تخصیص:
+                                    <strong id="creditMaxAmount"></strong>
+                                </small>
+                            </div>
+
+                            <div class="form-group mt-3">
+                                <label for="creditAllocationDescription">توضیحات (اختیاری)</label>
+                                <textarea id="creditAllocationDescription"
+                                          class="form-control"
+                                          rows="2"
+                                          maxlength="1000"></textarea>
+                            </div>
+                        `;
+
+                        ModalHelper.show({
+                            title: 'تخصیص اعتبار برگشت خرید',
+                            icon: 'fa-solid fa-money-bill-transfer',
+                            headerClass: 'bg-success text-white',
+                            size: 'modal-lg',
+                            body: bodyHtml,
+                            buttons: [
+                                {
+                                    text: 'ثبت تخصیص',
+                                    class: 'btn-success',
+                                    icon: 'fa-solid fa-check',
+                                    dismiss: false,
+                                    onClick: function () {
+
+                                        const selected = $('input[name="selectedCredit"]:checked');
+
+                                        if (!selected.length) {
+                                            ModalHelper.error('لطفاً یک اعتبار را انتخاب کنید.');
+                                            return;
+                                        }
+
+                                        const creditInvoiceId = Number(selected.val());
+                                        const availableAmount = Number(selected.data('available'));
+                                        const amountText = $('#creditAllocationAmount').val()
+                                            .replace(/,/g, '')
+                                            .replace(/[۰-۹]/g, function (d) {
+                                                return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d);
+                                            })
+                                            .replace(/[٠-٩]/g, function (d) {
+                                                return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);
+                                            });
+
+                                        const amount = Number(amountText);
+
+                                        if (!Number.isFinite(amount) || amount <= 0) {
+                                            ModalHelper.error('مبلغ تخصیص باید بیشتر از صفر باشد.');
+                                            return;
+                                        }
+
+                                        if (amount > availableAmount) {
+                                            ModalHelper.error('مبلغ تخصیص از اعتبار آزاد بیشتر است.');
+                                            return;
+                                        }
+
+                                        if (amount > remainingAmount) {
+                                            ModalHelper.error('مبلغ تخصیص از مانده فاکتور بیشتر است.');
+                                            return;
+                                        }
+
+                                        $.ajax({
+                                            url: '/Invoicing/Invoices/AllocateCredit',
+                                            type: 'POST',
+                                            data: {
+                                                creditInvoiceId: creditInvoiceId,
+                                                targetInvoiceId: @Model.Id,
+                                                amount: amount,
+                                                description: $('#creditAllocationDescription').val(),
+                                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                                            },
+                                            success: function (result) {
+                                                if (!result.success) {
+                                                    ModalHelper.error(result.message);
+                                                    return;
+                                                }
+
+                                                ModalHelper.success(result.message || 'اعتبار با موفقیت به فاکتور خرید تخصیص داده شد.');
+
+                                                setTimeout(function () {
+                                                    location.reload();
+                                                }, 1200);
+                                            },
+                                            error: function () {
+                                                ModalHelper.error('خطا در ثبت تخصیص اعتبار.');
+                                            }
+                                        });
+                                    }
+                                },
+                                {
+                                    text: 'بستن',
+                                    class: 'btn-secondary',
+                                    icon: 'fa-solid fa-times',
+                                    dismiss: true
+                                }
+                            ]
+                        });
+
+                        function updateCreditLimit() {
+                            const selected = $('input[name="selectedCredit"]:checked');
+                            const available = Number(selected.data('available') || 0);
+                            const maxAmount = Math.min(available, remainingAmount);
+
+                            $('#creditMaxAmount').text(maxAmount.toLocaleString('en-US'));
+                            $('#creditAllocationAmount').attr('placeholder',
+                                'حداکثر ' + maxAmount.toLocaleString('en-US'));
+                        }
+
+                        $('input[name="selectedCredit"]').on('change', updateCreditLimit);
+
+                        updateCreditLimit();
+
+                        $('#creditAllocationAmount').on('input', function () {
+                            let value = $(this).val()
+                                .replace(/,/g, '')
+                                .replace(/[^\d۰-۹٠-٩]/g, '');
+
+                            const english = value
+                                .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+                                .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+
+                            if (english) {
+                                $(this).val(Number(english).toLocaleString('en-US'));
+                            } else {
+                                $(this).val('');
+                            }
+                        });
+                    },
+                    error: function () {
+                        button.prop('disabled', false);
+                        ModalHelper.error('خطا در دریافت اعتبارهای آزاد فروشنده.');
+                    }
+                });
+            });
 
             // ============================================
             // دکمه‌ی "تسویه با تخفیف"
@@ -830,6 +1117,35 @@
                     __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
                 }).done(function (r) {
                     if (r.success) { location.reload(); } else { alert(r.message); }
+                });
+            });
+
+            // ============================================
+            // لغو تخصیص اعتبار برگشت خرید
+            // ============================================
+            $(document).on('click', '.btnCancelCreditAllocation', function () {
+
+                var $btn = $(this);
+                var id = $btn.data('id');
+
+                ModalHelper.confirmDelete({
+                    url: '/Invoicing/Invoices/CancelCreditAllocation',
+                    data: {
+                        id: id,
+                        __RequestVerificationToken:
+                            $('input[name="__RequestVerificationToken"]').first().val()
+                    },
+                    title: 'لغو تخصیص اعتبار',
+                    message: 'آیا از لغو این تخصیص اطمینان دارید؟ اعتبار مربوطه مجدداً به اعتبار آزاد فروشنده اضافه خواهد شد.',
+                    items: [
+                        {
+                            label: 'مبلغ تخصیص',
+                            value: $btn.closest('tr').find('td').eq(2).text().trim() + ' ریال'
+                        }
+                    ],
+                    onSuccess: function () {
+                        location.reload();
+                    }
                 });
             });
 

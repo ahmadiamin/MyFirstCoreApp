@@ -1,22 +1,29 @@
 /*
-    خلاصه‌ی داشبورد یک شرکت. شش Result Set به این ترتیب:
+    خلاصه‌ی داشبورد یک شرکت. هشت Result Set به این ترتیب:
         ۱) KPIها (یک ردیف)
         ۲) چک‌های دریافتنیِ سررسیدشده یا نزدیک (تا @DueUntil)
         ۳) چک‌های پرداختنیِ سررسیدشده یا نزدیک
         ۴) بدهکاران برتر (طرف حساب‌های دارای مانده‌ی مثبت)
         ۵) بستانکاران برتر (مانده‌ی منفی؛ مقدار منفی برمی‌گردد)
-        ۶) جریان روزانه‌ی سال مالی: فروش، خرید، دریافت، پرداخت (تقسیم به ماه شمسی در C# انجام می‌شود)
-        ۷) فاکتورهای فروشِ معوق یا نزدیک به سررسید (تا @DueUntil)
+        ۶) جریان روزانه‌ی سال مالی: فروش، خرید، دریافت، پرداخت
+        ۷) فاکتورهای فروشِ معوق یا نزدیک به سررسید
         ۸) فاکتورهای خریدِ معوق یا نزدیک به سررسید
 
-    @Today: برای تعیین «معوق» (سررسید قبل از امروز). اگر NULL باشد، KPIهای معوق صفر می‌شوند.
+    @Today: برای تعیین «معوق» (سررسید قبل از امروز).
+    اگر NULL باشد، KPIهای معوق صفر می‌شوند.
     فاکتور بدون سررسید هیچ‌وقت در ۷ و ۸ یا معوق‌ها نمی‌آید.
 
-    مقدارهای enum از C# پاس داده می‌شوند تا عدد جادویی در SQL نباشد.
+    مقدارهای enum از C# پاس داده می‌شوند.
 
-    فرمول باقی‌مانده‌ی فاکتور = مبلغ کل − پرداخت‌شده − تخفیف تسویه (مثل InvoiceBalance در C#).
+    مانده فروش:
+    مبلغ کل − پرداخت‌شده − تخفیف تسویه
+
+    مانده خرید:
+    مبلغ کل − پرداخت‌شده − تخفیف تسویه − اعتبار تخصیص‌یافته
+
     مانده‌ها فقط از اسناد قطعی و حذف‌نشده‌اند.
 */
+
 CREATE OR ALTER PROCEDURE dbo.usp_Dashboard_Summary
     @TenantId                 INT,
     @FromDate                 DATE,
@@ -50,211 +57,450 @@ BEGIN
     IF @TopN > 50 SET @TopN = 50;
 
     -- ۱) KPIها ---------------------------------------------------------------
+
     SELECT
         -- فروش و خرید قطعیِ سال مالی
-        (SELECT ISNULL(SUM(i.TotalAmount), 0) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
-            AND i.[Date] >= @FromDate AND i.[Date] <= @ToDate)                       AS SalesTotal,
+        (
+            SELECT ISNULL(SUM(i.TotalAmount), 0)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypeSale
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.[Date] >= @FromDate
+              AND i.[Date] <= @ToDate
+        ) AS SalesTotal,
 
-        (SELECT ISNULL(SUM(i.TotalAmount), 0) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
-            AND i.[Date] >= @FromDate AND i.[Date] <= @ToDate)                       AS PurchasesTotal,
+        (
+            SELECT ISNULL(SUM(i.TotalAmount), 0)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypePurchase
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.[Date] >= @FromDate
+              AND i.[Date] <= @ToDate
+        ) AS PurchasesTotal,
 
-        -- فاکتورهای باز (همه‌ی سال‌ها): تعداد و باقی‌مانده
-        (SELECT COUNT(*) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
-            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OpenSaleCount,
+        -- فاکتورهای باز فروش (همه‌ی سال‌ها)
+        (
+            SELECT COUNT(*)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypeSale
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
+        ) AS OpenSaleCount,
 
-        (SELECT ISNULL(SUM(i.TotalAmount - i.PaidAmount - i.SettlementDiscount), 0) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
-            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OpenSaleRemaining,
+        (
+            SELECT ISNULL(
+                SUM(i.TotalAmount - i.PaidAmount - i.SettlementDiscount), 0)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypeSale
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
+        ) AS OpenSaleRemaining,
 
-        (SELECT COUNT(*) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
-            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OpenPurchaseCount,
+        -- فاکتورهای باز خرید (با کسر اعتبار تخصیص‌یافته)
+        (
+            SELECT COUNT(*)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypePurchase
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.TotalAmount
+                  - i.PaidAmount
+                  - i.SettlementDiscount
+                  - i.AppliedCreditAmount > 0
+        ) AS OpenPurchaseCount,
 
-        (SELECT ISNULL(SUM(i.TotalAmount - i.PaidAmount - i.SettlementDiscount), 0) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
-            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OpenPurchaseRemaining,
+        (
+            SELECT ISNULL(
+                SUM(
+                    i.TotalAmount
+                    - i.PaidAmount
+                    - i.SettlementDiscount
+                    - i.AppliedCreditAmount
+                ), 0)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypePurchase
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.TotalAmount
+                  - i.PaidAmount
+                  - i.SettlementDiscount
+                  - i.AppliedCreditAmount > 0
+        ) AS OpenPurchaseRemaining,
 
         -- موجودی نقد و بانک (بدهکار − بستانکار)
-        (SELECT ISNULL(SUM(l.Debit - l.Credit), 0)
-           FROM dbo.TransactionLines AS l
-           INNER JOIN dbo.Transactions AS t ON t.Id = l.TransactionId
-           INNER JOIN dbo.Accounts AS a ON a.Id = l.AccountId
-          WHERE l.TenantId = @TenantId AND t.TenantId = @TenantId
-            AND l.IsDeleted = 0 AND t.IsDeleted = 0 AND t.IsPosted = 1
-            AND a.AccountType IN (@AccountTypeBank, @AccountTypeCash))               AS CashAndBankBalance,
+        (
+            SELECT ISNULL(SUM(l.Debit - l.Credit), 0)
+            FROM dbo.TransactionLines AS l
+            INNER JOIN dbo.Transactions AS t
+                ON t.Id = l.TransactionId
+            INNER JOIN dbo.Accounts AS a
+                ON a.Id = l.AccountId
+            WHERE l.TenantId = @TenantId
+              AND t.TenantId = @TenantId
+              AND l.IsDeleted = 0
+              AND t.IsDeleted = 0
+              AND t.IsPosted = 1
+              AND a.AccountType IN (@AccountTypeBank, @AccountTypeCash)
+        ) AS CashAndBankBalance,
 
-        -- مجموع دریافتنی‌ها (بدهکار − بستانکار) و پرداختنی‌ها (بستانکار − بدهکار)
-        (SELECT ISNULL(SUM(l.Debit - l.Credit), 0)
-           FROM dbo.TransactionLines AS l
-           INNER JOIN dbo.Transactions AS t ON t.Id = l.TransactionId
-           INNER JOIN dbo.Accounts AS a ON a.Id = l.AccountId
-          WHERE l.TenantId = @TenantId AND t.TenantId = @TenantId
-            AND l.IsDeleted = 0 AND t.IsDeleted = 0 AND t.IsPosted = 1
-            AND a.AccountType = @AccountTypeReceivable)                              AS ReceivableBalance,
+        -- مجموع دریافتنی‌ها (بدهکار − بستانکار)
+        (
+            SELECT ISNULL(SUM(l.Debit - l.Credit), 0)
+            FROM dbo.TransactionLines AS l
+            INNER JOIN dbo.Transactions AS t
+                ON t.Id = l.TransactionId
+            INNER JOIN dbo.Accounts AS a
+                ON a.Id = l.AccountId
+            WHERE l.TenantId = @TenantId
+              AND t.TenantId = @TenantId
+              AND l.IsDeleted = 0
+              AND t.IsDeleted = 0
+              AND t.IsPosted = 1
+              AND a.AccountType = @AccountTypeReceivable
+        ) AS ReceivableBalance,
 
-        (SELECT ISNULL(SUM(l.Credit - l.Debit), 0)
-           FROM dbo.TransactionLines AS l
-           INNER JOIN dbo.Transactions AS t ON t.Id = l.TransactionId
-           INNER JOIN dbo.Accounts AS a ON a.Id = l.AccountId
-          WHERE l.TenantId = @TenantId AND t.TenantId = @TenantId
-            AND l.IsDeleted = 0 AND t.IsDeleted = 0 AND t.IsPosted = 1
-            AND a.AccountType = @AccountTypePayable)                                 AS PayableBalance,
+        -- مجموع پرداختنی‌ها (بستانکار − بدهکار)
+        (
+            SELECT ISNULL(SUM(l.Credit - l.Debit), 0)
+            FROM dbo.TransactionLines AS l
+            INNER JOIN dbo.Transactions AS t
+                ON t.Id = l.TransactionId
+            INNER JOIN dbo.Accounts AS a
+                ON a.Id = l.AccountId
+            WHERE l.TenantId = @TenantId
+              AND t.TenantId = @TenantId
+              AND l.IsDeleted = 0
+              AND t.IsDeleted = 0
+              AND t.IsPosted = 1
+              AND a.AccountType = @AccountTypePayable
+        ) AS PayableBalance,
 
         -- چک‌های در انتظار وصول
-        (SELECT COUNT(*) FROM dbo.Cheques AS c
-          WHERE c.TenantId = @TenantId AND c.IsDeleted = 0
-            AND c.Direction = @ChequeDirectionReceived
-            AND c.[Status] IN (@ChequeStatusInProgress, @ChequeStatusRePresented))   AS PendingReceivedChequeCount,
+        (
+            SELECT COUNT(*)
+            FROM dbo.Cheques AS c
+            WHERE c.TenantId = @TenantId
+              AND c.IsDeleted = 0
+              AND c.Direction = @ChequeDirectionReceived
+              AND c.[Status] IN (
+                  @ChequeStatusInProgress,
+                  @ChequeStatusRePresented
+              )
+        ) AS PendingReceivedChequeCount,
 
-        (SELECT ISNULL(SUM(c.Amount), 0) FROM dbo.Cheques AS c
-          WHERE c.TenantId = @TenantId AND c.IsDeleted = 0
-            AND c.Direction = @ChequeDirectionReceived
-            AND c.[Status] IN (@ChequeStatusInProgress, @ChequeStatusRePresented))   AS PendingReceivedChequeAmount,
+        (
+            SELECT ISNULL(SUM(c.Amount), 0)
+            FROM dbo.Cheques AS c
+            WHERE c.TenantId = @TenantId
+              AND c.IsDeleted = 0
+              AND c.Direction = @ChequeDirectionReceived
+              AND c.[Status] IN (
+                  @ChequeStatusInProgress,
+                  @ChequeStatusRePresented
+              )
+        ) AS PendingReceivedChequeAmount,
 
-        (SELECT COUNT(*) FROM dbo.Cheques AS c
-          WHERE c.TenantId = @TenantId AND c.IsDeleted = 0
-            AND c.Direction = @ChequeDirectionIssued
-            AND c.[Status] IN (@ChequeStatusInProgress, @ChequeStatusRePresented))   AS PendingIssuedChequeCount,
+        (
+            SELECT COUNT(*)
+            FROM dbo.Cheques AS c
+            WHERE c.TenantId = @TenantId
+              AND c.IsDeleted = 0
+              AND c.Direction = @ChequeDirectionIssued
+              AND c.[Status] IN (
+                  @ChequeStatusInProgress,
+                  @ChequeStatusRePresented
+              )
+        ) AS PendingIssuedChequeCount,
 
-        (SELECT ISNULL(SUM(c.Amount), 0) FROM dbo.Cheques AS c
-          WHERE c.TenantId = @TenantId AND c.IsDeleted = 0
-            AND c.Direction = @ChequeDirectionIssued
-            AND c.[Status] IN (@ChequeStatusInProgress, @ChequeStatusRePresented))   AS PendingIssuedChequeAmount,
+        (
+            SELECT ISNULL(SUM(c.Amount), 0)
+            FROM dbo.Cheques AS c
+            WHERE c.TenantId = @TenantId
+              AND c.IsDeleted = 0
+              AND c.Direction = @ChequeDirectionIssued
+              AND c.[Status] IN (
+                  @ChequeStatusInProgress,
+                  @ChequeStatusRePresented
+              )
+        ) AS PendingIssuedChequeAmount,
 
-        -- فاکتورهای معوق (قطعی، باقی‌مانده‌ی مثبت، سررسید قبل از امروز)
-        (SELECT COUNT(*) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
-            AND i.DueDate IS NOT NULL AND i.DueDate < @Today
-            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OverdueSaleCount,
+        -- فاکتورهای معوق فروش
+        (
+            SELECT COUNT(*)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypeSale
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.DueDate IS NOT NULL
+              AND i.DueDate < @Today
+              AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
+        ) AS OverdueSaleCount,
 
-        (SELECT ISNULL(SUM(i.TotalAmount - i.PaidAmount - i.SettlementDiscount), 0) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
-            AND i.DueDate IS NOT NULL AND i.DueDate < @Today
-            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OverdueSaleRemaining,
+        (
+            SELECT ISNULL(
+                SUM(i.TotalAmount - i.PaidAmount - i.SettlementDiscount), 0)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypeSale
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.DueDate IS NOT NULL
+              AND i.DueDate < @Today
+              AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
+        ) AS OverdueSaleRemaining,
 
-        (SELECT COUNT(*) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
-            AND i.DueDate IS NOT NULL AND i.DueDate < @Today
-            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OverduePurchaseCount,
+        -- فاکتورهای معوق خرید (با کسر اعتبار تخصیص‌یافته)
+        (
+            SELECT COUNT(*)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypePurchase
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.DueDate IS NOT NULL
+              AND i.DueDate < @Today
+              AND i.TotalAmount
+                  - i.PaidAmount
+                  - i.SettlementDiscount
+                  - i.AppliedCreditAmount > 0
+        ) AS OverduePurchaseCount,
 
-        (SELECT ISNULL(SUM(i.TotalAmount - i.PaidAmount - i.SettlementDiscount), 0) FROM dbo.Invoices AS i
-          WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-            AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
-            AND i.DueDate IS NOT NULL AND i.DueDate < @Today
-            AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0)             AS OverduePurchaseRemaining;
+        (
+            SELECT ISNULL(
+                SUM(
+                    i.TotalAmount
+                    - i.PaidAmount
+                    - i.SettlementDiscount
+                    - i.AppliedCreditAmount
+                ), 0)
+            FROM dbo.Invoices AS i
+            WHERE i.TenantId = @TenantId
+              AND i.IsDeleted = 0
+              AND i.InvoiceType = @InvoiceTypePurchase
+              AND i.[Status] = @InvoiceStatusPosted
+              AND i.DueDate IS NOT NULL
+              AND i.DueDate < @Today
+              AND i.TotalAmount
+                  - i.PaidAmount
+                  - i.SettlementDiscount
+                  - i.AppliedCreditAmount > 0
+        ) AS OverduePurchaseRemaining;
 
-    -- ۲) چک‌های دریافتنیِ سررسیدشده/نزدیک ------------------------------------------
+
+    -- ۲) چک‌های دریافتنیِ سررسیدشده/نزدیک -------------------------------
+
     SELECT TOP (@TopN)
-        c.Id AS Id, c.ChequeNumber AS ChequeNumber, ct.Name AS ContactName, c.Amount AS Amount, c.DueDate AS DueDate
+        c.Id AS Id,
+        c.ChequeNumber AS ChequeNumber,
+        ct.Name AS ContactName,
+        c.Amount AS Amount,
+        c.DueDate AS DueDate
     FROM dbo.Cheques AS c
-    LEFT JOIN dbo.Contacts AS ct ON ct.Id = c.ContactId
-    WHERE c.TenantId = @TenantId AND c.IsDeleted = 0
+    LEFT JOIN dbo.Contacts AS ct
+        ON ct.Id = c.ContactId
+    WHERE c.TenantId = @TenantId
+      AND c.IsDeleted = 0
       AND c.Direction = @ChequeDirectionReceived
-      AND c.[Status] IN (@ChequeStatusInProgress, @ChequeStatusRePresented)
+      AND c.[Status] IN (
+          @ChequeStatusInProgress,
+          @ChequeStatusRePresented
+      )
       AND c.DueDate <= @DueUntil
     ORDER BY c.DueDate, c.Id;
 
-    -- ۳) چک‌های پرداختنیِ سررسیدشده/نزدیک ------------------------------------------
+
+    -- ۳) چک‌های پرداختنیِ سررسیدشده/نزدیک -------------------------------
+
     SELECT TOP (@TopN)
-        c.Id AS Id, c.ChequeNumber AS ChequeNumber, ct.Name AS ContactName, c.Amount AS Amount, c.DueDate AS DueDate
+        c.Id AS Id,
+        c.ChequeNumber AS ChequeNumber,
+        ct.Name AS ContactName,
+        c.Amount AS Amount,
+        c.DueDate AS DueDate
     FROM dbo.Cheques AS c
-    LEFT JOIN dbo.Contacts AS ct ON ct.Id = c.ContactId
-    WHERE c.TenantId = @TenantId AND c.IsDeleted = 0
+    LEFT JOIN dbo.Contacts AS ct
+        ON ct.Id = c.ContactId
+    WHERE c.TenantId = @TenantId
+      AND c.IsDeleted = 0
       AND c.Direction = @ChequeDirectionIssued
-      AND c.[Status] IN (@ChequeStatusInProgress, @ChequeStatusRePresented)
+      AND c.[Status] IN (
+          @ChequeStatusInProgress,
+          @ChequeStatusRePresented
+      )
       AND c.DueDate <= @DueUntil
     ORDER BY c.DueDate, c.Id;
 
-    -- مانده‌ی هر طرف حساب (همه‌ی اسناد قطعی، همه‌ی سال‌ها) -------------------------
-    SELECT l.ContactId AS ContactId, SUM(l.Debit - l.Credit) AS Balance
+
+    -- مانده‌ی هر طرف حساب (همه‌ی اسناد قطعی، همه‌ی سال‌ها) -------------
+
+    SELECT
+        l.ContactId AS ContactId,
+        SUM(l.Debit - l.Credit) AS Balance
     INTO #Balances
     FROM dbo.TransactionLines AS l
-    INNER JOIN dbo.Transactions AS t ON t.Id = l.TransactionId
-    WHERE l.TenantId = @TenantId AND t.TenantId = @TenantId
-      AND l.IsDeleted = 0 AND t.IsDeleted = 0 AND t.IsPosted = 1
+    INNER JOIN dbo.Transactions AS t
+        ON t.Id = l.TransactionId
+    WHERE l.TenantId = @TenantId
+      AND t.TenantId = @TenantId
+      AND l.IsDeleted = 0
+      AND t.IsDeleted = 0
+      AND t.IsPosted = 1
       AND l.ContactId IS NOT NULL
     GROUP BY l.ContactId;
 
-    -- ۴) بدهکاران برتر ------------------------------------------------------------
-    SELECT TOP (@TopN) b.ContactId AS ContactId, c.Name AS Name, b.Balance AS Balance
+
+    -- ۴) بدهکاران برتر --------------------------------------------------
+
+    SELECT TOP (@TopN)
+        b.ContactId AS ContactId,
+        c.Name AS Name,
+        b.Balance AS Balance
     FROM #Balances AS b
-    INNER JOIN dbo.Contacts AS c ON c.Id = b.ContactId
+    INNER JOIN dbo.Contacts AS c
+        ON c.Id = b.ContactId
     WHERE b.Balance > 0
     ORDER BY b.Balance DESC, b.ContactId;
 
-    -- ۵) بستانکاران برتر ----------------------------------------------------------
-    SELECT TOP (@TopN) b.ContactId AS ContactId, c.Name AS Name, b.Balance AS Balance
+
+    -- ۵) بستانکاران برتر ------------------------------------------------
+
+    SELECT TOP (@TopN)
+        b.ContactId AS ContactId,
+        c.Name AS Name,
+        b.Balance AS Balance
     FROM #Balances AS b
-    INNER JOIN dbo.Contacts AS c ON c.Id = b.ContactId
+    INNER JOIN dbo.Contacts AS c
+        ON c.Id = b.ContactId
     WHERE b.Balance < 0
     ORDER BY b.Balance ASC, b.ContactId;
 
-    -- ۶) جریان روزانه‌ی سال مالی --------------------------------------------------
-    SELECT d.[Date] AS [Date],
-           SUM(d.Sales) AS Sales, SUM(d.Purchases) AS Purchases,
-           SUM(d.Received) AS Received, SUM(d.Paid) AS Paid
-    FROM (
-        SELECT i.[Date] AS [Date],
-               CAST(CASE WHEN i.InvoiceType = @InvoiceTypeSale     THEN i.TotalAmount ELSE 0 END AS DECIMAL(19, 0)) AS Sales,
-               CAST(CASE WHEN i.InvoiceType = @InvoiceTypePurchase THEN i.TotalAmount ELSE 0 END AS DECIMAL(19, 0)) AS Purchases,
-               CAST(0 AS DECIMAL(19, 0)) AS Received,
-               CAST(0 AS DECIMAL(19, 0)) AS Paid
+
+    -- ۶) جریان روزانه‌ی سال مالی ---------------------------------------
+
+    SELECT
+        d.[Date] AS [Date],
+        SUM(d.Sales) AS Sales,
+        SUM(d.Purchases) AS Purchases,
+        SUM(d.Received) AS Received,
+        SUM(d.Paid) AS Paid
+    FROM
+    (
+        SELECT
+            i.[Date] AS [Date],
+            CAST(
+                CASE
+                    WHEN i.InvoiceType = @InvoiceTypeSale
+                    THEN i.TotalAmount
+                    ELSE 0
+                END AS DECIMAL(19, 0)
+            ) AS Sales,
+            CAST(
+                CASE
+                    WHEN i.InvoiceType = @InvoiceTypePurchase
+                    THEN i.TotalAmount
+                    ELSE 0
+                END AS DECIMAL(19, 0)
+            ) AS Purchases,
+            CAST(0 AS DECIMAL(19, 0)) AS Received,
+            CAST(0 AS DECIMAL(19, 0)) AS Paid
         FROM dbo.Invoices AS i
-        WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
+        WHERE i.TenantId = @TenantId
+          AND i.IsDeleted = 0
           AND i.[Status] = @InvoiceStatusPosted
-          AND i.InvoiceType IN (@InvoiceTypeSale, @InvoiceTypePurchase)
-          AND i.[Date] >= @FromDate AND i.[Date] <= @ToDate
+          AND i.InvoiceType IN (
+              @InvoiceTypeSale,
+              @InvoiceTypePurchase
+          )
+          AND i.[Date] >= @FromDate
+          AND i.[Date] <= @ToDate
 
         UNION ALL
 
-        SELECT p.[Date] AS [Date],
-               CAST(0 AS DECIMAL(19, 0)) AS Sales,
-               CAST(0 AS DECIMAL(19, 0)) AS Purchases,
-               CAST(CASE WHEN p.PaymentType = @PaymentTypeReceived THEN p.Amount ELSE 0 END AS DECIMAL(19, 0)) AS Received,
-               CAST(CASE WHEN p.PaymentType = @PaymentTypePaid     THEN p.Amount ELSE 0 END AS DECIMAL(19, 0)) AS Paid
+        SELECT
+            p.[Date] AS [Date],
+            CAST(0 AS DECIMAL(19, 0)) AS Sales,
+            CAST(0 AS DECIMAL(19, 0)) AS Purchases,
+            CAST(
+                CASE
+                    WHEN p.PaymentType = @PaymentTypeReceived
+                    THEN p.Amount
+                    ELSE 0
+                END AS DECIMAL(19, 0)
+            ) AS Received,
+            CAST(
+                CASE
+                    WHEN p.PaymentType = @PaymentTypePaid
+                    THEN p.Amount
+                    ELSE 0
+                END AS DECIMAL(19, 0)
+            ) AS Paid
         FROM dbo.Payments AS p
-        WHERE p.TenantId = @TenantId AND p.IsDeleted = 0
+        WHERE p.TenantId = @TenantId
+          AND p.IsDeleted = 0
           AND p.[Status] = @PaymentStatusPosted
-          AND p.[Date] >= @FromDate AND p.[Date] <= @ToDate
+          AND p.[Date] >= @FromDate
+          AND p.[Date] <= @ToDate
     ) AS d
     GROUP BY d.[Date]
     ORDER BY d.[Date];
 
-    -- ۷) فاکتورهای فروشِ معوق/نزدیک سررسید ----------------------------------------
+
+    -- ۷) فاکتورهای فروشِ معوق/نزدیک سررسید -----------------------------
+
     SELECT TOP (@TopN)
-        i.Id AS Id, i.Number AS Number, ct.Name AS ContactName,
+        i.Id AS Id,
+        i.Number AS Number,
+        ct.Name AS ContactName,
         i.TotalAmount - i.PaidAmount - i.SettlementDiscount AS Remaining,
         i.DueDate AS DueDate
     FROM dbo.Invoices AS i
-    LEFT JOIN dbo.Contacts AS ct ON ct.Id = i.ContactId
-    WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-      AND i.InvoiceType = @InvoiceTypeSale AND i.[Status] = @InvoiceStatusPosted
-      AND i.DueDate IS NOT NULL AND i.DueDate <= @DueUntil
+    LEFT JOIN dbo.Contacts AS ct
+        ON ct.Id = i.ContactId
+    WHERE i.TenantId = @TenantId
+      AND i.IsDeleted = 0
+      AND i.InvoiceType = @InvoiceTypeSale
+      AND i.[Status] = @InvoiceStatusPosted
+      AND i.DueDate IS NOT NULL
+      AND i.DueDate <= @DueUntil
       AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
     ORDER BY i.DueDate, i.Id;
 
-    -- ۸) فاکتورهای خریدِ معوق/نزدیک سررسید ---------------------------------------
+
+    -- ۸) فاکتورهای خریدِ معوق/نزدیک سررسید -----------------------------
+
     SELECT TOP (@TopN)
-        i.Id AS Id, i.Number AS Number, ct.Name AS ContactName,
-        i.TotalAmount - i.PaidAmount - i.SettlementDiscount AS Remaining,
+        i.Id AS Id,
+        i.Number AS Number,
+        ct.Name AS ContactName,
+        i.TotalAmount
+            - i.PaidAmount
+            - i.SettlementDiscount
+            - i.AppliedCreditAmount AS Remaining,
         i.DueDate AS DueDate
     FROM dbo.Invoices AS i
-    LEFT JOIN dbo.Contacts AS ct ON ct.Id = i.ContactId
-    WHERE i.TenantId = @TenantId AND i.IsDeleted = 0
-      AND i.InvoiceType = @InvoiceTypePurchase AND i.[Status] = @InvoiceStatusPosted
-      AND i.DueDate IS NOT NULL AND i.DueDate <= @DueUntil
-      AND i.TotalAmount - i.PaidAmount - i.SettlementDiscount > 0
+    LEFT JOIN dbo.Contacts AS ct
+        ON ct.Id = i.ContactId
+    WHERE i.TenantId = @TenantId
+      AND i.IsDeleted = 0
+      AND i.InvoiceType = @InvoiceTypePurchase
+      AND i.[Status] = @InvoiceStatusPosted
+      AND i.DueDate IS NOT NULL
+      AND i.DueDate <= @DueUntil
+      AND i.TotalAmount
+          - i.PaidAmount
+          - i.SettlementDiscount
+          - i.AppliedCreditAmount > 0
     ORDER BY i.DueDate, i.Id;
-END
+
+END;

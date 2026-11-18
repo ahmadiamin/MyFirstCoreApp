@@ -252,52 +252,45 @@
                 return `<span class="badge badge-${projectStageStatusClass(status)}">${projectStageStatusName(status)}</span>`;
             }
 
-                    function postForm(action, fields, confirmMessage) {
-            function submitForm() {
-                const form = document.createElement('form');
-                form.method = 'post';
-                form.action = action;
-                form.style.display = 'none';
+            function postForm(action, fields, confirmMessage) {
 
-                const allFields = {
-                    ...fields,
-                    __RequestVerificationToken: token
-                };
+                function submitForm() {
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = action;
+                    form.style.display = 'none';
 
-                Object.keys(allFields).forEach(key => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = allFields[key] ?? '';
-                    form.appendChild(input);
-                });
+                    const allFields = {
+                        ...fields,
+                        __RequestVerificationToken: token
+                    };
 
-                document.body.appendChild(form);
-                form.submit();
-            }
+                    Object.keys(allFields).forEach(key => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = allFields[key] ?? '';
+                        form.appendChild(input);
+                    });
 
-            if (window.Swal) {
-                Swal.fire({
-                    title: 'آیا مطمئن هستید؟',
-                    text: confirmMessage || 'این عملیات انجام شود؟',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'بله، حذف شود',
-                    cancelButtonText: 'انصراف',
-                    reverseButtons: true,
-                    focusCancel: true
-                }).then(result => {
-                    if (result.isConfirmed) {
-                        submitForm();
-                    }
-                });
-            } else {
-                if (window.confirm(confirmMessage || 'این عملیات انجام شود؟')) {
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+
+                if (confirmMessage) {
+                    ModalHelper.confirm(
+                        confirmMessage,
+                        submitForm,
+                        {
+                            title: 'تأیید حذف',
+                            icon: 'fa-solid fa-trash',
+                            headerClass: 'bg-danger text-white'
+                        }
+                    );
+                } else {
                     submitForm();
                 }
             }
-        }
-
             function memberActions(member) {
                 if (!permissions.manageMembers) return '';
                 return `<button type="button" class="btn btn-sm btn-outline-danger"

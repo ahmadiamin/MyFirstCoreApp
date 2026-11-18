@@ -118,7 +118,8 @@ public class InvoicesController : Controller
                 x.SettlementDiscount,
                 x.Status,
                 x.NextFollowUpDate,
-                HistoryCount = x.Histories.Count
+                HistoryCount = x.Histories.Count,
+                x.AppliedCreditAmount
             })
             .ToListAsync();
 
@@ -136,13 +137,21 @@ public class InvoicesController : Controller
             isOverdue = x.Status == InvoiceStatus.Posted
                         && x.DueDate.HasValue
                         && x.DueDate.Value < today
-                        && InvoiceBalance.Remaining(x.TotalAmount, x.PaidAmount, x.SettlementDiscount) > 0,
+                        && InvoiceBalance.Remaining(
+                            x.TotalAmount,
+                            x.PaidAmount,
+                            x.SettlementDiscount,
+                            x.AppliedCreditAmount) > 0,
             invoiceType = (int)x.InvoiceType,
             invoiceTypeName = GetInvoiceTypeName(x.InvoiceType),
             contactName = x.ContactName,
             totalAmount = x.TotalAmount,
             paidAmount = x.PaidAmount,
-            remainingAmount = InvoiceBalance.Remaining(x.TotalAmount, x.PaidAmount, x.SettlementDiscount),
+            remainingAmount = InvoiceBalance.Remaining(
+                x.TotalAmount,
+                x.PaidAmount,
+                x.SettlementDiscount,
+                x.AppliedCreditAmount),
             status = (int)x.Status,
             statusName = GetStatusName(x.Status),
             nextFollowUpDate = PersianDate.Format(x.NextFollowUpDate),
@@ -388,6 +397,16 @@ public class InvoicesController : Controller
             .ThenByDescending(i => i.Number)
             .ToListAsync();
 
+        // اعتبارهای تخصیص‌یافته به فاکتور خرید فعلی
+        ViewBag.CreditAllocations = await _context.InvoiceCreditAllocations
+            .AsNoTracking()
+            .Include(a => a.CreditInvoice)
+            .Where(a =>
+                a.TenantId == tenantId.Value &&
+                a.TargetInvoiceId == entity.Id)
+            .OrderByDescending(a => a.Id)
+            .ToListAsync();
+
         return View(entity);
     }
 
@@ -596,7 +615,79 @@ public class InvoicesController : Controller
         => RunAjaxAsync(
             tenantId => _invoiceService.SettleWithDiscountAsync(id, tenantId, discountAmount),
             "تسویه با تخفیف با موفقیت انجام شد.");
+    // ============================================
+    // تخصیص اعتبار برگشت خرید
+    // ============================================
 
+    // GET: /Invoicing/Invoices/GetAvailableCredits?contactId=5
+    [HttpGet]
+    [Authorize(Policy = "Invoice.View")]
+    public async Task<IActionResult> GetAvailableCredits(int contactId)
+    {
+        var tenantId = _currentTenant.TenantId;
+
+        if (!tenantId.HasValue)
+            return Json(new { success = false, message = NoTenantMessage });
+
+        try
+        {
+            if (contactId <= 0)
+                return Json(new { success = false, message = "طرف حساب معتبر نیست." });
+
+            var credits = await _invoiceService.GetAvailableCreditsAsync(
+                contactId,
+                tenantId.Value);
+            return Json(new
+            {
+                success = true,
+                data = credits.Select(x => new
+                {
+                    x.CreditInvoiceId,
+                    x.CreditInvoiceNumber,
+                    CreditInvoiceDate = PersianDate.Format(x.CreditInvoiceDate),
+                    x.CreditAmount,
+                    x.AllocatedAmount,
+                    x.AvailableAmount
+                })
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get available invoice credits");
+            return Json(new { success = false, message = UnexpectedErrorMessage });
+        }
+    }
+
+    // POST: /Invoicing/Invoices/AllocateCredit
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Invoice.Edit")]
+    public Task<IActionResult> AllocateCredit(
+        int creditInvoiceId,
+        int targetInvoiceId,
+        decimal amount,
+        string? description)
+    {
+        return RunAjaxAsync(
+            tenantId => _invoiceService.AllocateCreditAsync(
+                creditInvoiceId,
+                targetInvoiceId,
+                amount,
+                tenantId,
+                description),
+            "اعتبار با موفقیت به فاکتور خرید تخصیص داده شد.");
+    }
+
+    // POST: /Invoicing/Invoices/CancelCreditAllocation
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "Invoice.Edit")]
+    public Task<IActionResult> CancelCreditAllocation(int id)
+    {
+        return RunAjaxAsync(
+            tenantId => _invoiceService.CancelCreditAllocationAsync(id, tenantId),
+            "تخصیص اعتبار با موفقیت لغو شد و اعتبار مجدداً آزاد گردید.");
+    }
     // ============================================
     // تمدید سررسید  (AJAX)
     // ============================================

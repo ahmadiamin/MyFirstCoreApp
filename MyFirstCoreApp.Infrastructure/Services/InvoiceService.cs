@@ -253,6 +253,31 @@ public class InvoiceService : IInvoiceService
             if (invoice.SettlementDiscount > 0)
                 throw new InvalidOperationException(
                     "این فاکتور با تخفیف تسویه شده و قابل برگشت نیست.");
+            // جلوگیری از برگشت فاکتور منبع اعتباری که اعتبار آن مصرف شده است.
+            var hasIssuedAllocations = await _context.InvoiceCreditAllocations
+                .AnyAsync(a =>
+                    a.TenantId == tenantId &&
+                    a.CreditInvoiceId == invoice.Id);
+
+            if (hasIssuedAllocations)
+            {
+                throw new InvalidOperationException(
+                    "از اعتبار این فاکتور برگشت خرید برای تسویه فاکتورهای دیگر استفاده شده است. " +
+                    "ابتدا تخصیص‌های اعتبار را لغو کنید.");
+            }
+
+            // جلوگیری از برگشت فاکتور مقصدی که اعتبار به آن تخصیص یافته است.
+            var hasReceivedAllocations = await _context.InvoiceCreditAllocations
+                .AnyAsync(a =>
+                    a.TenantId == tenantId &&
+                    a.TargetInvoiceId == invoice.Id);
+
+            if (hasReceivedAllocations)
+            {
+                throw new InvalidOperationException(
+                    "به این فاکتور اعتبار برگشت خرید تخصیص یافته است. " +
+                    "ابتدا تخصیص‌های اعتبار را لغو کنید.");
+            }
 
             // جلوگیری از برگشت فاکتور اصلی در صورت وجود برگشت قطعی
             if (invoice.InvoiceType is InvoiceType.Sale or InvoiceType.Purchase)
@@ -1421,5 +1446,187 @@ public class InvoiceService : IInvoiceService
             }
         }
     }
+    public async Task<List<InvoiceAvailableCreditDto>> GetAvailableCreditsAsync(
+        int contactId,
+        int tenantId)
+    {
+        var credits = await _context.Invoices
+            .AsNoTracking()
+            .Where(i =>
+                i.TenantId == tenantId &&
+                i.ContactId == contactId &&
+                i.InvoiceType == InvoiceType.PurchaseReturn &&
+                i.Status == InvoiceStatus.Posted)
+            .Select(i => new
+            {
+                i.Id,
+                i.Number,
+                i.Date,
+                i.TotalAmount,
+                AllocatedAmount = _context.InvoiceCreditAllocations
+                    .Where(a =>
+                        a.TenantId == tenantId &&
+                        a.CreditInvoiceId == i.Id)
+                    .Sum(a => (decimal?)a.Amount) ?? 0m
+            })
+            .Where(x => x.TotalAmount > x.AllocatedAmount)
+            .OrderBy(x => x.Date)
+            .ThenBy(x => x.Number)
+            .Select(x => new InvoiceAvailableCreditDto
+            {
+                CreditInvoiceId = x.Id,
+                CreditInvoiceNumber = x.Number,
+                CreditInvoiceDate = x.Date,
+                CreditAmount = x.TotalAmount,
+                AllocatedAmount = x.AllocatedAmount
+            })
+            .ToListAsync();
 
+        return credits;
+    }
+
+    public Task AllocateCreditAsync(
+        int creditInvoiceId,
+        int targetInvoiceId,
+        decimal amount,
+        int tenantId,
+        string? description = null)
+    {
+        return _context.ExecuteInTransactionAsync(
+            IsolationLevel.Serializable,
+            async () =>
+            {
+                if (creditInvoiceId <= 0)
+                    throw new InvalidOperationException("فاکتور برگشت خرید معتبر نیست.");
+
+                if (targetInvoiceId <= 0)
+                    throw new InvalidOperationException("فاکتور خرید مقصد معتبر نیست.");
+
+                if (creditInvoiceId == targetInvoiceId)
+                    throw new InvalidOperationException("فاکتور منبع و مقصد نمی‌توانند یکسان باشند.");
+
+                if (amount <= 0)
+                    throw new InvalidOperationException("مبلغ تخصیص باید بیشتر از صفر باشد.");
+
+                // دریافت فاکتور برگشت خرید (منبع اعتبار)
+                var creditInvoice = await _context.Invoices
+                    .FirstOrDefaultAsync(i =>
+                        i.Id == creditInvoiceId &&
+                        i.TenantId == tenantId)
+                    ?? throw new InvalidOperationException("فاکتور برگشت خرید پیدا نشد.");
+
+                if (creditInvoice.InvoiceType != InvoiceType.PurchaseReturn)
+                    throw new InvalidOperationException("منبع اعتبار باید فاکتور برگشت از خرید باشد.");
+
+                if (creditInvoice.Status != InvoiceStatus.Posted)
+                    throw new InvalidOperationException("فاکتور برگشت خرید باید قطعی شده باشد.");
+
+                // دریافت فاکتور خرید مقصد
+                var targetInvoice = await _context.Invoices
+                    .FirstOrDefaultAsync(i =>
+                        i.Id == targetInvoiceId &&
+                        i.TenantId == tenantId)
+                    ?? throw new InvalidOperationException("فاکتور خرید مقصد پیدا نشد.");
+
+                if (targetInvoice.InvoiceType != InvoiceType.Purchase)
+                    throw new InvalidOperationException("فاکتور مقصد باید از نوع خرید باشد.");
+
+                if (targetInvoice.Status != InvoiceStatus.Posted)
+                    throw new InvalidOperationException("فاکتور خرید مقصد باید قطعی شده باشد.");
+
+                // هر دو فاکتور باید متعلق به یک فروشنده باشند.
+                if (creditInvoice.ContactId != targetInvoice.ContactId)
+                    throw new InvalidOperationException(
+                        "فاکتور برگشت و فاکتور خرید باید متعلق به یک فروشنده باشند.");
+
+                // محاسبه اعتبار قبلاً مصرف‌شده از این برگشت
+                var allocatedAmount = await _context.InvoiceCreditAllocations
+                    .Where(a =>
+                        a.TenantId == tenantId &&
+                        a.CreditInvoiceId == creditInvoiceId)
+                    .SumAsync(a => (decimal?)a.Amount) ?? 0m;
+
+                var availableAmount = creditInvoice.TotalAmount - allocatedAmount;
+
+                if (amount > availableAmount)
+                    throw new InvalidOperationException(
+                        $"مبلغ تخصیص بیشتر از اعتبار آزاد برگشت خرید است. اعتبار آزاد: {availableAmount:N0}");
+
+                // بررسی مانده فاکتور مقصد
+                var remainingAmount = InvoiceBalance.Remaining(targetInvoice);
+
+                if (remainingAmount <= 0)
+                    throw new InvalidOperationException("فاکتور خرید مقصد مانده قابل تسویه ندارد.");
+
+                if (amount > remainingAmount)
+                    throw new InvalidOperationException(
+                        $"مبلغ تخصیص بیشتر از مانده فاکتور خرید است. مانده فعلی: {remainingAmount:N0}");
+
+                // ثبت تخصیص اعتبار
+                var allocation = new InvoiceCreditAllocation
+                {
+                    TenantId = tenantId,
+                    CreditInvoiceId = creditInvoiceId,
+                    TargetInvoiceId = targetInvoiceId,
+                    Amount = amount,
+                    Description = string.IsNullOrWhiteSpace(description)
+                        ? null
+                        : description.Trim()
+                };
+
+                _context.InvoiceCreditAllocations.Add(allocation);
+
+                // به‌روزرسانی مانده اعتباری فاکتور مقصد
+                targetInvoice.AppliedCreditAmount += amount;
+
+                await _context.SaveChangesAsync();
+            });
+    }
+
+    public Task CancelCreditAllocationAsync(
+    int allocationId,
+    int tenantId)
+    {
+        return _context.ExecuteInTransactionAsync(
+            IsolationLevel.Serializable,
+            async () =>
+            {
+                if (allocationId <= 0)
+                    throw new InvalidOperationException("تخصیص اعتبار معتبر نیست.");
+
+                var allocation = await _context.InvoiceCreditAllocations
+                    .Include(a => a.CreditInvoice)
+                    .Include(a => a.TargetInvoice)
+                    .FirstOrDefaultAsync(a =>
+                        a.Id == allocationId &&
+                        a.TenantId == tenantId)
+                    ?? throw new InvalidOperationException(
+                        "تخصیص اعتبار پیدا نشد یا قبلاً لغو شده است.");
+
+                var creditInvoice = allocation.CreditInvoice;
+                var targetInvoice = allocation.TargetInvoice;
+
+                if (creditInvoice.Status != InvoiceStatus.Posted)
+                    throw new InvalidOperationException(
+                        "فاکتور برگشت خرید منبع باید قطعی باشد.");
+
+                if (targetInvoice.Status != InvoiceStatus.Posted)
+                    throw new InvalidOperationException(
+                        "فاکتور خرید مقصد باید قطعی باشد.");
+
+                if (targetInvoice.AppliedCreditAmount < allocation.Amount)
+                    throw new InvalidOperationException(
+                        "مبلغ اعتبار تخصیص‌یافته با اطلاعات فاکتور مقصد مغایرت دارد.");
+
+                // آزادسازی اعتبار از فاکتور مقصد
+                targetInvoice.AppliedCreditAmount -= allocation.Amount;
+
+                // لغو نرم تخصیص و ثبت اطلاعات ممیزی
+                allocation.IsDeleted = true;
+                allocation.DeletedAt = _timeProvider.GetUtcNow().UtcDateTime;
+                allocation.DeletedBy = _currentUser.UserId;
+
+                await _context.SaveChangesAsync();
+            });
+    }
 }

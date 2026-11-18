@@ -359,7 +359,15 @@ public class PaymentsController : Controller
         if (!tenantId.HasValue) return Json(new { success = false });
 
         var invoices = await QueryOpenInvoices(tenantId.Value, contactId, paymentType)
-            .Select(i => new { i.Id, i.Number, i.Date, i.TotalAmount, i.PaidAmount, i.SettlementDiscount })
+            .Select(i => new {
+                i.Id, 
+                i.Number,
+                i.Date,
+                i.TotalAmount,
+                i.PaidAmount,
+                i.SettlementDiscount,
+                i.AppliedCreditAmount
+            })
             .ToListAsync();
 
         var data = invoices.Select(i => new
@@ -369,7 +377,11 @@ public class PaymentsController : Controller
             dateShamsi = FormatInvoiceDate(i.Date),
             total = i.TotalAmount,
             paid = i.PaidAmount,
-            remaining = InvoiceBalance.Remaining(i.TotalAmount, i.PaidAmount, i.SettlementDiscount)
+            remaining = InvoiceBalance.Remaining(
+                i.TotalAmount,
+                i.PaidAmount,
+                i.SettlementDiscount,
+                i.AppliedCreditAmount)
         });
 
         return Json(new { success = true, data });

@@ -60,6 +60,8 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(x => x.CustomerResponse).HasMaxLength(2000);
         builder.Property(x => x.RevisionCount).HasDefaultValue(0);
 
+        builder.Property(x => x.AppliedCreditAmount).HasPrecision(18, 0);
+
         // 🆕 ایندکس‌های گردش کار
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.NextFollowUpDate);

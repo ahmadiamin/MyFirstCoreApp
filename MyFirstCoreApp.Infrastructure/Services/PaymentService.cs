@@ -7,6 +7,7 @@ using MyFirstCoreApp.Domain.Entities.Accounting;
 using MyFirstCoreApp.Domain.Entities.Banking;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
+using System.Data;
 
 namespace MyFirstCoreApp.Infrastructure.Services;
 
@@ -168,8 +169,10 @@ public class PaymentService : IPaymentService
 
     public Task PostAsync(int paymentId, int tenantId)
     {
-        return _context.ExecuteInTransactionAsync(async () =>
-        {
+        return _context.ExecuteInTransactionAsync(
+            IsolationLevel.Serializable,
+            async () =>
+            {
             var payment = await LoadAsync(paymentId, tenantId);
 
             if (payment.Status == PaymentStatus.Posted)

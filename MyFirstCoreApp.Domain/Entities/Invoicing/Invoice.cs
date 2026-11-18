@@ -81,7 +81,7 @@ public class Invoice : TenantEntity
     /// مبلغ باقی‌مانده (بعد از پرداخت و تخفیف تسویه).
     /// فقط برای خواندن در حافظه؛ در کوئری از InvoiceBalance.WithOpenBalance() استفاده شود.
     /// </summary>
-    public decimal RemainingAmount => TotalAmount - PaidAmount - SettlementDiscount;
+    public decimal RemainingAmount => TotalAmount - PaidAmount - SettlementDiscount - AppliedCreditAmount;
 
     /// <summary>
     /// سند حسابداری اصلی فاکتور (سند تخفیف تسویه جداگانه است و این فیلد را عوض نمی‌کند)
@@ -138,6 +138,11 @@ public class Invoice : TenantEntity
     /// </summary>
     public decimal SettlementDiscount { get; set; }
 
+    /// <summary>
+    /// مبلغ اعتبار برگشت خرید تخصیص‌یافته به این فاکتور
+    /// </summary>
+    public decimal AppliedCreditAmount { get; set; }
+
     // ============================================
     // Navigation
     // ============================================
@@ -147,4 +152,8 @@ public class Invoice : TenantEntity
     /// تاریخچه‌ی تغییرات
     /// </summary>
     public ICollection<InvoiceHistory> Histories { get; set; } = new List<InvoiceHistory>();
+
+    public ICollection<InvoiceCreditAllocation> IssuedCreditAllocations { get; set; } = new List<InvoiceCreditAllocation>();
+
+    public ICollection<InvoiceCreditAllocation> ReceivedCreditAllocations { get; set; } = new List<InvoiceCreditAllocation>();
 }

@@ -8,7 +8,6 @@ using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Domain.Entities.Identity;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
-using MyFirstCoreApp.Infrastructure.Services;
 using MyFirstCoreApp.Models.ViewModels;
 
 namespace MyFirstCoreApp.Controllers
