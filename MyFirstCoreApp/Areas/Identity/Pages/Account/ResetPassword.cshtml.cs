@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
 using MyFirstCoreApp.Domain.Entities.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.Text;
 
 namespace MyFirstCoreApp.Areas.Identity.Pages.Account
 {
@@ -69,9 +71,23 @@ namespace MyFirstCoreApp.Areas.Identity.Pages.Account
                 return RedirectToPage("./ResetPasswordConfirmation");
             }
 
+            string decodedCode;
+            try
+            {
+                decodedCode = Encoding.UTF8.GetString(
+                    WebEncoders.Base64UrlDecode(Input.Code));
+            }
+            catch (FormatException)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "لینک بازیابی نامعتبر یا ناقص است. لطفاً دوباره درخواست بازیابی رمز عبور بدهید.");
+                return Page();
+            }
+
             var result = await _userManager.ResetPasswordAsync(
                 user,
-                Input.Code,
+                decodedCode,
                 Input.Password);
 
             if (result.Succeeded)

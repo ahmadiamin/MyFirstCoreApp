@@ -27,6 +27,11 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .HasForeignKey(x => x.ContactId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.Project)
+            .WithMany()
+            .HasForeignKey(x => x.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // رابطه با ReferenceInvoice (پیش‌فاکتور)
         builder.HasOne(x => x.ReferenceInvoice)
             .WithMany()
@@ -55,6 +60,7 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.HasIndex(x => new { x.TenantId, x.Date });
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.ContactId);
+        builder.HasIndex(x => new { x.TenantId, x.ProjectId });
 
         // 🆕 گردش کار پیش‌فاکتور
         builder.Property(x => x.CustomerResponse).HasMaxLength(2000);

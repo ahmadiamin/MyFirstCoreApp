@@ -79,12 +79,12 @@ public class VerifyResetCodeModel : PageModel
 
         Mobile = mobile;
 
-        var result = await _otpService.RequestCodeAsync(
+        await _otpService.RequestCodeAsync(
             mobile,
             cancellationToken);
 
-        TempData["OtpResendMessage"] = result.Message;
-        TempData["OtpResendAccepted"] = result.IsAccepted;
+        TempData["OtpResendMessage"] =
+            "اگر شماره متعلق به حساب فعال با موبایل تأییدشده باشد، کد بازیابی ارسال می‌شود. در صورت نرسیدن پیامک، تنظیمات پیامک بازیابی سامانه را بررسی کنید.";
 
         return RedirectToPage();
     }

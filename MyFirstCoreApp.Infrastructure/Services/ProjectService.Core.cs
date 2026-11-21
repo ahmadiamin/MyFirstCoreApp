@@ -108,6 +108,7 @@ public partial class ProjectService : IProjectService
 			.AsNoTracking()
 			.Include(x => x.Contact)
 			.Include(x => x.Members)
+			.Include(x => x.StatusHistories.OrderByDescending(h => h.ChangedAt))
 			.Include(x => x.Stages.OrderBy(s => s.SortOrder))
 				.ThenInclude(x => x.Histories.OrderByDescending(h => h.ChangedAt))
 			.FirstOrDefaultAsync(x =>
@@ -116,6 +117,27 @@ public partial class ProjectService : IProjectService
 
 		if (project is null)
 			return null;
+
+		var projectInvoices = await _context.Invoices
+			.AsNoTracking()
+			.Where(x => x.TenantId == tenantId &&
+				(x.ProjectId == id || x.Items.Any(item => item.ProjectId == id)))
+			.OrderByDescending(x => x.Date)
+			.ThenByDescending(x => x.Number)
+			.Select(x => new ProjectInvoiceDto
+			{
+				Id = x.Id,
+				Number = x.Number,
+				Date = x.Date,
+				InvoiceType = x.InvoiceType,
+				Status = x.Status,
+				AllocatedAmount = x.Items
+					.Where(item => item.ProjectId == id || (item.ProjectId == null && x.ProjectId == id))
+					.Sum(item => (decimal?)item.LineTotal) ?? 0,
+				ProjectLineCount = x.Items.Count(item =>
+					item.ProjectId == id || (item.ProjectId == null && x.ProjectId == id))
+			})
+			.ToListAsync();
 
 		var userTenantIds = project.Members
 			.Select(x => x.UserTenantId)
@@ -130,6 +152,15 @@ public partial class ProjectService : IProjectService
 		var names = await GetUserTenantNamesAsync(
 			userTenantIds.Distinct().ToList(),
 			tenantId);
+
+		var changedByIds = project.StatusHistories
+			.Where(x => !string.IsNullOrWhiteSpace(x.ChangedByUserId))
+			.Select(x => x.ChangedByUserId!)
+			.Distinct()
+			.ToList();
+		var changedByNames = await _context.Users.AsNoTracking()
+			.Where(x => changedByIds.Contains(x.Id))
+			.ToDictionaryAsync(x => x.Id, x => x.FullName);
 
 		names.TryGetValue(
 			project.ProjectManagerUserTenantId ?? 0,
@@ -215,7 +246,24 @@ public partial class ProjectService : IProjectService
 							.ToList()
 					};
 				})
-				.ToList()
+				.ToList(),
+
+			StatusHistories = project.StatusHistories
+				.OrderByDescending(x => x.ChangedAt)
+				.Select(x => new ProjectStatusHistoryDto
+				{
+					Id = x.Id,
+					PreviousStatus = x.PreviousStatus,
+					NewStatus = x.NewStatus,
+					Description = x.Description,
+					ChangedByUserName = x.ChangedByUserId != null && changedByNames.TryGetValue(x.ChangedByUserId, out var name)
+						? name
+						: null,
+					ChangedAt = x.ChangedAt
+				})
+				.ToList(),
+
+			Invoices = projectInvoices
 		};
 	}
 
@@ -254,6 +302,14 @@ public partial class ProjectService : IProjectService
 		};
 
 		_context.Set<Project>().Add(project);
+		project.StatusHistories.Add(new ProjectStatusHistory
+		{
+			TenantId = tenantId,
+			PreviousStatus = null,
+			NewStatus = ProjectStatus.Draft,
+			Description = "ایجاد پروژه",
+			ChangedByUserId = _currentUser.UserId
+		});
 		await _context.SaveChangesAsync();
 
 		return project.Id;
@@ -427,7 +483,22 @@ public partial class ProjectService : IProjectService
 			project.ActualEndDate = DateOnly.FromDateTime(DateTime.Today);
 		}
 
+		var previousStatus = project.Status;
 		project.Status = request.NewStatus;
+		project.StatusHistories.Add(new ProjectStatusHistory
+		{
+			TenantId = tenantId,
+			PreviousStatus = previousStatus,
+			NewStatus = request.NewStatus,
+			Description = request.NewStatus switch
+			{
+				ProjectStatus.OnHold => project.HoldReason,
+				ProjectStatus.Cancelled => project.CancellationReason,
+				_ => null
+			},
+			ChangedByUserId = _currentUser.UserId,
+			ChangedAt = DateTime.UtcNow
+		});
 
 		await _context.SaveChangesAsync();
 	}

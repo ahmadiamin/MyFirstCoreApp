@@ -75,6 +75,7 @@ public class InvoiceService : IInvoiceService
         return _context.ExecuteInTransactionAsync(IsolationLevel.Serializable, async () =>
         {
             ValidateRequest(request);
+            await ValidateProjectAssignmentsAsync(request, tenantId);
 
             var contactId = await ResolveContactAsync(request, tenantId);
             var supplierInvoiceNumber = NormalizeSupplierInvoiceNumber(request);
@@ -89,6 +90,7 @@ public class InvoiceService : IInvoiceService
                 InvoiceType = request.InvoiceType,
                 DueDate = EffectiveDueDate(request),
                 ContactId = contactId,
+                ProjectId = request.ProjectId,
                 SupplierInvoiceNumber = supplierInvoiceNumber,
                 Status = InvoiceStatus.Draft,
                 Description = request.Description?.Trim(),
@@ -112,6 +114,7 @@ public class InvoiceService : IInvoiceService
         return _context.ExecuteInTransactionAsync(async () =>
         {
             ValidateRequest(request);
+            await ValidateProjectAssignmentsAsync(request, tenantId);
 
             var invoice = await GetInvoiceWithItemsAsync(request.Id, tenantId);
 
@@ -132,6 +135,7 @@ public class InvoiceService : IInvoiceService
 
             invoice.Date = request.Date;
             invoice.ContactId = contactId;
+            invoice.ProjectId = request.ProjectId;
             invoice.SupplierInvoiceNumber = supplierInvoiceNumber;
             invoice.Description = request.Description?.Trim();
             invoice.DueDate = EffectiveDueDate(request);
@@ -506,6 +510,7 @@ public class InvoiceService : IInvoiceService
                 Date = _timeProvider.Today(),
                 InvoiceType = InvoiceType.Sale,
                 ContactId = preInvoice.ContactId,
+                ProjectId = preInvoice.ProjectId,
                 Status = InvoiceStatus.Draft,
                 Description = preInvoice.Description,
                 ReferenceInvoiceId = preInvoice.Id,
@@ -518,6 +523,7 @@ public class InvoiceService : IInvoiceService
                     TenantId = tenantId,
                     ProductId = i.ProductId,
                     WarehouseId = i.WarehouseId,
+                    ProjectId = i.ProjectId,
                     Description = i.Description,
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice,
@@ -691,6 +697,32 @@ public class InvoiceService : IInvoiceService
             throw new InvalidOperationException("کالاهای جدید تکراری در فاکتور وجود دارد.");
     }
 
+    private async Task ValidateProjectAssignmentsAsync(
+        InvoiceRequest request,
+        int tenantId)
+    {
+        var projectIds = request.Items
+            .Select(x => x.ProjectId)
+            .Append(request.ProjectId)
+            .Where(x => x.HasValue)
+            .Select(x => x!.Value)
+            .Distinct()
+            .ToList();
+
+        if (projectIds.Any(x => x <= 0))
+            throw new InvalidOperationException("پروژهٔ انتخاب‌شده معتبر نیست.");
+
+        if (projectIds.Count == 0)
+            return;
+
+        var validProjectCount = await _context.Projects
+            .CountAsync(x => x.TenantId == tenantId && projectIds.Contains(x.Id));
+
+        if (validProjectCount != projectIds.Count)
+            throw new InvalidOperationException(
+                "یکی از پروژه‌های انتخاب‌شده وجود ندارد یا متعلق به شرکت جاری نیست.");
+    }
+
     // ============================================
     // طرف حساب و کالا (شامل ساخت سریع)
     // ============================================
@@ -808,6 +840,7 @@ public class InvoiceService : IInvoiceService
                 TenantId = tenantId,
                 ProductId = productId,
                 WarehouseId = trackInventory ? item.WarehouseId : null,
+                ProjectId = item.ProjectId,
                 Description = item.Description?.Trim(),
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
@@ -1306,6 +1339,7 @@ public class InvoiceService : IInvoiceService
                         TenantId = tenantId,
                         ProductId = originalItem.ProductId,
                         WarehouseId = originalItem.WarehouseId,
+                        ProjectId = originalItem.ProjectId,
                         ReferenceInvoiceItemId = originalItem.Id,
                         Description = originalItem.Description,
                         Quantity = requestedItem.Quantity,
@@ -1328,6 +1362,7 @@ public class InvoiceService : IInvoiceService
                     InvoiceType = returnType,
                     ReferenceInvoiceId = original.Id,
                     ContactId = original.ContactId,
+                    ProjectId = original.ProjectId,
                     Status = InvoiceStatus.Draft,
                     Description = string.IsNullOrWhiteSpace(request.Description)
                         ? $"برگشت از فاکتور شماره {original.Number}"

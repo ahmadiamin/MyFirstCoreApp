@@ -43,6 +43,11 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
             .HasForeignKey(x => x.WarehouseId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.Project)
+            .WithMany()
+            .HasForeignKey(x => x.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // فیلتر Tenant
         builder.HasQueryFilter(x => !x.IsDeleted);
 
@@ -50,6 +55,7 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
         builder.HasIndex(x => x.InvoiceId);
         builder.HasIndex(x => x.ProductId);
         builder.HasIndex(x => x.WarehouseId);
+        builder.HasIndex(x => new { x.TenantId, x.ProjectId });
 
 
         builder.HasOne(x => x.ReferenceInvoiceItem)

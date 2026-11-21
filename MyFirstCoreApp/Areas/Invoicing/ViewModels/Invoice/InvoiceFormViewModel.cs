@@ -30,6 +30,9 @@ public class InvoiceFormViewModel
     [Display(Name = "طرف حساب")]
     public int? ContactId { get; set; }
 
+    [Display(Name = "پروژه")]
+    public int? ProjectId { get; set; }
+
     [Display(Name = "نام طرف حساب")]
     [MaxLength(200)]
     public string? ContactName { get; set; }   // 🆕 nullable
@@ -67,5 +70,6 @@ public class InvoiceFormViewModel
     public List<SelectListItem> ContactOptions { get; set; } = new();
     public List<SelectListItem> InvoiceTypeOptions { get; set; } = new();
     public List<SelectListItem> WarehouseOptions { get; set; } = new();
+    public List<SelectListItem> ProjectOptions { get; set; } = new();
     public int? DefaultWarehouseId { get; set; }
 }

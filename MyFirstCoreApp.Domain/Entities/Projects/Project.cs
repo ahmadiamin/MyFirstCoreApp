@@ -38,4 +38,6 @@ public class Project : TenantEntity
     public ICollection<ProjectMember> Members { get; set; } = new List<ProjectMember>();
 
     public ICollection<ProjectStage> Stages { get; set; } = new List<ProjectStage>();
+
+    public ICollection<ProjectStatusHistory> StatusHistories { get; set; } = new List<ProjectStatusHistory>();
 }

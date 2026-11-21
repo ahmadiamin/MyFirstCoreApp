@@ -36,14 +36,10 @@ public class PositionFormViewModel
 
 public class StaffCreateViewModel
 {
-    [Display(Name = "ایمیل (نام کاربری)")]
-    [Required(ErrorMessage = "ایمیل الزامی است.")]
-    [EmailAddress(ErrorMessage = "ایمیل نامعتبر است.")]
-    public string Email { get; set; } = string.Empty;
-
-    [Display(Name = "رمز عبور")]
-    [DataType(DataType.Password)]
-    public string? Password { get; set; }
+    [Display(Name = "موبایل (شناسه‌ی ورود)")]
+    [Required(ErrorMessage = "موبایل الزامی است.")]
+    [RegularExpression(@"^(09|۰۹|٠٩)[0-9۰-۹٠-٩]{9}$", ErrorMessage = "موبایل باید ۱۱ رقم و با 09 شروع شود.")]
+    public string Mobile { get; set; } = string.Empty;
 
     [Display(Name = "نام")]
     [Required(ErrorMessage = "نام الزامی است.")]
@@ -62,10 +58,6 @@ public class StaffCreateViewModel
     [Display(Name = "تلفن داخلی")]
     [StringLength(20)]
     public string? InternalPhone { get; set; }
-
-    [Display(Name = "موبایل")]
-    [StringLength(20)]
-    public string? PhoneNumber { get; set; }
 
     public List<int> SelectedRoleIds { get; set; } = new();
     public IReadOnlyList<TenantRoleSummary> RoleOptions { get; set; } = Array.Empty<TenantRoleSummary>();

@@ -5,6 +5,7 @@ using MyFirstCoreApp.Domain.Entities.Accounting;
 using MyFirstCoreApp.Domain.Entities.Contacts;
 using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Domain.Entities.Invoicing;
+using MyFirstCoreApp.Domain.Entities.Projects;
 using MyFirstCoreApp.Domain.Entities.Tenancy;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
@@ -34,6 +35,62 @@ public class InvoiceServiceTests : IDisposable
     // ---------------------------------------------------------------
     // ثبت
     // ---------------------------------------------------------------
+
+    [Fact]
+    public async Task Create_PersistsInvoiceAndLineProjectAssignments()
+    {
+        int headerProjectId;
+        int lineProjectId;
+        await using (var context = _db.NewContext())
+        {
+            var headerProject = new Project { TenantId = TenantA, Title = "پروژه سربرگ" };
+            var lineProject = new Project { TenantId = TenantA, Title = "پروژه ردیف" };
+            context.Projects.AddRange(headerProject, lineProject);
+            await context.SaveChangesAsync();
+            headerProjectId = headerProject.Id;
+            lineProjectId = lineProject.Id;
+        }
+
+        var contactId = await AddContactAsync();
+        var item = Item("کالای پروژه‌ای", 2, 500);
+        item.ProjectId = lineProjectId;
+        var request = NewRequest(InvoiceType.Purchase, contactId, item);
+        request.ProjectId = headerProjectId;
+
+        var created = await CreateAsync(request);
+        var loaded = await LoadInvoiceAsync(created.Id);
+
+        Assert.Equal(headerProjectId, loaded.ProjectId);
+        Assert.Equal(lineProjectId, loaded.Items.Single().ProjectId);
+    }
+
+    [Fact]
+    public async Task Create_RejectsProjectFromAnotherTenant()
+    {
+        int foreignProjectId;
+        _db.Tenant.TenantId = 2;
+        try
+        {
+            await using var context = _db.NewContext();
+            var project = new Project { TenantId = 2, Title = "پروژه شرکت دیگر" };
+            context.Projects.Add(project);
+            await context.SaveChangesAsync();
+            foreignProjectId = project.Id;
+        }
+        finally
+        {
+            _db.Tenant.TenantId = TenantA;
+        }
+
+        var request = NewRequest(InvoiceType.Sale, await AddContactAsync(), Item("کالا", 1, 100));
+        request.ProjectId = foreignProjectId;
+
+        await using var serviceContext = _db.NewContext();
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => NewService(serviceContext).CreateAsync(request, TenantA));
+
+        Assert.Contains("شرکت جاری", error.Message);
+    }
 
     [Fact]
     public async Task Create_WithNewContactAndNewProducts_CreatesEverythingTogether()
@@ -464,6 +521,21 @@ public class InvoiceServiceTests : IDisposable
     public async Task Convert_ApprovedPreInvoice_CopiesAllAmountsIncludingItemDiscountAndTax()
     {
         var pre = await CreateApprovedPreInvoiceAsync();
+        int projectId;
+        await using (var context = _db.NewContext())
+        {
+            var project = new Project { TenantId = TenantA, Title = "پروژه تبدیل پیش‌فاکتور" };
+            context.Projects.Add(project);
+            await context.SaveChangesAsync();
+            projectId = project.Id;
+
+            var savedPreInvoice = await context.Invoices
+                .Include(x => x.Items)
+                .SingleAsync(x => x.Id == pre.Id);
+            savedPreInvoice.ProjectId = projectId;
+            savedPreInvoice.Items.Single().ProjectId = projectId;
+            await context.SaveChangesAsync();
+        }
 
         Invoice sale;
         await using (var context = _db.NewContext())
@@ -476,6 +548,8 @@ public class InvoiceServiceTests : IDisposable
         Assert.Equal(InvoiceType.Sale, loadedSale.InvoiceType);
         Assert.Equal(InvoiceStatus.Draft, loadedSale.Status);
         Assert.Equal(pre.Id, loadedSale.ReferenceInvoiceId);
+        Assert.Equal(projectId, loadedSale.ProjectId);
+        Assert.Equal(projectId, loadedSale.Items.Single().ProjectId);
         Assert.Equal(1, loadedSale.Number);
         Assert.Equal(new DateOnly(2026, 3, 21), loadedSale.Date); // امروزِ ایران، نه تاریخ UTC
 

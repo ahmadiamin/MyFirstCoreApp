@@ -36,7 +36,7 @@
                     <th>موبایل</th>
                     <th>ایمیل</th>
                     <th>سمت‌ها (دسترسی)</th>
-                    <th style="width:170px">عملیات</th>
+                    <th style="width:200px">عملیات</th>
                 </tr>
             </thead>
             <tbody>
@@ -71,6 +71,13 @@
                         </td>
                         <td>
                             <a asp-action="Edit" asp-route-id="@member.UserId" class="btn btn-sm btn-outline-primary"><i class="fa fa-edit"></i> ویرایش</a>
+                            @if (!member.IsOwner && !string.IsNullOrEmpty(member.PhoneNumber))
+                            {
+                                <form asp-action="SendPasswordCode" asp-route-id="@member.UserId" method="post" class="d-inline"
+                                      onsubmit="return confirm('کد تعیین رمز به موبایل این فرد پیامک شود؟');">
+                                    <button type="submit" class="btn btn-sm btn-outline-info" title="ارسال کد تعیین رمز با پیامک"><i class="fa fa-sms"></i></button>
+                                </form>
+                            }
                             @if (!member.IsOwner)
                             {
                                 <form asp-action="Remove" asp-route-id="@member.UserId" method="post" class="d-inline"

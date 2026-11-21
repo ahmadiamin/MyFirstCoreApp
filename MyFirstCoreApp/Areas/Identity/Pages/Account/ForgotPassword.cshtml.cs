@@ -55,19 +55,15 @@ public class ForgotPasswordModel : PageModel
 
         if (isMobile)
         {
-            var result = await _otpService.RequestCodeAsync(
+            await _otpService.RequestCodeAsync(
                 value,
                 cancellationToken);
 
             // برای جلوگیری از افشای وجود یا عدم وجود حساب کاربری،
             // در هر دو حالت به صفحه تأیید هدایت می‌شویم.
             TempData["RecoveryMobile"] = NormalizeDigits(value);
-
-            if (!result.IsAccepted)
-            {
-                // در این مرحله پیام عمومی نمایش داده می‌شود.
-                // جزئیات خطا نباید وجود حساب کاربری را افشا کند.
-            }
+            TempData["OtpInitialNotice"] =
+                "اگر شماره متعلق به حساب فعال با موبایل تأییدشده باشد، کد بازیابی ارسال می‌شود. اگر پیامکی دریافت نکردید، تنظیمات پیامک بازیابی سامانه و شماره موبایل تأییدشده حساب را بررسی کنید.";
 
             return RedirectToPage("./VerifyResetCode");
         }

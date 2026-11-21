@@ -187,8 +187,10 @@ public class TenantSecurityService : ITenantSecurityService
 
     public async Task<TenantMemberInfo?> GetMemberAsync(int tenantId, string userId)
     {
-        var member = await QueryMembers(tenantId).FirstOrDefaultAsync(m => m.UserId == userId);
-        if (member == null) return null;
+        var member = await QueryMembers(tenantId, userId).FirstOrDefaultAsync();
+
+        if (member == null)
+            return null;
 
         return ToInfo(member, await GetRolesByUserAsync(tenantId));
     }
@@ -296,13 +298,31 @@ public class TenantSecurityService : ITenantSecurityService
         string UserId, bool IsOwner, string? FirstName, string? LastName, string? JobTitle, string? InternalPhone,
         string FullName, string? Email, string? PhoneNumber, bool UserIsActive);
 
-    private IQueryable<MemberRow> QueryMembers(int tenantId)
-        => _context.UserTenants
+    private IQueryable<MemberRow> QueryMembers(int tenantId, string? userId = null)
+    {
+        var query = _context.UserTenants
             .AsNoTracking()
-            .Where(ut => ut.TenantId == tenantId && !ut.IsDeleted)
-            .Join(_context.Users, ut => ut.UserId, u => u.Id, (ut, u) => new MemberRow(
-                ut.UserId, ut.IsOwner, ut.FirstName, ut.LastName, ut.JobTitle, ut.InternalPhone,
-                u.FullName, u.Email, u.PhoneNumber, u.IsActive));
+            .Where(ut => ut.TenantId == tenantId && !ut.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(userId))
+            query = query.Where(ut => ut.UserId == userId);
+
+        return query.Join(
+            _context.Users,
+            ut => ut.UserId,
+            u => u.Id,
+            (ut, u) => new MemberRow(
+                ut.UserId,
+                ut.IsOwner,
+                ut.FirstName,
+                ut.LastName,
+                ut.JobTitle,
+                ut.InternalPhone,
+                u.FullName,
+                u.Email,
+                u.PhoneNumber,
+                u.IsActive));
+    }
 
     private async Task<Dictionary<string, List<TenantMemberRole>>> GetRolesByUserAsync(int tenantId)
     {
@@ -345,6 +365,7 @@ public class TenantSecurityService : ITenantSecurityService
         return membership ?? throw new InvalidOperationException("این شخص عضو شرکت نیست.");
     }
 
+
     private async Task<(string Name, string? Description, List<string> Permissions)> ValidateRoleAsync(
         int tenantId, TenantRoleRequest request, int? excludeRoleId)
     {
@@ -352,8 +373,18 @@ public class TenantSecurityService : ITenantSecurityService
         var description = OptionalText(request.Description, "توضیحات", MaxDescriptionLength);
 
         var lowered = name.ToLower();
-        var duplicate = await _context.TenantRoles.AnyAsync(r =>
-            r.TenantId == tenantId && r.Id != (excludeRoleId ?? 0) && r.Name.ToLower() == lowered);
+
+        var rolesQuery = _context.TenantRoles
+            .Where(r => r.TenantId == tenantId);
+
+        if (excludeRoleId.HasValue)
+        {
+            var roleId = excludeRoleId.Value;
+            rolesQuery = rolesQuery.Where(r => r.Id != roleId);
+        }
+
+        var duplicate = await rolesQuery.AnyAsync(r =>
+            r.Name.ToLower() == lowered);
 
         if (duplicate)
             throw new InvalidOperationException("نقشی با این نام قبلاً وجود دارد.");
@@ -366,7 +397,10 @@ public class TenantSecurityService : ITenantSecurityService
 
         var accepted = new List<string>();
 
-        foreach (var raw in request.PermissionNames.Select(p => p?.Trim()).Where(p => !string.IsNullOrEmpty(p)).Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var raw in request.PermissionNames
+                     .Select(p => p?.Trim())
+                     .Where(p => !string.IsNullOrEmpty(p))
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var permission = raw!;
 

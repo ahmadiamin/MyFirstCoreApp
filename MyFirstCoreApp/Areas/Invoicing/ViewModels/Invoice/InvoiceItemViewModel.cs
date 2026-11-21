@@ -14,6 +14,9 @@ public class InvoiceItemViewModel
     [Display(Name = "انبار")]
     public int? WarehouseId { get; set; }
 
+    [Display(Name = "پروژه ردیف")]
+    public int? ProjectId { get; set; }
+
     /// <summary>null means a product has not been selected yet.</summary>
     public bool? TrackInventory { get; set; }
 

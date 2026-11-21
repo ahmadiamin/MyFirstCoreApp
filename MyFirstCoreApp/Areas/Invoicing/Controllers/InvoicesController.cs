@@ -181,6 +181,7 @@ public class InvoicesController : Controller
             Date = PersianDate.Format(_timeProvider.Today()),
             InvoiceType = invoiceType,
             ContactOptions = await GetContactOptionsAsync(),
+            ProjectOptions = await GetProjectOptionsAsync(tenantId.Value),
             InvoiceTypeOptions = GetInvoiceTypeOptions(),
             WarehouseOptions = await GetWarehouseOptionsAsync(tenantId.Value),
             Items = new List<InvoiceItemViewModel>
@@ -292,16 +293,19 @@ public class InvoicesController : Controller
             DueDate = entity.DueDate.HasValue ? PersianDate.Format(entity.DueDate.Value) : null,
             InvoiceType = entity.InvoiceType,
             ContactId = entity.ContactId,
+            ProjectId = entity.ProjectId,
             ContactName = entity.Contact?.Name,
             SupplierInvoiceNumber = entity.SupplierInvoiceNumber,
             Description = entity.Description,
             ContactOptions = await GetContactOptionsAsync(),
+            ProjectOptions = await GetProjectOptionsAsync(tenantId.Value),
             InvoiceTypeOptions = GetInvoiceTypeOptions(),
             Items = entity.Items.Select(it => new InvoiceItemViewModel
             {
                 Id = it.Id,
                 ProductId = it.ProductId,
                 WarehouseId = it.WarehouseId,
+                ProjectId = it.ProjectId,
                 TrackInventory = it.Product?.TrackInventory,
                 ProductName = it.Product?.Name,
                 Description = it.Description,
@@ -382,6 +386,9 @@ public class InvoicesController : Controller
                 .ThenInclude(it => it.Product)
             .Include(i => i.Items)
                 .ThenInclude(it => it.Warehouse)
+            .Include(i => i.Items)
+                .ThenInclude(it => it.Project)
+            .Include(i => i.Project)
             .Include(i => i.Transaction)
             .Include(i => i.Histories)
             .Include(i => i.ReferenceInvoice)
@@ -1423,6 +1430,7 @@ public class InvoicesController : Controller
             InvoiceType = model.InvoiceType,
             SupplierInvoiceNumber = model.SupplierInvoiceNumber,
             ContactId = model.ContactId > 0 ? model.ContactId : null,
+            ProjectId = model.ProjectId,
             NewContactName = model.ContactName,
             Description = model.Description,
             Items = model.Items
@@ -1431,6 +1439,7 @@ public class InvoicesController : Controller
                 {
                     ProductId = i.ProductId,
                     WarehouseId = i.WarehouseId,
+                    ProjectId = i.ProjectId,
                     NewProductName = i.ProductId > 0 ? null : i.ProductName,
                     Description = i.Description,
                     Quantity = i.Quantity,
@@ -1449,6 +1458,9 @@ public class InvoicesController : Controller
         model.ContactOptions = await GetContactOptionsAsync();
         model.InvoiceTypeOptions = GetInvoiceTypeOptions();
         var tenantId = _currentTenant.TenantId;
+        model.ProjectOptions = tenantId.HasValue
+            ? await GetProjectOptionsAsync(tenantId.Value)
+            : new();
         model.WarehouseOptions = tenantId.HasValue
             ? await GetWarehouseOptionsAsync(tenantId.Value)
             : new();
@@ -1513,6 +1525,20 @@ public class InvoicesController : Controller
             {
                 Value = c.Id.ToString(),
                 Text = c.Name
+            })
+            .ToListAsync();
+    }
+
+    private async Task<List<SelectListItem>> GetProjectOptionsAsync(int tenantId)
+    {
+        return await _context.Projects
+            .AsNoTracking()
+            .Where(x => x.TenantId == tenantId)
+            .OrderBy(x => x.Title)
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text = x.Code == null ? x.Title : x.Title + " (" + x.Code + ")"
             })
             .ToListAsync();
     }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using MyFirstCoreApp.Application.Common.Interfaces;
 using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Application.Security;
@@ -102,19 +103,31 @@ public class StaffController : Controller
             {
                 var result = await _staff.AddMemberAsync(tenantId.Value, new MemberCreateRequest
                 {
-                    Email = model.Email,
-                    Password = model.Password,
+                    Mobile = model.Mobile,
                     FirstName = model.FirstName,
                     LastName = model.LastName,
                     JobTitle = model.JobTitle,
                     InternalPhone = model.InternalPhone,
-                    PhoneNumber = model.PhoneNumber,
                     RoleIds = model.SelectedRoleIds ?? new List<int>()
                 });
 
-                TempData["Success"] = result.CreatedNewAccount
-                    ? "فرد جدید و حساب کاربری‌اش ثبت شد."
-                    : "این ایمیل از قبل حساب داشت؛ به شرکت اضافه شد (رمز و نام حساب او تغییر نکرد).";
+                if (!result.CreatedNewAccount)
+                {
+                    TempData["Success"] =
+                        "این شماره از قبل حساب داشت؛ به شرکت اضافه شد (رمز و مشخصات حساب او تغییر نکرد).";
+                }
+                else if (result.PasswordSmsAccepted)
+                {
+                    TempData["Success"] =
+                        $"حساب ساخته شد و کد تعیین رمز به {result.MaskedMobile} پیامک شد. کارمند با آن رمز خودش را می‌گذارد. " +
+                        "کد ۵ دقیقه اعتبار دارد؛ اگر منقضی شد، «ارسال کد» را بزنید یا کارمند از «فراموشی رمز» استفاده کند.";
+                }
+                else
+                {
+                    TempData["Error"] =
+                        $"حساب ساخته شد ولی ارسال پیامک به {result.MaskedMobile} انجام نشد (تنظیمات پیامک یا محدودیت ارسال). " +
+                        "کمی بعد «ارسال کد» را بزنید.";
+                }
 
                 return RedirectToAction(nameof(Index));
             }
@@ -203,6 +216,40 @@ public class StaffController : Controller
 
         model.RoleOptions = await ActiveRolesAsync(tenantId.Value);
         return View(model);
+    }
+
+    // ============================================
+    // ارسال دوباره‌ی کد تعیین رمز (پیامک)
+    // ============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "User.Edit")]
+    public async Task<IActionResult> SendPasswordCode(string id)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        try
+        {
+            var result = await _staff.SendPasswordCodeAsync(tenantId.Value, id);
+
+            if (result.Accepted)
+                TempData["Success"] = $"کد تعیین رمز به {result.MaskedMobile} پیامک شد (۵ دقیقه اعتبار).";
+            else
+                TempData["Error"] = "ارسال کد انجام نشد؛ ممکن است محدودیت ارسال (۶۰ ثانیه فاصله، ۳ بار در ۱۵ دقیقه) یا تنظیمات پیامک مانع باشد.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Send staff password code failed");
+            TempData["Error"] = UnexpectedErrorMessage;
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     // ============================================

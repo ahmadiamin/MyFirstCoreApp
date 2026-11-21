@@ -42,6 +42,12 @@ public interface IProjectService
         ProjectMemberRequest request,
         int tenantId);
 
+    Task UpdateMemberAsync(
+        int memberId,
+        string? roleTitle,
+        string? notes,
+        int tenantId);
+
     Task RemoveMemberAsync(
         int memberId,
         int tenantId);

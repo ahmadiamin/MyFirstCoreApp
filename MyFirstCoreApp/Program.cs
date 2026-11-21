@@ -46,6 +46,16 @@ try
         options.LoginPath = "/Identity/Account/Login";
         options.LogoutPath = "/Identity/Account/Logout";
         options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+
+        // با خروج، سمتِ انتخاب‌شده (مدیر/کارمند) پاک شود تا ورود بعدی دوباره بپرسد
+        options.Events.OnSigningOut = context =>
+        {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoginCapacityAccessor>()
+                .Clear();
+
+            return Task.CompletedTask;
+        };
     });
 
     builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
@@ -57,6 +67,7 @@ try
     builder.Services.AddScoped<IMenuService, MenuService>();
     builder.Services.AddScoped<IFileService, FileService>();
     builder.Services.AddScoped<ICurrentTenant, CurrentTenantService>();
+    builder.Services.AddScoped<ILoginCapacityAccessor, SessionLoginCapacityAccessor>();
     builder.Services.AddScoped<ICurrentUser, CurrentUserService>();
     builder.Services.AddScoped<ITransactionService, TransactionService>();
     builder.Services.AddScoped<IInvoiceService, InvoiceService>();

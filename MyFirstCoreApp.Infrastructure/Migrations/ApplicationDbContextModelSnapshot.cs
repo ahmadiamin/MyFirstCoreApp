@@ -17,7 +17,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.12")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -2421,6 +2421,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasPrecision(18)
                         .HasColumnType("decimal(18,0)");
 
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ReferenceInvoiceId")
                         .HasColumnType("int");
 
@@ -2477,6 +2480,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.HasIndex("NextFollowUpDate");
 
+                    b.HasIndex("ProjectId");
+
                     b.HasIndex("ReferenceInvoiceId");
 
                     b.HasIndex("SentDate");
@@ -2486,6 +2491,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.HasIndex("TransactionId");
 
                     b.HasIndex("TenantId", "Date");
+
+                    b.HasIndex("TenantId", "ProjectId");
 
                     b.HasIndex("TenantId", "ContactId", "SupplierInvoiceNumber")
                         .IsUnique()
@@ -2715,6 +2722,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 3)
                         .HasColumnType("decimal(18,3)");
@@ -2752,9 +2762,13 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.HasIndex("ProductId");
 
+                    b.HasIndex("ProjectId");
+
                     b.HasIndex("ReferenceInvoiceItemId");
 
                     b.HasIndex("WarehouseId");
+
+                    b.HasIndex("TenantId", "ProjectId");
 
                     b.ToTable("InvoiceItems", (string)null);
                 });
@@ -3173,6 +3187,69 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.HasIndex("TenantId", "ProjectStageId", "ChangedAt");
 
                     b.ToTable("ProjectStageHistories", (string)null);
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.ProjectStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PreviousStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("TenantId", "ChangedByUserId");
+
+                    b.HasIndex("TenantId", "ProjectId", "ChangedAt");
+
+                    b.ToTable("ProjectStatusHistories", (string)null);
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Tenancy.Tenant", b =>
@@ -3973,6 +4050,11 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasForeignKey("ContactId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Projects.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", "ReferenceInvoice")
                         .WithMany()
                         .HasForeignKey("ReferenceInvoiceId")
@@ -3984,6 +4066,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Contact");
+
+                    b.Navigation("Project");
 
                     b.Navigation("ReferenceInvoice");
 
@@ -4034,6 +4118,11 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Projects.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Invoicing.InvoiceItem", "ReferenceInvoiceItem")
                         .WithMany()
                         .HasForeignKey("ReferenceInvoiceItemId")
@@ -4047,6 +4136,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("Invoice");
 
                     b.Navigation("Product");
+
+                    b.Navigation("Project");
 
                     b.Navigation("ReferenceInvoiceItem");
 
@@ -4126,6 +4217,17 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("ProjectStage");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.ProjectStatusHistory", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Projects.Project", "Project")
+                        .WithMany("StatusHistories")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Tenancy.Tenant", b =>
@@ -4293,6 +4395,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Stages");
+
+                    b.Navigation("StatusHistories");
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.ProjectStage", b =>

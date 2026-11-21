@@ -568,6 +568,11 @@
                     </span>
                     <span class="warehouse-not-applicable" style="display:none">—</span>
                 </td>
+                <td data-label="پروژه ردیف">
+                    <select name="Items[${newIndex}].ProjectId" class="form-control project-select select2">
+                        ${$('#projectOptionsTemplate').html()}
+                    </select>
+                </td>
                 <td data-label="تعداد">
                     <input type="text" name="Items[${newIndex}].Quantity"
                            class="form-control persian-number quantity-input" value="۱"

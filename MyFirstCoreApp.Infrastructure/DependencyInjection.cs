@@ -88,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantStaffService, TenantStaffService>();
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IMenuTreeService, MenuTreeService>();
+        services.AddScoped<ILoginCapacityService, LoginCapacityService>();
 
         return services;
     }

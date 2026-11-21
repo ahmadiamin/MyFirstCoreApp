@@ -1,5 +1,7 @@
 ﻿using MyFirstCoreApp.Domain.Common;
 
+using MyFirstCoreApp.Domain.Entities.Projects;
+
 namespace MyFirstCoreApp.Domain.Entities.Invoicing;
 
 /// <summary>
@@ -22,6 +24,10 @@ public class InvoiceItem : TenantEntity
     /// </summary>
     public int? WarehouseId { get; set; }
     public Inventory.Warehouse? Warehouse { get; set; }
+
+    /// <summary>پروژهٔ اختصاصی ردیف؛ در صورت خالی‌بودن، پروژهٔ سربرگ فاکتور ملاک است.</summary>
+    public int? ProjectId { get; set; }
+    public Project? Project { get; set; }
 
     /// <summary>
     /// شرح (اختیاری)

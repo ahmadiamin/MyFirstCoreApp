@@ -66,6 +66,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         public DbSet<ProjectMember> ProjectMembers { get; set; }
         public DbSet<ProjectStage> ProjectStages { get; set; }
         public DbSet<ProjectStageHistory> ProjectStageHistories { get; set; }
+        public DbSet<ProjectStatusHistory> ProjectStatusHistories { get; set; }
 
         // Inventory
         public DbSet<Unit> Units { get; set; }

@@ -174,7 +174,11 @@ public sealed class PasswordResetOtpService : IPasswordResetOtpService
     }
     private async Task ConsumeOtpAsync(PasswordResetOtp otp)
     {
-        otp.ConsumedAt = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        otp.ConsumedAt = now;
+        otp.IsDeleted = true;
+        otp.DeletedAt = now;
+        otp.DeletedBy = "system";
 
         // برای اطمینان از ذخیره وضعیت مصرف‌شده،
         // حتی اگر CancellationToken درخواست لغو شده باشد.

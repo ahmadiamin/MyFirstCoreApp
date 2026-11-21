@@ -58,6 +58,16 @@
         </div>
     </div>
 
+    <div class="col-md-4">
+        <div class="form-group">
+            <label asp-for="ProjectId"></label>
+            <select asp-for="ProjectId" asp-items="Model.ProjectOptions" class="form-control select2">
+                <option value="">بدون پروژه</option>
+            </select>
+            <small class="form-text text-muted">پروژهٔ این فاکتور؛ ردیف‌ها می‌توانند پروژهٔ جداگانه داشته باشند.</small>
+        </div>
+    </div>
+
 
     <div class="col-md-6">
         <div class="form-group">
@@ -94,6 +104,7 @@
                 <th style="width: 40px;">#</th>
                 <th style="width: 250px;">کالا</th>
                 <th style="width: 160px;">انبار</th>
+                <th style="width: 190px;">پروژه ردیف</th>
                 <th style="width: 100px;">تعداد</th>
                 <th style="width: 130px;">قیمت واحد</th>
                 <th style="width: 100px;">تخفیف %</th>
@@ -145,6 +156,22 @@
                         </span>
                         <span class="warehouse-not-applicable" style="@(Model.Items[i].TrackInventory == false ? null : "display:none")">—</span>
                     </td>
+                    <td data-label="پروژه ردیف">
+                        <select name="Items[@i].ProjectId" class="form-control project-select select2">
+                            <option value="">پروژهٔ پیش‌فرض فاکتور</option>
+                            @foreach (var project in Model.ProjectOptions)
+                            {
+                                if (Model.Items[i].ProjectId?.ToString() == project.Value)
+                                {
+                                    <option value="@project.Value" selected>@project.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@project.Value">@project.Text</option>
+                                }
+                            }
+                        </select>
+                    </td>
                     <td data-label="تعداد">
                         <input type="text" name="Items[@i].Quantity"
                                class="form-control persian-number quantity-input"
@@ -180,7 +207,7 @@
         </tbody>
         <tfoot>
             <tr style="height: 100px;">
-                <td colspan="9"></td>
+                <td colspan="10"></td>
             </tr>
         </tfoot>
     </table>
@@ -198,6 +225,14 @@
         {
             <option value="@warehouse.Value">@warehouse.Text</option>
         }
+    }
+</select>
+
+<select id="projectOptionsTemplate" class="d-none" aria-hidden="true" tabindex="-1">
+    <option value="">پروژهٔ پیش‌فرض فاکتور</option>
+    @foreach (var project in Model.ProjectOptions)
+    {
+        <option value="@project.Value">@project.Text</option>
     }
 </select>
 

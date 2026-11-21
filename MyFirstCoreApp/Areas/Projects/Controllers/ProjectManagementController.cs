@@ -94,6 +94,59 @@ public class ProjectManagementController : Controller
         }
     }
 
+    [HttpGet]
+    [Authorize(Policy = "ProjectMember.Manage")]
+    public async Task<IActionResult> EditMember(int memberId, int projectId)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        var project = await _projectService.GetByIdAsync(projectId, tenantId.Value);
+        if (project is null) return NotFound();
+
+        var member = project.Members.FirstOrDefault(x => x.Id == memberId);
+        if (member is null) return NotFound();
+
+        return View(new ProjectMemberFormViewModel
+        {
+            Id = member.Id,
+            ProjectId = projectId,
+            UserTenantId = member.UserTenantId,
+            UserName = member.UserName,
+            RoleTitle = member.RoleTitle,
+            Notes = member.Notes
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "ProjectMember.Manage")]
+    public async Task<IActionResult> EditMember(ProjectMemberFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        try
+        {
+            await _projectService.UpdateMemberAsync(
+                model.Id,
+                model.RoleTitle,
+                model.Notes,
+                tenantId.Value);
+
+            TempData["Success"] = "اطلاعات عضو پروژه به‌روزرسانی شد.";
+            return RedirectToAction("Details", "Projects", new { area = "Projects", id = model.ProjectId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = "ProjectMember.Manage")]

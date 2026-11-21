@@ -1,4 +1,5 @@
 using MyFirstCoreApp.Domain.Common;
+using MyFirstCoreApp.Domain.Entities.Projects;
 using MyFirstCoreApp.Domain.Enums;
 
 namespace MyFirstCoreApp.Domain.Entities.Invoicing;
@@ -32,6 +33,10 @@ public class Invoice : TenantEntity
     /// </summary>
     public int? ContactId { get; set; }
     public Contacts.Contact? Contact { get; set; }
+
+    /// <summary>پروژه پیش‌فرض برای این فاکتور؛ ردیف‌ها می‌توانند پروژهٔ جداگانه داشته باشند.</summary>
+    public int? ProjectId { get; set; }
+    public Project? Project { get; set; }
 
     /// <summary>
     /// وضعیت (پیش‌نویس، قطعی، لغو شده)

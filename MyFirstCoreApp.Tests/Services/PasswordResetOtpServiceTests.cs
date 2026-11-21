@@ -373,15 +373,23 @@ public sealed class PasswordResetOtpServiceTests
         Assert.False(requestResult.IsAccepted);
         Assert.Equal(1, smsService.SendCount);
         Assert.NotNull(smsService.LastCode);
+        var failedCode = smsService.LastCode!;
 
         var savedOtp = context.PasswordResetOtps
+            .IgnoreQueryFilters()
             .Single(x => x.UserId == user.Id);
 
         Assert.NotNull(savedOtp.ConsumedAt);
+        Assert.True(savedOtp.IsDeleted);
+
+        smsService.SendAccepted = true;
+        var retryResult = await service.RequestCodeAsync(user.PhoneNumber);
+        Assert.True(retryResult.IsAccepted);
+        Assert.Equal(2, smsService.SendCount);
 
         var verifyResult = await service.VerifyCodeAsync(
             user.PhoneNumber,
-            smsService.LastCode!);
+            failedCode);
 
         Assert.False(verifyResult.IsVerified);
         Assert.Null(verifyResult.RequestId);
@@ -718,9 +726,11 @@ public sealed class PasswordResetOtpServiceTests
         Assert.False(result.IsAccepted);
 
         var savedOtp = context.PasswordResetOtps
+            .IgnoreQueryFilters()
             .Single(x => x.UserId == user.Id);
 
         Assert.NotNull(savedOtp.ConsumedAt);
+        Assert.True(savedOtp.IsDeleted);
     }
 
     [Fact]

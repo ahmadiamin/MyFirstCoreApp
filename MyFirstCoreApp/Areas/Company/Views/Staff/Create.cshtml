@@ -10,22 +10,20 @@
         <div class="card-body">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+            <div class="alert alert-info py-2">
+                <i class="fa fa-sms"></i>
+                کارمند با <b>شماره‌ی موبایل</b> وارد می‌شود. رمز را شما نمی‌دهید: کد تعیین رمز به همین شماره پیامک می‌شود
+                و کارمند خودش رمز می‌گذارد. اگر این شماره از قبل حساب دارد (مثلاً مدیر کسب‌وکار دیگری است)، همان حساب به شرکت شما اضافه می‌شود.
+            </div>
+
             <div class="row">
+                <div class="col-md-3"><div class="form-group"><label asp-for="Mobile"></label><input asp-for="Mobile" class="form-control" dir="ltr" autocomplete="off" placeholder="09121234567" /><span asp-validation-for="Mobile" class="text-danger"></span></div></div>
                 <div class="col-md-3"><div class="form-group"><label asp-for="FirstName"></label><input asp-for="FirstName" class="form-control" /><span asp-validation-for="FirstName" class="text-danger"></span></div></div>
                 <div class="col-md-3"><div class="form-group"><label asp-for="LastName"></label><input asp-for="LastName" class="form-control" /><span asp-validation-for="LastName" class="text-danger"></span></div></div>
-                <div class="col-md-3"><div class="form-group"><label asp-for="JobTitle"></label><input asp-for="JobTitle" class="form-control" placeholder="مثلاً منشی" /></div></div>
                 <div class="col-md-3"><div class="form-group"><label asp-for="InternalPhone"></label><input asp-for="InternalPhone" class="form-control" dir="ltr" placeholder="مثلاً 101" /><span asp-validation-for="InternalPhone" class="text-danger"></span></div></div>
             </div>
             <div class="row">
-                <div class="col-md-4"><div class="form-group"><label asp-for="Email"></label><input asp-for="Email" class="form-control" dir="ltr" autocomplete="off" /><span asp-validation-for="Email" class="text-danger"></span></div></div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label asp-for="Password"></label>
-                        <input asp-for="Password" class="form-control" dir="ltr" autocomplete="new-password" />
-                        <small class="form-text text-muted">فقط برای حساب «جدید». اگر این ایمیل از قبل حساب دارد، رمز و نامِ حسابش تغییر نمی‌کند.</small>
-                    </div>
-                </div>
-                <div class="col-md-4"><div class="form-group"><label asp-for="PhoneNumber"></label><input asp-for="PhoneNumber" class="form-control" dir="ltr" /></div></div>
+                <div class="col-md-4"><div class="form-group"><label asp-for="JobTitle"></label><input asp-for="JobTitle" class="form-control" placeholder="مثلاً منشی" /></div></div>
             </div>
 
             <partial name="_RolePicker" model="@(new MyFirstCoreApp.Areas.Company.ViewModels.RolePickerViewModel { RoleOptions = Model.RoleOptions, SelectedRoleIds = Model.SelectedRoleIds })" />

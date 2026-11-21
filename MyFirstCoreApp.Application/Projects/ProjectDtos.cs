@@ -47,6 +47,29 @@ public sealed class ProjectDetailsDto
 
     public List<ProjectMemberDto> Members { get; set; } = new();
     public List<ProjectStageDto> Stages { get; set; } = new();
+    public List<ProjectStatusHistoryDto> StatusHistories { get; set; } = new();
+    public List<ProjectInvoiceDto> Invoices { get; set; } = new();
+}
+
+public sealed class ProjectInvoiceDto
+{
+    public int Id { get; set; }
+    public int Number { get; set; }
+    public DateOnly Date { get; set; }
+    public InvoiceType InvoiceType { get; set; }
+    public InvoiceStatus Status { get; set; }
+    public decimal AllocatedAmount { get; set; }
+    public int ProjectLineCount { get; set; }
+}
+
+public sealed class ProjectStatusHistoryDto
+{
+    public int Id { get; set; }
+    public ProjectStatus? PreviousStatus { get; set; }
+    public ProjectStatus NewStatus { get; set; }
+    public string? Description { get; set; }
+    public string? ChangedByUserName { get; set; }
+    public DateTime ChangedAt { get; set; }
 }
 
 public sealed class ProjectMemberDto

@@ -18,11 +18,31 @@
         _ => "نامشخص"
     };
 
+    string GetInvoiceStatusName(InvoiceStatus status) => status switch
+    {
+        InvoiceStatus.Draft => "پیش‌نویس",
+        InvoiceStatus.Sent => "ارسال‌شده",
+        InvoiceStatus.Revised => "اصلاح‌شده",
+        InvoiceStatus.Approved => "تأییدشده",
+        InvoiceStatus.Rejected => "ردشده",
+        InvoiceStatus.Postponed => "به‌تعویق‌افتاده",
+        InvoiceStatus.Converted => "تبدیل‌شده",
+        InvoiceStatus.Cancelled => "لغوشده",
+        InvoiceStatus.Posted => "قطعی",
+        _ => "نامشخص"
+    };
+
+    var projectStatusHistoryJson = JsonSerializer.Serialize(Model.StatusHistories, new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+
     var canEditProject = (await AuthorizationService.AuthorizeAsync(User, null, "Project.Edit")).Succeeded;
     var canChangeProjectStatus = (await AuthorizationService.AuthorizeAsync(User, null, "Project.Status.Change")).Succeeded;
     var canManageMembers = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectMember.Manage")).Succeeded;
     var canManageStages = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectStage.Manage")).Succeeded;
     var canChangeStageStatus = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectStage.Status.Change")).Succeeded;
+    var canViewInvoices = (await AuthorizationService.AuthorizeAsync(User, null, "Invoice.View")).Succeeded;
 
     var membersJson = JsonSerializer.Serialize(Model.Members, new JsonSerializerOptions
     {
@@ -102,6 +122,60 @@
                 <div class="col-md-12 mb-3"><strong>علت لغو:</strong><p class="mb-0">@Model.CancellationReason</p></div>
             }
         </div>
+
+        <hr />
+
+        @if (canViewInvoices)
+        {
+            <section class="mb-4">
+                <h5 class="mb-3"><i class="fa fa-file-invoice-dollar"></i> اسناد مالی پروژه</h5>
+                @if (Model.Invoices.Count == 0)
+                {
+                    <div class="text-muted">هنوز فاکتوری به این پروژه تخصیص داده نشده است.</div>
+                }
+                else
+                {
+                    <div class="row">
+                        @foreach (var invoice in Model.Invoices)
+                        {
+                            var invoiceTypeName = invoice.InvoiceType switch
+                            {
+                                InvoiceType.PreInvoice => "پیش‌فاکتور",
+                                InvoiceType.Sale => "فروش",
+                                InvoiceType.Purchase => "خرید",
+                                InvoiceType.SalesReturn => "برگشت از فروش",
+                                InvoiceType.PurchaseReturn => "برگشت از خرید",
+                                _ => "فاکتور"
+                            };
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="detail-mobile-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>@invoiceTypeName شماره @invoice.Number</strong>
+                                        <span class="badge badge-info">@GetInvoiceStatusName(invoice.Status)</span>
+                                    </div>
+                                    <div class="detail-line">تاریخ: @PersianDate.Format(invoice.Date)</div>
+                                    <div class="detail-line">مبلغ تخصیص‌یافته: <span class="persian-number-comma">@invoice.AllocatedAmount.ToString("N0")</span> ریال</div>
+                                    @if (invoice.ProjectLineCount > 0)
+                                    {
+                                        <div class="detail-line">ردیف‌های اختصاص‌یافته: @invoice.ProjectLineCount</div>
+                                    }
+                                    <a asp-area="Invoicing" asp-controller="Invoices" asp-action="Details"
+                                       asp-route-id="@invoice.Id" class="btn btn-sm btn-outline-primary mt-2">
+                                        مشاهده فاکتور
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+            <hr />
+        }
+
+        <section class="mb-4">
+            <h5 class="mb-3"><i class="fa fa-clock-rotate-left"></i> تاریخچه وضعیت پروژه</h5>
+            <div id="projectStatusHistory"></div>
+        </section>
 
         <hr />
 
@@ -189,6 +263,7 @@
             const projectId = @Model.Id;
             const memberRows = @Html.Raw(membersJson);
             const stageRows = @Html.Raw(stagesJson);
+            const projectStatusHistory = @Html.Raw(projectStatusHistoryJson);
 
             const permissions = {
                 manageMembers: @(canManageMembers ? "true" : "false"),
@@ -235,6 +310,37 @@
                     5: 'رد شده',
                     6: 'لغوشده'
                 })[status] || 'نامشخص';
+            }
+
+            function projectStatusName(status) {
+                return ({
+                    1: 'پیش‌نویس',
+                    2: 'در حال اجرا',
+                    3: 'متوقف',
+                    4: 'تکمیل‌شده',
+                    5: 'لغوشده'
+                })[status] || 'نامشخص';
+            }
+
+            function renderProjectStatusHistory() {
+                const host = $('#projectStatusHistory');
+                if (!projectStatusHistory.length) {
+                    host.html('<div class="text-muted">هنوز تغییری برای وضعیت پروژه ثبت نشده است.</div>');
+                    return;
+                }
+
+                host.html(projectStatusHistory.map(item => {
+                    const changedAt = new Date(item.changedAt);
+                    const time = Number.isNaN(changedAt.getTime()) ? '-' :
+                        new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit' }).format(changedAt);
+                    const from = item.previousStatus == null ? '—' : projectStatusName(item.previousStatus);
+                    return `<div class="detail-mobile-card">
+                        <div class="detail-card-title">${esc(from)} ← ${esc(projectStatusName(item.newStatus))}</div>
+                        <div class="detail-line">تاریخ: ${esc(formatDate(item.changedAt))}، ساعت ${esc(time)}</div>
+                        <div class="detail-line">ثبت‌کننده: ${esc(item.changedByUserName || '-')}</div>
+                        ${item.description ? `<div class="detail-line">توضیحات: ${esc(item.description)}</div>` : ''}
+                    </div>`;
+                }).join(''));
             }
 
             function projectStageStatusClass(status) {
@@ -293,7 +399,10 @@
             }
             function memberActions(member) {
                 if (!permissions.manageMembers) return '';
-                return `<button type="button" class="btn btn-sm btn-outline-danger"
+                return `<a class="btn btn-sm btn-outline-primary"
+                            href="${projectManagementBase}/EditMember?memberId=${Number(member.id)}&projectId=${projectId}"
+                            title="ویرایش عضو"><i class="fa fa-edit"></i></a>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
                             onclick="removeProjectMember(${Number(member.id)})" title="حذف عضو">
                             <i class="fa fa-trash"></i>
                         </button>`;
@@ -528,6 +637,7 @@
             $('#memberCount').text('تعداد اعضا: ' + persianNumber(memberRows.length));
             $('#stageCount').text('تعداد مراحل: ' + persianNumber(stageRows.length));
 
+            renderProjectStatusHistory();
             renderMembersMobile();
             renderStagesMobile();
 

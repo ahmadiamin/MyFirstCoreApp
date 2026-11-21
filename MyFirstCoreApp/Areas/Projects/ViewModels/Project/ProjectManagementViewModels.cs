@@ -7,11 +7,15 @@ namespace MyFirstCoreApp.Areas.Projects.ViewModels.Project;
 
 public class ProjectMemberFormViewModel
 {
+    public int Id { get; set; }
+
     public int ProjectId { get; set; }
 
     [Required(ErrorMessage = "انتخاب عضو الزامی است.")]
     [Display(Name = "عضو پروژه")]
     public int UserTenantId { get; set; }
+
+    public string UserName { get; set; } = string.Empty;
 
     [Display(Name = "نقش در پروژه")]
     [MaxLength(100)]

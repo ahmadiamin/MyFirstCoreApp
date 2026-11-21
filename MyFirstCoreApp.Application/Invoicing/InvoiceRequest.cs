@@ -25,6 +25,8 @@ public sealed class InvoiceRequest
     /// <summary>طرف حساب موجود. اگر خالی باشد باید NewContactName پر باشد.</summary>
     public int? ContactId { get; set; }
 
+    public int? ProjectId { get; set; }
+
     /// <summary>نام طرف حساب جدید (ساخت سریع) — فقط وقتی ContactId خالی است.</summary>
     public string? NewContactName { get; set; }
 
@@ -40,6 +42,8 @@ public sealed class InvoiceItemRequest
 
     /// <summary>انبار مقصد خرید یا مبدأ فروش؛ برای ورودی‌های قدیمی اختیاری است.</summary>
     public int? WarehouseId { get; set; }
+
+    public int? ProjectId { get; set; }
 
     /// <summary>نام کالای جدید (ساخت سریع).</summary>
     public string? NewProductName { get; set; }

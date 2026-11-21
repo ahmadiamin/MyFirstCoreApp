@@ -188,6 +188,12 @@
             </div>
             <div class="col-md-3 col-6 mb-2">
                 <div class="info-box">
+                    <div class="label">پروژه</div>
+                    <div class="value">@(Model.Project?.Title ?? "بدون پروژه")</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="info-box">
                     <div class="label">مبلغ نهایی</div>
                     <div class="value money persian-number-comma">
                         @Model.TotalAmount.ToString("N0") <small class="text-muted">ریال</small>
@@ -325,6 +331,7 @@
                             <th style="width: 40px;" class="text-center">#</th>
                             <th>کالا</th>
                             <th>انبار</th>
+                            <th>پروژه</th>
                             <th class="text-center">تعداد</th>
                             <th class="text-left">قیمت واحد</th>
                             <th class="text-left">تخفیف</th>
@@ -342,6 +349,7 @@
                                 <td class="text-center persian-number">@i</td>
                                 <td>@item.Product?.Name</td>
                                 <td>@(item.Warehouse?.Name ?? "—")</td>
+                                <td>@(item.Project?.Title ?? Model.Project?.Title ?? "—")</td>
                                 <td class="text-center persian-number">@item.Quantity.ToString("0.###")</td>
                                 <td class="text-left persian-number-comma">@item.UnitPrice.ToString("N0")</td>
                                 <td class="text-left persian-number-comma">@item.DiscountAmount.ToString("N0")</td>
@@ -353,19 +361,19 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th colspan="7" class="text-left">جمع اقلام:</th>
+                            <th colspan="8" class="text-left">جمع اقلام:</th>
                             <th class="text-left persian-number-comma">@Model.SubTotal.ToString("N0")</th>
                         </tr>
                         <tr>
-                            <th colspan="7" class="text-left">جمع تخفیف:</th>
+                            <th colspan="8" class="text-left">جمع تخفیف:</th>
                             <th class="text-left persian-number-comma">@Model.DiscountAmount.ToString("N0")</th>
                         </tr>
                         <tr>
-                            <th colspan="7" class="text-left">جمع مالیات:</th>
+                            <th colspan="8" class="text-left">جمع مالیات:</th>
                             <th class="text-left persian-number-comma">@Model.TaxAmount.ToString("N0")</th>
                         </tr>
                         <tr class="bg-info">
-                            <th colspan="7" class="text-left">مبلغ نهایی:</th>
+                            <th colspan="8" class="text-left">مبلغ نهایی:</th>
                             <th class="text-left persian-number-comma"><strong>@Model.TotalAmount.ToString("N0")</strong></th>
                         </tr>
                     </tfoot>
@@ -390,6 +398,7 @@
                         {
                             <div class="row-line">انبار: @item.Warehouse.Name</div>
                         }
+                        <div class="row-line">پروژه: @(item.Project?.Title ?? Model.Project?.Title ?? "—")</div>
                         <div class="row-line">تعداد: <span class="persian-number" dir="ltr">@item.Quantity.ToString("0.###")</span></div>
                         <div class="row-line">قیمت واحد: <span class="persian-number-comma" dir="ltr">@item.UnitPrice.ToString("N0")</span></div>
                         @if (item.DiscountAmount > 0)

@@ -67,6 +67,35 @@ public partial class ProjectService
         await _context.SaveChangesAsync();
     }
 
+    public async Task UpdateMemberAsync(
+        int memberId,
+        string? roleTitle,
+        string? notes,
+        int tenantId)
+    {
+        var member = await _context.Set<ProjectMember>()
+            .Include(x => x.Project)
+            .FirstOrDefaultAsync(x =>
+                x.Id == memberId &&
+                x.TenantId == tenantId);
+
+        if (member is null)
+            throw new InvalidOperationException("عضو پروژه پیدا نشد.");
+
+        EnsureProjectIsEditable(member.Project);
+
+        if (roleTitle?.Trim().Length > 100)
+            throw new InvalidOperationException("نقش پروژه نمی‌تواند بیشتر از ۱۰۰ کاراکتر باشد.");
+
+        if (notes?.Trim().Length > 1000)
+            throw new InvalidOperationException("توضیحات نمی‌تواند بیشتر از ۱۰۰۰ کاراکتر باشد.");
+
+        member.RoleTitle = NormalizeOptional(roleTitle);
+        member.Notes = NormalizeOptional(notes);
+
+        await _context.SaveChangesAsync();
+    }
+
     // ============================================
     // Project Stages
     // ============================================

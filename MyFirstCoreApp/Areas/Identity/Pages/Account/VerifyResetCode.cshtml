@@ -3,8 +3,8 @@
 
 @{
     ViewData["Title"] = "تأیید کد بازیابی";
+    var initialNotice = TempData["OtpInitialNotice"] as string;
     var resendMessage = TempData["OtpResendMessage"] as string;
-    var resendAccepted = TempData["OtpResendAccepted"] as bool?;
 }
 
 <div class="row justify-content-center">
@@ -20,16 +20,18 @@
 
             <div class="card-body">
 
+                @if (!string.IsNullOrWhiteSpace(initialNotice))
+                {
+                    <div class="alert alert-info" role="status">@initialNotice</div>
+                }
+
                 <p class="text-center text-muted mb-4">
                     کد شش‌رقمی ارسال‌شده به شماره زیر را وارد کنید.
                 </p>
 
                 @if (!string.IsNullOrWhiteSpace(resendMessage))
                 {
-                    <div class="alert @(resendAccepted == true ? "alert-success" : "alert-warning")"
-                         role="alert">
-                        @resendMessage
-                    </div>
+                    <div class="alert alert-info" role="status">@resendMessage</div>
                 }
 
                 <form method="post">

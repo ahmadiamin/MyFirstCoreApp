@@ -195,7 +195,7 @@ public class AccountsController : Controller
         entity.BankName = model.BankName?.Trim();
         entity.AccountNumber = model.AccountNumber?.Trim();
         entity.CardNumber = model.CardNumber?.Trim();
-        entity.ShebaNumber = model.ShebaNumber?.Trim();
+        entity.ShebaNumber = model.ShebaNumber?.Replace(" ", "").Trim();
         entity.CurrentBalance = model.CurrentBalance;
         entity.IsDefault = model.IsDefault;
         entity.IsActive = model.IsActive;

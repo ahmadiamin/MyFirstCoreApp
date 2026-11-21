@@ -88,19 +88,19 @@ public sealed class MemberProfileRequest
     public string? InternalPhone { get; set; }
 }
 
-/// <summary>افزودن یک نفر به شرکت (حساب جدید یا کاربرِ موجود).</summary>
+/// <summary>
+/// افزودن یک نفر به شرکت با «شماره‌ی موبایل» (هویت کارمند = موبایل).
+/// رمز را مالک نمی‌دهد: برای حساب جدید، کدِ تعیین رمز به همین موبایل پیامک می‌شود و کارمند خودش رمز می‌گذارد.
+/// </summary>
 public sealed class MemberCreateRequest
 {
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>فقط برای حساب «جدید» لازم است؛ برای کاربر موجود نادیده گرفته می‌شود.</summary>
-    public string? Password { get; set; }
+    /// <summary>09xxxxxxxxx (ارقام فارسی/عربی نرمال می‌شود). شناسه‌ی یکتای حساب.</summary>
+    public string Mobile { get; set; } = string.Empty;
 
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string? JobTitle { get; set; }
     public string? InternalPhone { get; set; }
-    public string? PhoneNumber { get; set; }
 
     public List<int> RoleIds { get; set; } = new();
 }
@@ -109,6 +109,18 @@ public sealed class MemberCreateResult
 {
     public string UserId { get; set; } = string.Empty;
 
-    /// <summary>true = حساب تازه ساخته شد؛ false = کاربرِ موجود به این شرکت اضافه شد.</summary>
+    /// <summary>true = حساب تازه ساخته شد؛ false = حسابِ موجود (مثلاً مدیر شرکتی دیگر) به این شرکت اضافه شد.</summary>
     public bool CreatedNewAccount { get; set; }
+
+    /// <summary>فقط برای حساب جدید: آیا پیامک کد تعیین رمز پذیرفته شد؟</summary>
+    public bool PasswordSmsAccepted { get; set; }
+
+    /// <summary>موبایل با ماسک (0912***4567) برای نمایش.</summary>
+    public string MaskedMobile { get; set; } = string.Empty;
+}
+
+public sealed class StaffPasswordCodeResult
+{
+    public bool Accepted { get; set; }
+    public string MaskedMobile { get; set; } = string.Empty;
 }
