@@ -1,0 +1,96 @@
+@using MyFirstCoreApp.Application.Common.Utilities
+@using System.Text.Json
+@{ ViewData["Title"] = "هزینه‌های پروژه"; var projectId = ViewBag.ProjectId as int?; }
+
+<style>
+    #projectExpensesGrid.ag-theme-alpine { --ag-font-size: 13px; width: 100%; }
+    .expense-actions { display:flex; gap:4px; justify-content:center; }
+    .expense-card { border:1px solid #e3e3e3; border-radius:6px; background:#fff; margin-bottom:8px; padding:12px; }
+    .expense-card .line { font-size:12px; color:#6c757d; margin-top:5px; overflow-wrap:anywhere; }
+</style>
+
+@if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+@Html.AntiForgeryToken()
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <h3 class="card-title"><i class="fa fa-money-bill-wave"></i> هزینه‌های پروژه</h3>
+        <a asp-action="Create" asp-route-projectId="@projectId" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> ثبت هزینه</a>
+    </div>
+    <div class="card-body">
+        <div id="gridError" class="alert alert-danger d-none" role="alert"></div>
+        <div class="row mb-3"><div class="col-md-6"><input id="txtSearch" class="form-control" placeholder="جستجو در شرح، پروژه، طرف‌حساب یا مرجع" /></div><div class="col-md-6 text-left"><span id="lblCount" class="text-muted"></span></div></div>
+        <div id="projectExpensesGrid" class="ag-theme-alpine d-none d-md-block" style="height:600px"></div>
+        <div id="mobileExpenses" class="d-md-none"></div>
+    </div>
+</div>
+
+<form id="deleteExpenseForm" asp-action="Delete" method="post" class="d-none">
+    <input type="hidden" name="id" id="deleteExpenseId" />
+</form>
+
+@section Scripts {
+<script>
+$(function () {
+    var gridApi;
+    var rows = @Html.Raw(JsonSerializer.Serialize(ViewBag.InitialRows));
+    function toPersianDigits(value) {
+        const digits = '۰۱۲۳۴۵۶۷۸۹';
+        return String(value ?? '').replace(/[0-9]/g, digit => digits[Number(digit)]);
+    }
+    const projectId = '@(projectId?.ToString() ?? "")';
+    const canDelete = @((bool)(ViewBag.CanDelete ?? false) ? "true" : "false");
+    const columnDefs = [
+        { headerName:'#', width:65, sortable:false, valueGetter:p=>toPersianDigits(p.node.rowIndex+1), cellStyle:{textAlign:'center'} },
+        { field:'number', headerName:'شماره', width:90, valueFormatter:p=>toPersianDigits(p.value ?? '') },
+        { field:'date', headerName:'تاریخ', width:120 },
+        { field:'projectTitle', headerName:'پروژه', minWidth:150, flex:1 },
+        { field:'contactName', headerName:'فروشنده / طلبکار', minWidth:150, flex:1 },
+        { field:'description', headerName:'شرح', minWidth:180, flex:2 },
+        { field:'amount', headerName:'مبلغ', width:130, valueFormatter:money },
+        { field:'paidAmount', headerName:'پرداخت‌شده', width:130, valueFormatter:money },
+        { field:'remainingAmount', headerName:'مانده', width:130, valueFormatter:money },
+        { headerName:'عملیات', width:105, sortable:false, filter:false, pinned:'left', cellRenderer:p=>actions(p.data) }
+    ];
+    function money(p) { return p.value == null ? '' : toPersianDigits(Number(p.value).toLocaleString('en-US')); }
+    function actions(d) {
+        if (!d) return '';
+        var html = '<div class="expense-actions"><a class="btn btn-sm btn-outline-info" title="جزئیات" href="/Projects/ProjectExpenses/Details/' + d.id + '"><i class="fa fa-eye"></i></a>';
+        if (canDelete) html += '<button type="button" class="btn btn-sm btn-outline-danger delete-expense" data-id="' + d.id + '" title="حذف"><i class="fa fa-trash"></i></button>';
+        return html + '</div>';
+    }
+    function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function renderMobile() {
+        var host = document.getElementById('mobileExpenses');
+        if (!rows.length) { host.innerHTML='<div class="text-center text-muted py-4">هزینه‌ای برای نمایش نیست</div>'; return; }
+        host.innerHTML = rows.map(d => '<div class="expense-card"><strong>هزینه ' + toPersianDigits(d.number) + ' — ' + esc(d.description) + '</strong>' +
+            '<div class="line">تاریخ: ' + esc(d.date) + ' | پروژه: ' + esc(d.projectTitle || '—') + '</div>' +
+            '<div class="line">فروشنده / طلبکار: ' + esc(d.contactName || '—') + '</div>' +
+            '<div class="line">مبلغ: ' + money({value:d.amount}) + ' | پرداخت‌شده: ' + money({value:d.paidAmount}) + ' | مانده: ' + money({value:d.remainingAmount}) + '</div>' +
+            '<div class="mt-2">' + actions(d) + '</div></div>').join('');
+    }
+    function loadData() {
+        var request = { startRow:0, endRow:10000, search:($('#txtSearch').val() || '').trim() };
+        if (gridApi) { var sorted=(gridApi.getColumnState()||[]).filter(c=>c.sort); if(sorted.length){request.sortBy=sorted[0].colId; request.sortDir=sorted[0].sort;} }
+        var url='/Projects/ProjectExpenses/GetData' + (projectId ? '?projectId=' + encodeURIComponent(projectId) : '');
+        $.ajax({ url:url, type:'POST', contentType:'application/json', headers:{'RequestVerificationToken':$('input[name="__RequestVerificationToken"]').val()}, data:JSON.stringify(request),
+            success:r=>{ if (!r || r.success !== true || !Array.isArray(r.rows)) { $('#gridError').removeClass('d-none').text('پاسخ فهرست هزینه‌ها معتبر نبود.'); return; } $('#gridError').addClass('d-none'); rows=r.rows; if(gridApi) gridApi.setGridOption('rowData',rows); $('#lblCount').text('تعداد هزینه‌ها: ' + toPersianDigits(r.lastRow||0)); renderMobile(); },
+            error:x=>{ $('#gridError').removeClass('d-none').text('بارگذاری فهرست هزینه‌ها ناموفق بود (کد ' + x.status + '). صفحه را تازه‌سازی کنید یا دسترسی و شرکت فعال را بررسی کنید.'); console.error(x.responseText); }
+        });
+    }
+    gridApi=agGrid.createGrid(document.getElementById('projectExpensesGrid'), {
+        columnDefs:columnDefs, enableRtl:true, defaultColDef:{sortable:true,resizable:true,filter:false,headerClass:'ag-right-aligned-header',cellStyle:{textAlign:'right'}},
+        rowData:rows, pagination:true, paginationPageSize:20, paginationPageSizeSelector:[10,20,50,100],
+        localeText:{page:'صفحه',to:'تا',of:'از',next:'بعدی',last:'آخر',first:'اول',previous:'قبلی',loadingOoo:'در حال بارگذاری...',noRowsToShow:'هزینه‌ای برای نمایش نیست',pageSizeSelectorLabel:'تعداد در صفحه:'}
+    });
+    $('#lblCount').text('تعداد هزینه‌ها: ' + toPersianDigits(rows.length));
+    renderMobile();
+    var timer; $('#txtSearch').on('input',function(){clearTimeout(timer);timer=setTimeout(loadData,300);});
+    $(document).on('click','.delete-expense',function(){
+        if (!confirm('هزینه و تمام پرداخت‌های آن حذف نرم شوند؟ سندهای حسابداری مرتبط نیز از گزارش‌های جاری خارج می‌شوند.')) return;
+        $('#deleteExpenseId').val($(this).data('id')); $('#deleteExpenseForm').trigger('submit');
+    });
+});
+</script>
+}

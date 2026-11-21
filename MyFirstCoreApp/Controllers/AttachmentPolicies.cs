@@ -16,6 +16,8 @@ public static class AttachmentPolicies
         AttachmentEntityType.Invoice => ["Invoice.View"],
         AttachmentEntityType.Product => ["Product.View"],
         AttachmentEntityType.Contact => ["Contact.View"],
+        AttachmentEntityType.ProjectExpense => ["ProjectExpense.View"],
+        AttachmentEntityType.ProjectExpensePayment => ["ProjectExpense.View"],
         _ => []
     };
 
@@ -27,6 +29,8 @@ public static class AttachmentPolicies
         AttachmentEntityType.Invoice => ["Invoice.Edit"],
         AttachmentEntityType.Product => ["Product.Edit"],
         AttachmentEntityType.Contact => ["Contact.Edit"],
+        AttachmentEntityType.ProjectExpense => ["ProjectExpense.Create"],
+        AttachmentEntityType.ProjectExpensePayment => ["ProjectExpense.Create"],
         _ => []
     };
 }

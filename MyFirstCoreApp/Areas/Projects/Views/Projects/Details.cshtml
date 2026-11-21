@@ -69,6 +69,10 @@
                     <i class="fa fa-edit"></i> ویرایش
                 </a>
             }
+            @if ((await AuthorizationService.AuthorizeAsync(User, null, "ProjectExpense.View")).Succeeded)
+            {
+                <a asp-area="Projects" asp-controller="ProjectExpenses" asp-action="Index" asp-route-projectId="@Model.Id" class="btn btn-info btn-sm ml-1 mb-1"><i class="fa fa-money-bill-wave"></i> هزینه‌های پروژه</a>
+            }
             @if (canChangeProjectStatus)
             {
                 <a asp-controller="ProjectManagement" asp-action="ChangeProjectStatus"

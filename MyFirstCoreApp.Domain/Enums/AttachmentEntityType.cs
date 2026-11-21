@@ -8,6 +8,8 @@
         Invoice = 4,
         Product = 5,
         Contact = 6,
-        Tenant = 7
+        Tenant = 7,
+        ProjectExpense = 8,
+        ProjectExpensePayment = 9
     }
 }

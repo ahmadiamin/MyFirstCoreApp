@@ -1,0 +1,96 @@
+@model MyFirstCoreApp.Application.Projects.ProjectExpenseDto
+@using MyFirstCoreApp.Application.Common.Utilities
+@using MyFirstCoreApp.Domain.Enums
+@{ ViewData["Title"] = "جزئیات هزینه"; }
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3>هزینه شماره @Model.Number</h3>
+        @if ((bool)(ViewBag.CanDeleteExpense ?? false))
+        {
+            <form asp-action="Delete" method="post" onsubmit="return confirm('هزینه و پرداخت‌های ثبت‌شده آن حذف نرم شوند؟');">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button class="btn btn-outline-danger btn-sm"><i class="fa fa-trash"></i> حذف هزینه</button>
+            </form>
+        }
+    </div>
+    <div class="card-body">
+        @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+        @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+        <dl class="row">
+            <dt class="col-sm-2">تاریخ</dt><dd class="col-sm-4">@PersianDate.Format(Model.Date, true)</dd>
+            <dt class="col-sm-2">پروژه</dt><dd class="col-sm-4">@Model.ProjectTitle</dd>
+            <dt class="col-sm-2">فروشنده / طلبکار</dt><dd class="col-sm-4">@Model.ContactName</dd>
+            <dt class="col-sm-2">طبقه‌بندی هزینه</dt><dd class="col-sm-4">@Model.ExpenseAccountName</dd>
+            <dt class="col-sm-2">شرح</dt><dd class="col-sm-4">@Model.Description</dd>
+            <dt class="col-sm-2">مبلغ</dt><dd class="col-sm-4">@Model.Amount.ToString("N0") ریال</dd>
+            <dt class="col-sm-2">پرداخت‌شده / مانده</dt><dd class="col-sm-4">@Model.PaidAmount.ToString("N0") / @Model.RemainingAmount.ToString("N0") ریال</dd>
+        </dl>
+
+        @if (Model.RemainingAmount > 0)
+        {
+            <hr /><h4>ثبت پرداخت</h4>
+            <form asp-action="AddPayment" method="post" class="row">
+                <input type="hidden" name="ProjectExpenseId" value="@Model.Id" />
+                <div class="form-group col-md-2"><label>تاریخ</label><input name="DateText" type="text" class="form-control datepicker" autocomplete="off" placeholder="۱۴۰۵/۰۱/۱۵" dir="ltr" required /></div>
+                <div class="form-group col-md-2"><label>مبلغ (ریال)</label><input name="AmountText" type="text" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۱,۵۰۰,۰۰۰" dir="ltr" class="form-control persian-number persian-number-comma" required /></div>
+                <div class="form-group col-md-3"><label>پرداخت از کدام صندوق/بانک؟</label><select name="AccountId" asp-items="ViewBag.CashAccounts" class="form-control select2" required><option value="">انتخاب کنید</option></select></div>
+                <div class="form-group col-md-2"><label>روش پرداخت</label><select name="PaymentMethod" asp-items="ViewBag.PaymentMethods" class="form-control select2"></select></div>
+                <div class="form-group col-md-3"><label>شرح/مرجع</label><input name="Description" class="form-control" /></div>
+                <div class="col-12"><button class="btn btn-success">ثبت پرداخت</button></div>
+            </form>
+        }
+
+        <hr /><h4>پرداخت‌های ثبت‌شده</h4>
+        <div class="table-responsive"><table class="table"><thead><tr><th>تاریخ</th><th>مبلغ</th><th>حساب</th><th>روش</th><th>مرجع</th><th>رسید / عملیات</th></tr></thead><tbody>
+        @foreach (var p in Model.Payments)
+        {
+            <tr>
+                <td>@PersianDate.Format(p.Date, true)</td><td>@p.Amount.ToString("N0")</td><td>@p.AccountName</td><td>@PaymentMethodName(p.PaymentMethod)</td><td>@p.Reference</td>
+                <td>
+                    @await Component.InvokeAsync("Attachments", new { entityType = AttachmentEntityType.ProjectExpensePayment, entityId = p.Id })
+                    @if ((bool)(ViewBag.CanDeleteExpense ?? false))
+                    {
+                        <form asp-action="DeletePayment" method="post" class="mt-1" onsubmit="return confirm('این پرداخت و سند حسابداری مرتبط حذف نرم شوند؟');">
+                            <input type="hidden" name="expenseId" value="@Model.Id" /><input type="hidden" name="paymentId" value="@p.Id" />
+                            <button class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i> حذف پرداخت</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody></table></div>
+        <h4>پیوست‌های هزینه</h4>
+        @await Component.InvokeAsync("Attachments", new { entityType = AttachmentEntityType.ProjectExpense, entityId = Model.Id })
+        <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-secondary mt-3">بازگشت</a>
+    </div>
+</div>
+
+@functions {
+    private static string PaymentMethodName(PaymentMethod method) => method switch
+    {
+        PaymentMethod.Cash => "نقدی",
+        PaymentMethod.BankTransfer => "انتقال بانکی",
+        PaymentMethod.Card => "کارت بانکی",
+        PaymentMethod.Pos => "کارت‌خوان",
+        PaymentMethod.Internet => "پرداخت اینترنتی",
+        PaymentMethod.Other => "سایر",
+        PaymentMethod.Cheque => "چک",
+        _ => "نامشخص"
+    };
+}
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('.select2').select2({ width: '100%', dir: 'rtl', language: 'fa', placeholder: 'انتخاب کنید', allowClear: true });
+            $('.datepicker').each(function () {
+                $(this).persianDatepicker({
+                    format: 'YYYY/MM/DD', initialValue: false, autoClose: true, observer: true,
+                    calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                    toolbox: { calendarSwitch: { enabled: false } }
+                });
+            });
+        });
+    </script>
+}

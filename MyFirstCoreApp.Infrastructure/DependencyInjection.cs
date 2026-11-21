@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MyFirstCoreApp.Application.Attachments;
 using MyFirstCoreApp.Application.Interfaces;
+using MyFirstCoreApp.Application.Projects;
 using MyFirstCoreApp.Infrastructure.Security;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Infrastructure.Persistence.Interceptors;
@@ -87,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantSecurityService, TenantSecurityService>();
         services.AddScoped<ITenantStaffService, TenantStaffService>();
         services.AddScoped<IProjectService, ProjectService>();
+        services.AddScoped<IProjectExpenseService, ProjectExpenseService>();
         services.AddScoped<IMenuTreeService, MenuTreeService>();
         services.AddScoped<ILoginCapacityService, LoginCapacityService>();
 

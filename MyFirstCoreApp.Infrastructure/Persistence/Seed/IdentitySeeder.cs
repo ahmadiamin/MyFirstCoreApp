@@ -400,6 +400,9 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "ProjectMember.Manage", DisplayName = "مدیریت اعضای پروژه", GroupName = "Projects", IsActive = true },
                 new Permission { Name = "ProjectStage.Manage", DisplayName = "مدیریت مراحل پروژه", GroupName = "Projects", IsActive = true },
                 new Permission { Name = "ProjectStage.Status.Change", DisplayName = "تغییر وضعیت مراحل پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "ProjectExpense.View", DisplayName = "مشاهده هزینه‌های پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "ProjectExpense.Create", DisplayName = "ثبت هزینه و پرداخت پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "ProjectExpense.Delete", DisplayName = "حذف هزینه و پرداخت پروژه", GroupName = "Projects", IsActive = true },
             };
 
             foreach (var permission in permissions)
@@ -685,6 +688,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                     SortOrder = 1,
                     IsActive = true
                 },
+                new Menu { Title = "هزینه‌های پروژه", Url = "/Projects/ProjectExpenses", Icon = "fa-solid fa-money-bill-wave", Permission = "ProjectExpense.View", ParentId = projectsParent.Id, SortOrder = 2, IsActive = true },
             };
 
             foreach (var child in children)
