@@ -16,6 +16,10 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
         <h3 class="card-title"><i class="fa fa-money-bill-wave"></i> @(isProjectView ? "هزینه‌های پروژه" : "هزینه‌ها")</h3>
+        @if (projectId != null)
+        {
+            <a asp-area="Projects" asp-controller="Projects" asp-action="Details" asp-route-id="@projectId" class="btn btn-secondary btn-sm"><i class="fa fa-arrow-right"></i> بازگشت به جزئیات پروژه</a>
+        }
         <a asp-action="Create" asp-route-projectId="@projectId" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> ثبت هزینه</a>
     </div>
     <div class="card-body">

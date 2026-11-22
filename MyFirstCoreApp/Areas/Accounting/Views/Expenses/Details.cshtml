@@ -8,7 +8,7 @@
         <h3>هزینه شماره @Model.Number</h3>
         @if ((bool)(ViewBag.CanDeleteExpense ?? false))
         {
-            <form asp-action="Delete" method="post" onsubmit="return confirm('هزینه و پرداخت‌های ثبت‌شده آن حذف نرم شوند؟');">
+            <form asp-action="Delete" method="post" onsubmit="return confirm('هزینه و پرداخت‌های ثبت‌شده آن حذف شوند؟');">
                 <input type="hidden" name="id" value="@Model.Id" />
                 <button class="btn btn-outline-danger btn-sm"><i class="fa fa-trash"></i> حذف هزینه</button>
             </form>
@@ -42,7 +42,25 @@
         }
 
         <hr /><h4>پرداخت‌های ثبت‌شده</h4>
-        <div class="table-responsive"><table class="table"><thead><tr><th>تاریخ</th><th>مبلغ</th><th>حساب</th><th>روش</th><th>مرجع</th><th>رسید / عملیات</th></tr></thead><tbody>
+        <div class="d-md-none">
+        @foreach (var p in Model.Payments)
+        {
+            <div class="card mb-2 payment-mobile-card"><div class="card-body p-3">
+                <div class="d-flex justify-content-between"><strong>@PersianDate.Format(p.Date, true)</strong><strong>@p.Amount.ToString("N0") ریال</strong></div>
+                <div class="small mt-2"><div><strong>حساب:</strong> @p.AccountName</div><div><strong>روش:</strong> @PaymentMethodName(p.PaymentMethod)</div><div><strong>مرجع:</strong> @(p.Reference ?? "—")</div></div>
+                <div class="mt-2">@await Component.InvokeAsync("Attachments", new { entityType = AttachmentEntityType.ProjectExpensePayment, entityId = p.Id })
+                @if ((bool)(ViewBag.CanDeleteExpense ?? false))
+                {
+                    <form asp-action="DeletePayment" method="post" class="mt-1" onsubmit="return confirm('این پرداخت و سند حسابداری مرتبط حذف شوند؟');">
+                        <input type="hidden" name="expenseId" value="@Model.Id" /><input type="hidden" name="paymentId" value="@p.Id" />
+                        <button class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i> حذف پرداخت</button>
+                    </form>
+                }
+                </div>
+            </div></div>
+        }
+        </div>
+        <div class="table-responsive d-none d-md-block"><table class="table"><thead><tr><th>تاریخ</th><th>مبلغ</th><th>حساب</th><th>روش</th><th>مرجع</th><th>رسید / عملیات</th></tr></thead><tbody>
         @foreach (var p in Model.Payments)
         {
             <tr>
@@ -51,7 +69,7 @@
                     @await Component.InvokeAsync("Attachments", new { entityType = AttachmentEntityType.ProjectExpensePayment, entityId = p.Id })
                     @if ((bool)(ViewBag.CanDeleteExpense ?? false))
                     {
-                        <form asp-action="DeletePayment" method="post" class="mt-1" onsubmit="return confirm('این پرداخت و سند حسابداری مرتبط حذف نرم شوند؟');">
+                        <form asp-action="DeletePayment" method="post" class="mt-1" onsubmit="return confirm('این پرداخت و سند حسابداری مرتبط حذف شوند؟');">
                             <input type="hidden" name="expenseId" value="@Model.Id" /><input type="hidden" name="paymentId" value="@p.Id" />
                             <button class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i> حذف پرداخت</button>
                         </form>
@@ -62,7 +80,15 @@
         </tbody></table></div>
         <h4>پیوست‌های هزینه</h4>
         @await Component.InvokeAsync("Attachments", new { entityType = AttachmentEntityType.ProjectExpense, entityId = Model.Id })
-        <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-secondary mt-3">بازگشت</a>
+        @if (Model.ProjectId.HasValue)
+        {
+            <a asp-area="Projects" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn btn-secondary mt-3"><i class="fa fa-arrow-right"></i> بازگشت به جزئیات پروژه</a>
+            <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-outline-secondary mt-3">فهرست هزینه‌های پروژه</a>
+        }
+        else
+        {
+            <a asp-action="Index" class="btn btn-secondary mt-3">بازگشت به هزینه‌ها</a>
+        }
     </div>
 </div>
 

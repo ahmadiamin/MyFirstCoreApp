@@ -286,7 +286,7 @@ public sealed class StockMovementSqlServerTests
         var results = await Task.WhenAll(firstTask, secondTask);
 
         // دقیقاً یکی از درخواست‌ها باید موفق شود.
-        Assert.Single(results.Where(x => x is null));
+        Assert.Single(results, x => x is null);
 
         // 5. بررسی نتیجه در دیتابیس
         await using var verify = db.NewContext();

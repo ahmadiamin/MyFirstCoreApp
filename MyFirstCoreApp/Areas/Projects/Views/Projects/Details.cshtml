@@ -149,7 +149,17 @@
                         }
                         else
                         {
-                            <div class="table-responsive">
+                            <div class="d-md-none">
+                                @foreach (var item in Model.MaterialConsumptions)
+                                {
+                                    <div class="border rounded p-2 mb-2">
+                                        <div class="font-weight-bold">@item.ProductName</div>
+                                        <div class="small text-muted">کد: <span dir="ltr">@(item.ProductCode ?? "—")</span></div>
+                                        <div class="mt-1">جمع مقدار مصرف‌شده: <strong>@item.TotalQuantity.ToString("N2")</strong> @item.UnitSymbol</div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="table-responsive d-none d-md-block">
                                 <table class="table table-sm table-bordered mb-0">
                                     <thead><tr><th>قلم مصرفی</th><th>کد</th><th>جمع مقدار مصرف‌شده</th></tr></thead>
                                     <tbody>

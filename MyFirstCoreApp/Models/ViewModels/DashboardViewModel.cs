@@ -1,5 +1,6 @@
 ﻿using MyFirstCoreApp.Application.CustomerPortal;
 using MyFirstCoreApp.Application.Dashboard;
+using MyFirstCoreApp.Domain.Enums;
 
 namespace MyFirstCoreApp.Models.ViewModels
 {
@@ -32,6 +33,12 @@ namespace MyFirstCoreApp.Models.ViewModels
         public bool ShowFinance { get; set; }      // Report.Ledger
         public bool ShowCheques { get; set; }      // Cheque.View
         public bool ShowInvoices { get; set; }     // Invoice.View
+        public bool ShowProjectSummary { get; set; } // Project.Report.View
+        public int ActiveProjectCount { get; set; }
+        public int OnHoldProjectCount { get; set; }
+        public int CompletedProjectCount { get; set; }
+        public int DelayedProjectStageCount { get; set; }
+        public List<DashboardDelayedStageItem> DelayedProjectStages { get; set; } = [];
 
         /// <summary>null یعنی خلاصه‌ی مالی در دسترس نبود (مثلاً پروسیجر نصب نشده)؛ بقیه‌ی داشبورد نمایش داده می‌شود.</summary>
         public DashboardSummary? Summary { get; set; }
@@ -45,5 +52,14 @@ namespace MyFirstCoreApp.Models.ViewModels
 
         public bool ShowTenantSmsBalance { get; set; }
         public SmsBalanceResult? TenantSmsBalance { get; set; }
+    }
+
+    public sealed class DashboardDelayedStageItem
+    {
+        public int ProjectId { get; set; }
+        public string ProjectTitle { get; set; } = string.Empty;
+        public string StageTitle { get; set; } = string.Empty;
+        public DateOnly PlannedEndDate { get; set; }
+        public int DelayDays { get; set; }
     }
 }

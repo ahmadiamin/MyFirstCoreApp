@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +24,7 @@ public class InvoicePrintSettingsController : Controller
     }
 
     [HttpGet]
-    [Authorize(Policy = "InvoicePrintSetting.View")]
+    [Authorize(Policy = "InvoiceSetting.View")]
     public async Task<IActionResult> Edit()
     {
         var tenantId = _currentTenant.TenantId;
@@ -60,7 +60,7 @@ public class InvoicePrintSettingsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Policy = "InvoicePrintSetting.Edit")]
+    [Authorize(Policy = "InvoiceSetting.Edit")]
     public async Task<IActionResult> Edit(InvoicePrintSettingViewModel model)
     {
         var tenantId = _currentTenant.TenantId;

@@ -111,6 +111,41 @@
     </div>
 }
 
+@if (Model.ShowProjectSummary)
+{
+    <div class="card card-outline card-primary">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+            <h3 class="card-title"><i class="fa fa-diagram-project"></i> خلاصه پروژه‌ها</h3>
+            <a asp-area="Projects" asp-controller="ProjectReports" asp-action="Index" class="btn btn-sm btn-outline-primary">گزارش کامل پروژه‌ها</a>
+        </div>
+        <div class="card-body pb-2">
+            <div class="row">
+                <div class="col-6 col-lg-3"><div class="info-box"><span class="info-box-icon bg-primary"><i class="fa fa-play"></i></span><div class="info-box-content"><span class="info-box-text">در حال اجرا</span><span class="info-box-number">@Model.ActiveProjectCount</span></div></div></div>
+                <div class="col-6 col-lg-3"><div class="info-box"><span class="info-box-icon bg-warning"><i class="fa fa-pause"></i></span><div class="info-box-content"><span class="info-box-text">متوقف</span><span class="info-box-number">@Model.OnHoldProjectCount</span></div></div></div>
+                <div class="col-6 col-lg-3"><div class="info-box"><span class="info-box-icon bg-success"><i class="fa fa-check"></i></span><div class="info-box-content"><span class="info-box-text">تکمیل‌شده</span><span class="info-box-number">@Model.CompletedProjectCount</span></div></div></div>
+                <div class="col-6 col-lg-3"><div class="info-box"><span class="info-box-icon bg-danger"><i class="fa fa-clock"></i></span><div class="info-box-content"><span class="info-box-text">مرحله عقب‌افتاده</span><span class="info-box-number">@Model.DelayedProjectStageCount</span></div></div></div>
+            </div>
+            @if (Model.DelayedProjectStages.Count > 0)
+            {
+                <h6 class="mt-1">پیگیری مرحله‌های عقب‌افتاده</h6>
+                <div class="list-group list-group-flush">
+                    @foreach (var stage in Model.DelayedProjectStages)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+                            <span><strong>@stage.ProjectTitle</strong> — @stage.StageTitle</span>
+                            <span class="badge badge-danger">@stage.DelayDays روز تأخیر</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted small">مرحله عقب‌افتاده‌ای برای پیگیری وجود ندارد.</div>
+            }
+        </div>
+    </div>
+}
+
 @if (summary != null && Model.ShowFinance)
 {
     <!-- خلاصه‌ی مالی -->

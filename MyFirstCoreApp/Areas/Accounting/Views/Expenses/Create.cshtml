@@ -39,7 +39,14 @@
                 </div>
             </div>
             <button class="btn btn-success">ثبت هزینه و سند حسابداری</button>
-            <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-secondary">بازگشت</a>
+            @if (Model.ProjectId.HasValue)
+            {
+                <a asp-area="Projects" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn btn-secondary">بازگشت به جزئیات پروژه</a>
+            }
+            else
+            {
+                <a asp-action="Index" class="btn btn-secondary">بازگشت به هزینه‌ها</a>
+            }
         </form>
     </div>
 </div>

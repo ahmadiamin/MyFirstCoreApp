@@ -9,19 +9,21 @@ public static class EnumExtensions
     /// <summary>
     /// تبدیل Enum به SelectList با پشتیبانی از Display Attribute
     /// </summary>
-    public static List<SelectListItem> GetEnumSelectListWithDisplay<TEnum>() where TEnum : Enum
+    public static List<SelectListItem> GetEnumSelectListWithDisplay<TEnum>()
+        where TEnum : struct, Enum
     {
         var list = new List<SelectListItem>();
 
-        foreach (var value in Enum.GetValues(typeof(TEnum)))
+        foreach (var value in Enum.GetValues<TEnum>())
         {
-            var field = value.GetType().GetField(value.ToString());
+            var fieldName = value.ToString();
+            var field = typeof(TEnum).GetField(fieldName);
             var displayAttr = field?.GetCustomAttribute<DisplayAttribute>();
 
             list.Add(new SelectListItem
             {
-                Value = ((int)value).ToString(),
-                Text = displayAttr?.Name ?? value.ToString()
+                Value = Convert.ToInt32(value).ToString(),
+                Text = displayAttr?.GetName() ?? fieldName
             });
         }
 

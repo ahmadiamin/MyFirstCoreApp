@@ -77,7 +77,7 @@
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> ثبت پیش‌نویس</button>
-            <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-secondary">انصراف</a>
+            <a asp-area="Projects" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn btn-secondary">بازگشت به جزئیات پروژه</a>
         </div>
     </form>
 </div>

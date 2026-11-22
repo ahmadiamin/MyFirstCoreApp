@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -402,6 +402,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "ProjectStage.Manage", DisplayName = "مدیریت مراحل پروژه", GroupName = "Projects", IsActive = true },
                 new Permission { Name = "ProjectStage.Status.Change", DisplayName = "تغییر وضعیت مراحل پروژه", GroupName = "Projects", IsActive = true },
                 new Permission { Name = "ProjectStage.Report", DisplayName = "ثبت گزارش اجرای مرحله", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "Project.Report.View", DisplayName = "مشاهده گزارش‌های مدیریتی پروژه", GroupName = "Projects", IsActive = true },
                 new Permission { Name = "ProjectExpense.View", DisplayName = "مشاهده هزینه‌ها", GroupName = "Accounting", IsActive = true },
                 new Permission { Name = "ProjectExpense.Create", DisplayName = "ثبت هزینه و پرداخت", GroupName = "Accounting", IsActive = true },
                 new Permission { Name = "ProjectExpense.Delete", DisplayName = "حذف هزینه و پرداخت", GroupName = "Accounting", IsActive = true },
@@ -421,10 +422,12 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 {
                     context.Permissions.Add(permission);
                 }
-                else if (permission.Name.StartsWith("ProjectExpense.", StringComparison.Ordinal))
+                else if (permission.Name.StartsWith("ProjectExpense.", StringComparison.Ordinal)
+                    || permission.Name == "Project.Report.View")
                 {
                     existingPermission.DisplayName = permission.DisplayName;
                     existingPermission.GroupName = permission.GroupName;
+                    existingPermission.IsActive = permission.IsActive;
                 }
             }
 
@@ -669,7 +672,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                     Title = "تنظیمات فاکتور",
                     Url = "/Invoicing/InvoicePrintSettings/Edit",
                     Icon = "fa fa-print",
-                    Permission = "InvoicePrintSetting.View",
+                    Permission = "InvoiceSetting.View",
                     ParentId = invoicingParent.Id,
                     SortOrder = 6,
                     IsActive = true
@@ -702,6 +705,16 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                     SortOrder = 1,
                     IsActive = true
                 },
+                new Menu
+                {
+                    Title = "گزارش‌های مدیریتی پروژه",
+                    Url = "/Projects/ProjectReports",
+                    Icon = "fa-solid fa-chart-line",
+                    Permission = "Project.Report.View",
+                    ParentId = projectsParent.Id,
+                    SortOrder = 2,
+                    IsActive = true
+                },
             };
 
             var legacyProjectExpensesMenu = await context.Menus.FirstOrDefaultAsync(x => x.Url == "/Projects/ProjectExpenses");
@@ -725,8 +738,20 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
 
             foreach (var child in children)
             {
-                var exists = await context.Menus.AnyAsync(x => x.Url == child.Url);
-                if (!exists) context.Menus.Add(child);
+                var existingMenu = await context.Menus.FirstOrDefaultAsync(x => x.Url == child.Url);
+
+                if (existingMenu == null)
+                {
+                    context.Menus.Add(child);
+                    continue;
+                }
+
+                existingMenu.Title = child.Title;
+                existingMenu.Icon = child.Icon;
+                existingMenu.Permission = child.Permission;
+                existingMenu.ParentId = child.ParentId;
+                existingMenu.SortOrder = child.SortOrder;
+                existingMenu.IsActive = child.IsActive;
             }
 
             await context.SaveChangesAsync();

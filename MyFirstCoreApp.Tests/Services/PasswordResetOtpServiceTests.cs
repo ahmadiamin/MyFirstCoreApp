@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -942,8 +942,8 @@ public sealed class PasswordResetOtpServiceTests
             SendRequestAsync(),
             SendRequestAsync());
 
-        Assert.Single(results.Where(x => x.IsAccepted));
-        Assert.Single(results.Where(x => !x.IsAccepted));
+        Assert.Single(results, x => x.IsAccepted);
+        Assert.Single(results, x => !x.IsAccepted);
 
         Assert.Equal(1, smsService.SendCount);
 
@@ -1432,8 +1432,8 @@ public sealed class PasswordResetOtpServiceTests
             CompleteAsync(),
             CompleteAsync());
 
-        Assert.Single(results.Where(x => x.IsSucceeded));
-        Assert.Single(results.Where(x => !x.IsSucceeded));
+        Assert.Single(results, x => x.IsSucceeded);
+        Assert.Single(results, x => !x.IsSucceeded);
 
         // بررسی وضعیت نهایی دیتابیس
         await using var verificationContext = database.NewContext();

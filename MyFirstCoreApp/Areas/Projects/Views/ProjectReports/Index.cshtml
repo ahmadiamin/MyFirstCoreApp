@@ -1,0 +1,375 @@
+@model MyFirstCoreApp.Areas.Projects.ViewModels.Project.ProjectManagementReportViewModel
+@using MyFirstCoreApp.Application.Common.Utilities
+@using MyFirstCoreApp.Domain.Enums
+
+@{
+    ViewData["Title"] = "گزارش‌های مدیریتی پروژه‌ها";
+    string ProjectStatusName(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Draft => "پیش‌نویس",
+        ProjectStatus.Active => "در حال اجرا",
+        ProjectStatus.OnHold => "متوقف",
+        ProjectStatus.Completed => "تکمیل‌شده",
+        ProjectStatus.Cancelled => "لغوشده",
+        _ => "نامشخص"
+    };
+    string StageStatusName(ProjectStageStatus status) => status switch
+    {
+        ProjectStageStatus.NotStarted => "شروع‌نشده",
+        ProjectStageStatus.InProgress => "در حال اجرا",
+        ProjectStageStatus.Waiting => "در انتظار",
+        ProjectStageStatus.Completed => "تکمیل‌شده",
+        ProjectStageStatus.Skipped => "ردشده",
+        ProjectStageStatus.Cancelled => "لغوشده",
+        _ => "نامشخص"
+    };
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <h3 class="card-title mb-2 mb-md-0">
+            <i class="fa fa-chart-line"></i> گزارش‌های مدیریتی پروژه‌ها
+        </h3>
+        <a asp-area="Projects"
+           asp-controller="Projects"
+           asp-action="Index"
+           class="btn btn-secondary btn-sm">
+            <i class="fa fa-arrow-right"></i> بازگشت به پروژه‌ها
+        </a>
+    </div>
+
+    <div class="card-body">
+        <div class="text-muted mb-3">
+            وضعیت گزارش تا @PersianDate.Format(Model.AsOfDate)
+        </div>
+
+        <div class="alert alert-info">
+            مبالغ خرید و فروش بر اساس ردیف‌های فاکتور قطعی تخصیص‌یافته به پروژه و با احتساب برگشت‌ها محاسبه شده‌اند.
+            تفاوت فروش با خرید و هزینه، شاخص مدیریتی است و به‌دلیل موجودی مصرف‌نشده لزوماً سود حسابداری پروژه نیست.
+        </div>
+
+        <div class="row">
+            <div class="col-6 col-lg-3 mb-3">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h4 class="persian-number-comma">@Model.TotalSales.ToString("N0")</h4>
+                        <p>فروش خالص پروژه‌ها (ریال)</p>
+                    </div>
+                    <div class="icon"><i class="fa fa-file-invoice-dollar"></i></div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3 mb-3">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h4 class="persian-number-comma">@Model.TotalPurchases.ToString("N0")</h4>
+                        <p>خرید خالص پروژه‌ها (ریال)</p>
+                    </div>
+                    <div class="icon"><i class="fa fa-cart-shopping"></i></div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3 mb-3">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h4 class="persian-number-comma">@Model.TotalExpenses.ToString("N0")</h4>
+                        <p>هزینه‌های ثبت‌شده (ریال)</p>
+                    </div>
+                    <div class="icon"><i class="fa fa-money-bill-wave"></i></div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3 mb-3">
+                <div class="small-box bg-primary">
+                    <div class="inner">
+                        <h4>@Model.ActiveProjectCount / @Model.OnHoldProjectCount</h4>
+                        <p>پروژه فعال / متوقف</p>
+                        <small>مرحله‌های عقب‌افتاده: @Model.DelayedStageCount</small>
+                    </div>
+                    <div class="icon"><i class="fa fa-diagram-project"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="mt-3">وضعیت مالی هر پروژه</h4>
+
+        @if (Model.Projects.Count == 0)
+        {
+            <div class="alert alert-secondary">
+                هنوز پروژه‌ای برای نمایش گزارش مالی وجود ندارد.
+            </div>
+        }
+        else
+        {
+            <div class="d-md-none">
+                @foreach (var project in Model.Projects)
+                {
+                    <div class="border rounded p-3 mb-2">
+                        <div class="d-flex justify-content-between">
+                            <strong>@project.Title</strong>
+                            <span class="badge badge-secondary">@ProjectStatusName(project.Status)</span>
+                        </div>
+
+                        <div class="small mt-2">
+                            فروش خالص:
+                            <span class="persian-number-comma">@project.Sales.ToString("N0")</span> ریال
+                        </div>
+                        <div class="small">
+                            خرید خالص:
+                            <span class="persian-number-comma">@project.Purchases.ToString("N0")</span> ریال
+                        </div>
+                        <div class="small">
+                            هزینه:
+                            <span class="persian-number-comma">@project.Expenses.ToString("N0")</span> ریال
+                        </div>
+
+                        <div class="mt-1">
+                            <strong>
+                                فروش پس از کسر خرید و هزینه:
+                                <span class="persian-number-comma">@project.NetDifference.ToString("N0")</span> ریال
+                            </strong>
+                        </div>
+
+                        <a asp-area="Projects"
+                           asp-controller="Projects"
+                           asp-action="Details"
+                           asp-route-id="@project.ProjectId"
+                           class="btn btn-sm btn-outline-primary mt-2">
+                            جزئیات پروژه
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>پروژه</th>
+                            <th>وضعیت</th>
+                            <th>فروش خالص</th>
+                            <th>خرید خالص</th>
+                            <th>هزینه</th>
+                            <th>فروش پس از کسر خرید و هزینه</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var project in Model.Projects)
+                        {
+                            <tr>
+                                <td>@project.Title</td>
+                                <td>@ProjectStatusName(project.Status)</td>
+                                <td class="persian-number-comma">@project.Sales.ToString("N0")</td>
+                                <td class="persian-number-comma">@project.Purchases.ToString("N0")</td>
+                                <td class="persian-number-comma">@project.Expenses.ToString("N0")</td>
+                                <td class="persian-number-comma">@project.NetDifference.ToString("N0")</td>
+                                <td>
+                                    <a asp-area="Projects"
+                                       asp-controller="Projects"
+                                       asp-action="Details"
+                                       asp-route-id="@project.ProjectId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        جزئیات
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <h4 class="mt-4">مراحل عقب‌افتاده</h4>
+
+        @if (Model.DelayedStages.Count == 0)
+        {
+            <div class="text-muted mb-3">مرحله عقب‌افتاده‌ای وجود ندارد.</div>
+        }
+        else
+        {
+            <div class="d-md-none">
+                @foreach (var stage in Model.DelayedStages)
+                {
+                    <div class="border rounded p-3 mb-2">
+                        <strong>@stage.ProjectTitle</strong>
+                        <div>@stage.StageTitle</div>
+                        <div class="small">
+                            موعد: @PersianDate.Format(stage.PlannedEndDate)
+                            · تأخیر: @stage.DelayDays روز
+                            · @StageStatusName(stage.Status)
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(stage.WaitingReason))
+                        {
+                            <div class="small mt-1">علت توقف: @stage.WaitingReason</div>
+                        }
+
+                        <a asp-area="Projects"
+                           asp-controller="Projects"
+                           asp-action="Details"
+                           asp-route-id="@stage.ProjectId"
+                           class="btn btn-sm btn-outline-primary mt-2">
+                            مشاهده پروژه
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>پروژه</th>
+                            <th>مرحله</th>
+                            <th>موعد</th>
+                            <th>تأخیر (روز)</th>
+                            <th>وضعیت</th>
+                            <th>علت انتظار</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var stage in Model.DelayedStages)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-area="Projects"
+                                       asp-controller="Projects"
+                                       asp-action="Details"
+                                       asp-route-id="@stage.ProjectId">
+                                        @stage.ProjectTitle
+                                    </a>
+                                </td>
+                                <td>@stage.StageTitle</td>
+                                <td>@PersianDate.Format(stage.PlannedEndDate)</td>
+                                <td>@stage.DelayDays</td>
+                                <td>@StageStatusName(stage.Status)</td>
+                                <td>@(stage.WaitingReason ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <h4 class="mt-4">پروژه‌های متوقف</h4>
+
+        @if (Model.OnHoldProjects.Count == 0)
+        {
+            <div class="text-muted mb-3">پروژه متوقف‌شده‌ای وجود ندارد.</div>
+        }
+        else
+        {
+            <div class="d-md-none">
+                @foreach (var project in Model.OnHoldProjects)
+                {
+                    <div class="border rounded p-3 mb-2">
+                        <strong>@project.Title</strong>
+
+                        <div class="small mt-1">
+                            پایان برنامه‌ریزی‌شده:
+                            @(project.PlannedEndDate.HasValue
+                                                ? PersianDate.Format(project.PlannedEndDate.Value)
+                                                : "تعیین نشده")
+                </div>
+
+                        <div class="small">
+                            علت توقف: @(project.HoldReason ?? "ثبت نشده")
+                        </div>
+
+                        <a asp-area="Projects"
+                           asp-controller="Projects"
+                           asp-action="Details"
+                           asp-route-id="@project.ProjectId"
+                           class="btn btn-sm btn-outline-primary mt-2">
+                            مشاهده پروژه
+                        </a>
+                    </div>
+                        }
+            </div>
+
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>پروژه</th>
+                            <th>پایان برنامه‌ریزی‌شده</th>
+                            <th>علت توقف</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var project in Model.OnHoldProjects)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-area="Projects"
+                                       asp-controller="Projects"
+                                       asp-action="Details"
+                                       asp-route-id="@project.ProjectId">
+                                        @project.Title
+                                    </a>
+                                </td>
+                                <td>
+                                    @(project.PlannedEndDate.HasValue
+                                                                ? PersianDate.Format(project.PlannedEndDate.Value)
+                                                                : "تعیین نشده")
+                        </td>
+                        <td>@(project.HoldReason ?? "ثبت نشده")</td>
+                    </tr>
+                                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <h4 class="mt-4">عملکرد مسئولان مراحل</h4>
+
+        @if (Model.Employees.Count == 0)
+        {
+            <div class="text-muted">مرحله‌ای به مسئول مشخصی تخصیص نیافته است.</div>
+        }
+        else
+        {
+            <div class="d-md-none">
+                @foreach (var employee in Model.Employees)
+                {
+                    <div class="border rounded p-3 mb-2">
+                        <strong>@employee.EmployeeName</strong>
+                        <div class="small mt-1">
+                            کل مراحل: @employee.AssignedStageCount
+                            · تکمیل‌شده: @employee.CompletedStageCount
+                            · در انتظار: @employee.WaitingStageCount
+                            · عقب‌افتاده: @employee.DelayedStageCount
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>کارمند</th>
+                            <th>مراحل تخصیص‌یافته</th>
+                            <th>تکمیل‌شده</th>
+                            <th>در انتظار</th>
+                            <th>عقب‌افتاده</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var employee in Model.Employees)
+                        {
+                            <tr>
+                                <td>@employee.EmployeeName</td>
+                                <td>@employee.AssignedStageCount</td>
+                                <td>@employee.CompletedStageCount</td>
+                                <td>@employee.WaitingStageCount</td>
+                                <td>@employee.DelayedStageCount</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

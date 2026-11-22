@@ -89,8 +89,48 @@ namespace MyFirstCoreApp.Controllers
                 ShowSystemStats = await HasAsync("User.View"),
                 ShowFinance = await HasAsync("Report.Ledger"),
                 ShowCheques = await HasAsync("Cheque.View"),
-                ShowInvoices = await HasAsync("Invoice.View")
+                ShowInvoices = await HasAsync("Invoice.View"),
+                ShowProjectSummary = await HasAsync("Project.Report.View")
             };
+
+            if (model.ShowProjectSummary)
+            {
+                var today = _timeProvider.Today();
+                model.ActiveProjectCount = await _context.Projects.CountAsync(x => x.TenantId == tenantId && x.Status == ProjectStatus.Active);
+                model.OnHoldProjectCount = await _context.Projects.CountAsync(x => x.TenantId == tenantId && x.Status == ProjectStatus.OnHold);
+                model.CompletedProjectCount = await _context.Projects.CountAsync(x => x.TenantId == tenantId && x.Status == ProjectStatus.Completed);
+
+                var delayedStagesQuery = _context.ProjectStages.AsNoTracking()
+                    .Where(x =>
+                        x.TenantId == tenantId &&
+                        x.Project.TenantId == tenantId &&
+                        x.PlannedEndDate.HasValue &&
+                        x.PlannedEndDate.Value < today &&
+                        x.Status != ProjectStageStatus.Completed &&
+                        x.Status != ProjectStageStatus.Skipped &&
+                        x.Status != ProjectStageStatus.Cancelled);
+
+                model.DelayedProjectStageCount = await delayedStagesQuery.CountAsync();
+                var delayedStages = await delayedStagesQuery
+                    .OrderBy(x => x.PlannedEndDate)
+                    .Take(4)
+                    .Select(x => new
+                    {
+                        x.ProjectId,
+                        ProjectTitle = x.Project.Title,
+                        StageTitle = x.Title,
+                        PlannedEndDate = x.PlannedEndDate!.Value
+                    })
+                    .ToListAsync();
+                model.DelayedProjectStages = delayedStages.Select(x => new DashboardDelayedStageItem
+                {
+                    ProjectId = x.ProjectId,
+                    ProjectTitle = x.ProjectTitle,
+                    StageTitle = x.StageTitle,
+                    PlannedEndDate = x.PlannedEndDate,
+                    DelayDays = today.DayNumber - x.PlannedEndDate.DayNumber
+                }).ToList();
+            }
 
             // آمار سیستم (کاربران این شرکت؛ نقش‌ها/دسترسی‌ها/منوها سراسری‌اند، فقط برای دارندگان User.View)
             if (model.ShowSystemStats)

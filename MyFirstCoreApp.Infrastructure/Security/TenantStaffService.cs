@@ -111,8 +111,8 @@ public class TenantStaffService : ITenantStaffService
             // اعتبارسنجی و ذخیره‌ی مشخصات و نقش‌ها با همان قواعدِ مدیریت افراد
             await _security.UpdateMemberProfileAsync(tenantId, user.Id, new MemberProfileRequest
             {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
+                FirstName = request.FirstName?.Trim() ?? string.Empty,
+                LastName = request.LastName?.Trim() ?? string.Empty,
                 JobTitle = request.JobTitle,
                 InternalPhone = request.InternalPhone
             });

@@ -7,6 +7,10 @@
     var title = isDebtors ? "گزارش بدهکاران" : "گزارش بستانکاران";
     var subtitle = isDebtors ? "طرف حساب‌هایی که به ما بدهکارند" : "طرف حساب‌هایی که ما به آن‌ها بدهکاریم";
     var report = Model.Report;
+var reportRows = report?.Rows ?? new();
+var reportAsOf = report is not null
+    ? PersianDate.Format(report.AsOf)
+    : Model.AsOf;
 
     ViewData["Title"] = title;
 }
@@ -386,7 +390,7 @@
             // داده‌ها
             // ============================================
             var balancesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                report.Rows.Select(r => new {
+                reportRows.Select(r => new {
                     contactId = r.ContactId,
                     contactName = r.ContactName,
                     contactCode = r.ContactCode,
@@ -463,7 +467,7 @@
                                 '<span class="badge badge-secondary ml-1">' + toPersianDigits(index + 1) + '</span>' +
                                 '<i class="fa fa-user text-muted ml-1"></i>' +
                                 '<a href="/Accounting/Reports/Contact?contactId=' + r.contactId +
-                                '&toDate=' + encodeURIComponent('@PersianDate.Format(report.AsOf)') + '">' +
+                                '&toDate=' + encodeURIComponent('@reportAsOf') + '">' +
                                 (r.contactName || '—') + '</a>' +
                                 (r.contactCode ? ' <small class="text-muted">(' + r.contactCode + ')</small>' : '') +
                             '</div>' +
