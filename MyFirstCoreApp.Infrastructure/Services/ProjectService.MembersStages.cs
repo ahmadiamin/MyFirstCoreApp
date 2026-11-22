@@ -306,6 +306,74 @@ public partial class ProjectService
         await _context.SaveChangesAsync();
     }
 
+    public async Task AddStageReportAsync(ProjectStageReportRequest request, int tenantId)
+    {
+        if (request.ReportDate == default)
+            throw new InvalidOperationException("تاریخ گزارش معتبر نیست.");
+        if (request.ProgressPercent is < 0 or > 100)
+            throw new InvalidOperationException("درصد پیشرفت باید بین صفر و صد باشد.");
+        if (string.IsNullOrWhiteSpace(request.WorkSummary))
+            throw new InvalidOperationException("شرح کار انجام‌شده الزامی است.");
+        if (request.IsStopped && string.IsNullOrWhiteSpace(request.StopReason))
+            throw new InvalidOperationException("در صورت توقف، علت توقف الزامی است.");
+        if (request.IsStopped && !request.NextFollowUpDate.HasValue)
+            throw new InvalidOperationException("برای توقف، تاریخ پیگیری بعدی را مشخص کنید.");
+        if (request.NextFollowUpDate < request.ReportDate)
+            throw new InvalidOperationException("تاریخ پیگیری نمی‌تواند قبل از تاریخ گزارش باشد.");
+
+        var stage = await _context.Set<ProjectStage>()
+            .Include(x => x.Project)
+            .FirstOrDefaultAsync(x => x.Id == request.ProjectStageId && x.TenantId == tenantId);
+        if (stage == null)
+            throw new InvalidOperationException("مرحله پروژه پیدا نشد.");
+        if (stage.Project.Status != ProjectStatus.Active)
+            throw new InvalidOperationException("گزارش اجرا فقط برای پروژه فعال ثبت می‌شود.");
+        if (stage.Status is ProjectStageStatus.Completed or ProjectStageStatus.Skipped or ProjectStageStatus.Cancelled)
+            throw new InvalidOperationException("برای مرحله تکمیل‌شده، ردشده یا لغوشده گزارش جدید ثبت نمی‌شود.");
+
+        var previousStatus = stage.Status;
+        var nextStatus = request.IsStopped
+            ? ProjectStageStatus.Waiting
+            : stage.Status == ProjectStageStatus.Waiting
+                ? ProjectStageStatus.InProgress
+                : stage.Status;
+        var now = DateTime.UtcNow;
+        if (request.ProgressPercent > 0)
+            stage.StartedAt ??= now;
+        stage.Status = nextStatus;
+        stage.WaitingReason = request.IsStopped ? request.StopReason!.Trim() : null;
+        stage.NextFollowUpDate = request.NextFollowUpDate;
+
+        _context.Set<ProjectStageReport>().Add(new ProjectStageReport
+        {
+            TenantId = tenantId,
+            ProjectStageId = stage.Id,
+            ReportDate = request.ReportDate,
+            ProgressPercent = request.ProgressPercent,
+            WorkSummary = request.WorkSummary.Trim(),
+            IsStopped = request.IsStopped,
+            StopReason = NormalizeOptional(request.StopReason),
+            NextFollowUpDate = request.NextFollowUpDate,
+            ReportedByUserId = NormalizeOptional(request.ReportedByUserId)
+        });
+
+        if (nextStatus != previousStatus)
+        {
+            _context.Set<ProjectStageHistory>().Add(new ProjectStageHistory
+            {
+                TenantId = tenantId,
+                ProjectStageId = stage.Id,
+                PreviousStatus = previousStatus,
+                NewStatus = nextStatus,
+                Description = request.IsStopped ? $"گزارش اجرا؛ توقف: {request.StopReason!.Trim()}" : "گزارش اجرا؛ ادامه فعالیت",
+                ChangedByUserId = request.ReportedByUserId,
+                ChangedAt = now
+            });
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
     // ============================================
     // Helpers
     // ============================================

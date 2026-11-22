@@ -33,6 +33,7 @@ public class StockMovementService : IStockMovementService
                 await ValidateProductsAsync(request.Items, tenantId);
                 await ValidateReferenceInvoiceAsync(
                     request.ReferenceInvoiceId, tenantId);
+                await ValidateProjectIssueAsync(request, tenantId);
 
                 var movement = new StockMovement
                 {
@@ -45,6 +46,7 @@ public class StockMovementService : IStockMovementService
                     SourceWarehouseId = request.SourceWarehouseId,
                     DestinationWarehouseId = request.DestinationWarehouseId,
                     ReferenceInvoiceId = request.ReferenceInvoiceId,
+                    ProjectId = request.ProjectId,
                     Description = request.Description?.Trim(),
                     Items = BuildItems(request.Items, tenantId)
                 };
@@ -84,6 +86,7 @@ public class StockMovementService : IStockMovementService
             await ValidateWarehousesAsync(request, tenantId);
             await ValidateProductsAsync(request.Items, tenantId);
             await ValidateReferenceInvoiceAsync(request.ReferenceInvoiceId, tenantId);
+            await ValidateProjectIssueAsync(request, tenantId);
 
             _context.StockMovementItems.RemoveRange(movement.Items);
             movement.Items.Clear();
@@ -93,6 +96,7 @@ public class StockMovementService : IStockMovementService
             movement.SourceWarehouseId = request.SourceWarehouseId;
             movement.DestinationWarehouseId = request.DestinationWarehouseId;
             movement.ReferenceInvoiceId = request.ReferenceInvoiceId;
+            movement.ProjectId = request.ProjectId;
             movement.Description = request.Description?.Trim();
 
             foreach (var item in BuildItems(request.Items, tenantId))
@@ -143,6 +147,7 @@ public class StockMovementService : IStockMovementService
                     SourceWarehouseId = movement.SourceWarehouseId,
                     DestinationWarehouseId = movement.DestinationWarehouseId,
                     ReferenceInvoiceId = movement.ReferenceInvoiceId,
+                    ProjectId = movement.ProjectId,
                     Description = movement.Description,
                     Items = movement.Items.Select(x =>
                         new StockMovementItemRequest
@@ -158,6 +163,7 @@ public class StockMovementService : IStockMovementService
                 await ValidateWarehousesAsync(request, tenantId);
                 await ValidateProductsAsync(request.Items, tenantId);
                 await ValidateReferenceInvoiceAsync(request.ReferenceInvoiceId, tenantId);
+                await ValidateProjectIssueAsync(request, tenantId);
                 var canAllowNegativeStock =
                     await CanAllowNegativeStockForSaleAsync(
                         movement,
@@ -232,6 +238,110 @@ public class StockMovementService : IStockMovementService
 
                 await _context.SaveChangesAsync();
             });
+    }
+
+    public async Task ReverseAsync(int id, int tenantId)
+    {
+        var reversalId = await _context.ExecuteInTransactionAsync(
+            IsolationLevel.Serializable,
+            async () =>
+            {
+                var original = await _context.StockMovements
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId);
+                if (original == null)
+                    throw new InvalidOperationException("سند گردش انبار پیدا نشد.");
+                if (original.Status != StockMovementStatus.Posted)
+                    throw new InvalidOperationException("فقط سند قطعی‌شده قابل برگشت از قطعی است.");
+                if (original.ReferenceInvoiceId.HasValue || original.ReversesMovementId.HasValue)
+                    throw new InvalidOperationException("این سند باید از مسیر فاکتور یا سند اصلی خودش اصلاح شود.");
+
+                var hasReversal = await _context.StockMovements.IgnoreQueryFilters().AnyAsync(x =>
+                    x.TenantId == tenantId && x.ReversesMovementId == original.Id && !x.IsDeleted);
+                if (hasReversal)
+                    throw new InvalidOperationException("برای این سند قبلاً برگشت ثبت شده است.");
+
+                var reversalDate = DateOnly.FromDateTime(DateTime.Today);
+                var reversal = new StockMovement
+                {
+                    TenantId = tenantId,
+                    Number = await GenerateNumberAsync(reversalDate, tenantId),
+                    Date = reversalDate,
+                    MovementType = original.MovementType switch
+                    {
+                        StockMovementType.Issue => StockMovementType.Receipt,
+                        StockMovementType.Receipt or StockMovementType.Opening => StockMovementType.Issue,
+                        StockMovementType.Transfer => StockMovementType.Transfer,
+                        _ => throw new InvalidOperationException("نوع سند قابل برگشت نیست.")
+                    },
+                    Status = StockMovementStatus.Draft,
+                    SourceWarehouseId = original.MovementType switch
+                    {
+                        StockMovementType.Transfer => original.DestinationWarehouseId,
+                        StockMovementType.Receipt or StockMovementType.Opening => original.DestinationWarehouseId,
+                        _ => null
+                    },
+                    DestinationWarehouseId = original.MovementType switch
+                    {
+                        StockMovementType.Transfer => original.SourceWarehouseId,
+                        StockMovementType.Issue => original.SourceWarehouseId,
+                        _ => null
+                    },
+                    ReversesMovementId = original.Id,
+                    Description = $"برگشت سند {original.Number}",
+                    Items = BuildItems(original.Items.Select(x => new StockMovementItemRequest
+                    {
+                        ProductId = x.ProductId,
+                        Quantity = x.Quantity,
+                        UnitCost = x.UnitCost,
+                        Description = x.Description
+                    }).ToList(), tenantId)
+                };
+                _context.StockMovements.Add(reversal);
+                await _context.SaveChangesAsync();
+                return reversal.Id;
+            });
+
+        // برگشت با ثبت و قطعی‌کردن سند معکوس انجام می‌شود؛ اگر قطعی‌کردن شکست بخورد،
+        // پیش‌نویس برگشت در فهرست باقی می‌ماند تا بتوان آن را پس از اصلاح قطعی کرد.
+        await PostAsync(reversalId, tenantId);
+    }
+
+    public async Task DeleteAsync(int id, int tenantId, string? deletedByUserId)
+    {
+        await _context.ExecuteInTransactionAsync(IsolationLevel.Serializable, async () =>
+        {
+            var movement = await _context.StockMovements
+                .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId);
+            if (movement == null)
+                throw new InvalidOperationException("سند گردش انبار پیدا نشد.");
+            if (movement.ReferenceInvoiceId.HasValue || movement.ReversesMovementId.HasValue)
+                throw new InvalidOperationException("سندهای مرتبط با فاکتور یا سند برگشت قابل حذف نیستند.");
+
+            if (movement.Status == StockMovementStatus.Posted)
+            {
+                var hasPostedReversal = await _context.StockMovements.IgnoreQueryFilters().AnyAsync(x =>
+                    x.TenantId == tenantId && x.ReversesMovementId == movement.Id &&
+                    !x.IsDeleted && x.Status == StockMovementStatus.Posted);
+                if (!hasPostedReversal)
+                    throw new InvalidOperationException("ابتدا برگشت از قطعی را ثبت کنید؛ سپس می‌توانید سند اصلی را حذف کنید.");
+            }
+            else if (movement.Status is not (StockMovementStatus.Draft or StockMovementStatus.Cancelled))
+            {
+                throw new InvalidOperationException("وضعیت این سند اجازه حذف نمی‌دهد.");
+            }
+
+            var hasDraftReversal = await _context.StockMovements.IgnoreQueryFilters().AnyAsync(x =>
+                x.TenantId == tenantId && x.ReversesMovementId == movement.Id &&
+                !x.IsDeleted && x.Status == StockMovementStatus.Draft);
+            if (hasDraftReversal)
+                throw new InvalidOperationException("پیش‌نویس برگشت را ابتدا قطعی یا لغو کنید.");
+
+            movement.IsDeleted = true;
+            movement.DeletedAt = DateTime.UtcNow;
+            movement.DeletedBy = string.IsNullOrWhiteSpace(deletedByUserId) ? null : deletedByUserId.Trim();
+            await _context.SaveChangesAsync();
+        });
     }
 
     private static void ValidateRequest(StockMovementRequest request)
@@ -370,6 +480,29 @@ public class StockMovementService : IStockMovementService
         if (!exists)
             throw new InvalidOperationException(
                 "فاکتور مرجع پیدا نشد یا متعلق به شرکت جاری نیست.");
+    }
+
+    private async Task ValidateProjectIssueAsync(
+        StockMovementRequest request,
+        int tenantId)
+    {
+        if (!request.ProjectId.HasValue)
+            return;
+
+        if ((StockMovementType)request.MovementType != StockMovementType.Issue)
+            throw new InvalidOperationException("مصرف پروژه باید از نوع حواله خروج انبار باشد.");
+
+        var projectExists = await _context.Projects.AnyAsync(x =>
+            x.Id == request.ProjectId.Value && x.TenantId == tenantId);
+        if (!projectExists)
+            throw new InvalidOperationException("پروژه انتخاب‌شده متعلق به شرکت جاری نیست.");
+
+        var productIds = request.Items.Select(x => x.ProductId).Distinct().ToList();
+        var consumableCount = await _context.Products.CountAsync(x =>
+            x.TenantId == tenantId && x.IsActive && x.TrackInventory &&
+            x.ProductType == ProductType.Consumable && productIds.Contains(x.Id));
+        if (consumableCount != productIds.Count)
+            throw new InvalidOperationException("در مصرف پروژه فقط می‌توان اقلام مصرفیِ دارای کنترل موجودی را انتخاب کرد.");
     }
 
     private async Task<string> GenerateNumberAsync(

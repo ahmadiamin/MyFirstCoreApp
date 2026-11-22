@@ -4,6 +4,7 @@ using MyFirstCoreApp.Application.Interfaces;
 using MyFirstCoreApp.Domain.Entities.Contacts;
 using MyFirstCoreApp.Domain.Entities.Inventory;
 using MyFirstCoreApp.Domain.Entities.Invoicing;
+using MyFirstCoreApp.Domain.Entities.Projects;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Persistence;
 using MyFirstCoreApp.Infrastructure.Services;
@@ -23,6 +24,102 @@ public sealed class StockMovementServiceTests : IDisposable
     public void Dispose()
     {
         _db.Dispose();
+    }
+
+    [Fact]
+    public async Task ProjectIssueForConsumablesReducesStockAndKeepsProjectLink()
+    {
+        _db.Tenant.TenantId = TenantA;
+        int productId;
+        int warehouseId;
+        int projectId;
+        await using (var setup = _db.NewContext())
+        {
+            var unit = new Unit { TenantId = TenantA, Name = "عدد", Symbol = "عدد", IsActive = true };
+            setup.Units.Add(unit);
+            await setup.SaveChangesAsync();
+            var product = new Product
+            {
+                TenantId = TenantA,
+                Name = "پیچ مصرفی",
+                UnitId = unit.Id,
+                ProductType = ProductType.Consumable,
+                IsSaleable = false,
+                TrackInventory = true,
+                IsActive = true
+            };
+            var warehouse = new Warehouse { TenantId = TenantA, Code = "CONS-WH", Name = "انبار مصرفی", IsActive = true, IsDefault = true };
+            var project = new Project { TenantId = TenantA, Title = "پروژه مصرف تست" };
+            setup.AddRange(product, warehouse, project);
+            await setup.SaveChangesAsync();
+            productId = product.Id;
+            warehouseId = warehouse.Id;
+            projectId = project.Id;
+        }
+
+        await using var context = _db.NewContext();
+        var service = NewService(context);
+        var receiptId = await service.CreateAsync(new StockMovementRequest
+        {
+            Date = TestDate,
+            MovementType = (int)StockMovementType.Receipt,
+            DestinationWarehouseId = warehouseId,
+            Items = [new StockMovementItemRequest { ProductId = productId, Quantity = 10, UnitCost = 100 }]
+        }, TenantA);
+        await service.PostAsync(receiptId, TenantA);
+
+        var issueId = await service.CreateAsync(new StockMovementRequest
+        {
+            Date = TestDate,
+            MovementType = (int)StockMovementType.Issue,
+            SourceWarehouseId = warehouseId,
+            ProjectId = projectId,
+            Items = [new StockMovementItemRequest { ProductId = productId, Quantity = 3 }]
+        }, TenantA);
+        await service.PostAsync(issueId, TenantA);
+
+        Assert.Equal(7, await service.GetBalanceAsync(productId, warehouseId, TenantA));
+        var issue = await context.StockMovements.SingleAsync(x => x.Id == issueId);
+        Assert.Equal(projectId, issue.ProjectId);
+        var projectService = new ProjectService(context, _db.User);
+        var projectDetails = await projectService.GetByIdAsync(projectId, TenantA);
+        Assert.NotNull(projectDetails);
+        Assert.Equal(3, Assert.Single(projectDetails.MaterialConsumptions).TotalQuantity);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteAsync(issueId, TenantA, "owner"));
+
+        await service.ReverseAsync(issueId, TenantA);
+        Assert.Equal(10, await service.GetBalanceAsync(productId, warehouseId, TenantA));
+        projectDetails = await projectService.GetByIdAsync(projectId, TenantA);
+        Assert.NotNull(projectDetails);
+        Assert.Empty(projectDetails.MaterialConsumptions);
+        await service.DeleteAsync(issueId, TenantA, "owner");
+
+        var deletedOriginal = await context.StockMovements.IgnoreQueryFilters()
+            .SingleAsync(x => x.Id == issueId);
+        Assert.True(deletedOriginal.IsDeleted);
+        var reversal = await context.StockMovements.IgnoreQueryFilters()
+            .SingleAsync(x => x.ReversesMovementId == issueId && !x.IsDeleted);
+        Assert.Equal(StockMovementStatus.Posted, reversal.Status);
+
+        var ordinaryGood = new Product
+        {
+            TenantId = TenantA,
+            Name = "کالای عادی",
+            UnitId = await context.Units.Select(x => x.Id).SingleAsync(),
+            ProductType = ProductType.Goods,
+            TrackInventory = true,
+            IsActive = true
+        };
+        context.Products.Add(ordinaryGood);
+        await context.SaveChangesAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(new StockMovementRequest
+        {
+            Date = TestDate,
+            MovementType = (int)StockMovementType.Issue,
+            SourceWarehouseId = warehouseId,
+            ProjectId = projectId,
+            Items = [new StockMovementItemRequest { ProductId = ordinaryGood.Id, Quantity = 1 }]
+        }, TenantA));
     }
 
     private StockMovementService NewService(

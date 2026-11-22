@@ -86,6 +86,29 @@ public class ProjectStageStatusFormViewModel
     public string? NextFollowUpDate { get; set; }
 }
 
+public sealed class ProjectStageReportFormViewModel
+{
+    public int ProjectId { get; set; }
+    public int ProjectStageId { get; set; }
+
+    [Required(ErrorMessage = "تاریخ گزارش الزامی است.")]
+    public string ReportDate { get; set; } = string.Empty;
+
+    [Range(0, 100, ErrorMessage = "درصد پیشرفت باید بین صفر تا صد باشد.")]
+    public int ProgressPercent { get; set; }
+
+    [Required(ErrorMessage = "شرح کار انجام‌شده الزامی است.")]
+    [MaxLength(2000)]
+    public string WorkSummary { get; set; } = string.Empty;
+
+    public bool IsStopped { get; set; }
+
+    [MaxLength(1000)]
+    public string? StopReason { get; set; }
+
+    public string? NextFollowUpDate { get; set; }
+}
+
 public class ProjectStatusFormViewModel
 {
     public int ProjectId { get; set; }

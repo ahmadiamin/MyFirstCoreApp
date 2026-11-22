@@ -837,6 +837,9 @@ public class InvoicesController : Controller
         var query = _context.Products
             .Where(p => p.TenantId == tenantId.Value && p.IsActive);
 
+        if (invoiceType is InvoiceType.Sale or InvoiceType.PreInvoice)
+            query = query.Where(p => p.IsSaleable);
+
         if (!string.IsNullOrWhiteSpace(q))
         {
             q = PersianDate.NormalizeDigits(q.Trim());

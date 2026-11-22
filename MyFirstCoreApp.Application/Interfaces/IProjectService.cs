@@ -71,4 +71,6 @@ public interface IProjectService
     Task ChangeStageStatusAsync(
         ProjectStageStatusChangeRequest request,
         int tenantId);
+
+    Task AddStageReportAsync(ProjectStageReportRequest request, int tenantId);
 }

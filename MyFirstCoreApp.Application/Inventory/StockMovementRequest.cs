@@ -15,6 +15,8 @@ public class StockMovementRequest
 
     public int? ReferenceInvoiceId { get; set; }
 
+    public int? ProjectId { get; set; }
+
     public string? Description { get; set; }
 
     public List<StockMovementItemRequest> Items { get; set; } = new();

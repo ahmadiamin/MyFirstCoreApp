@@ -44,11 +44,22 @@ public sealed class ProjectDetailsDto
 
     public string? HoldReason { get; set; }
     public string? CancellationReason { get; set; }
+    public decimal TotalExpenses { get; set; }
+    public List<ProjectMaterialSummaryDto> MaterialConsumptions { get; set; } = new();
 
     public List<ProjectMemberDto> Members { get; set; } = new();
     public List<ProjectStageDto> Stages { get; set; } = new();
     public List<ProjectStatusHistoryDto> StatusHistories { get; set; } = new();
     public List<ProjectInvoiceDto> Invoices { get; set; } = new();
+}
+
+public sealed class ProjectMaterialSummaryDto
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string? ProductCode { get; set; }
+    public string UnitSymbol { get; set; } = string.Empty;
+    public decimal TotalQuantity { get; set; }
 }
 
 public sealed class ProjectInvoiceDto
@@ -111,6 +122,19 @@ public sealed class ProjectStageDto
     public string? Notes { get; set; }
 
     public List<ProjectStageHistoryDto> Histories { get; set; } = new();
+    public List<ProjectStageReportDto> Reports { get; set; } = new();
+}
+
+public sealed class ProjectStageReportDto
+{
+    public int Id { get; set; }
+    public DateOnly ReportDate { get; set; }
+    public int ProgressPercent { get; set; }
+    public string WorkSummary { get; set; } = string.Empty;
+    public bool IsStopped { get; set; }
+    public string? StopReason { get; set; }
+    public DateOnly? NextFollowUpDate { get; set; }
+    public string? ReportedByUserName { get; set; }
 }
 
 public sealed class ProjectStageHistoryDto

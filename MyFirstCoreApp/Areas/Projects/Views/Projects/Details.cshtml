@@ -42,7 +42,10 @@
     var canManageMembers = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectMember.Manage")).Succeeded;
     var canManageStages = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectStage.Manage")).Succeeded;
     var canChangeStageStatus = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectStage.Status.Change")).Succeeded;
+    var canReportStage = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectStage.Report")).Succeeded;
     var canViewInvoices = (await AuthorizationService.AuthorizeAsync(User, null, "Invoice.View")).Succeeded;
+    var canViewProjectExpenses = (await AuthorizationService.AuthorizeAsync(User, null, "ProjectExpense.View")).Succeeded;
+    var canViewProjectMaterials = (await AuthorizationService.AuthorizeAsync(User, null, "StockMovement.View")).Succeeded;
 
     var membersJson = JsonSerializer.Serialize(Model.Members, new JsonSerializerOptions
     {
@@ -71,7 +74,11 @@
             }
             @if ((await AuthorizationService.AuthorizeAsync(User, null, "ProjectExpense.View")).Succeeded)
             {
-                <a asp-area="Projects" asp-controller="ProjectExpenses" asp-action="Index" asp-route-projectId="@Model.Id" class="btn btn-info btn-sm ml-1 mb-1"><i class="fa fa-money-bill-wave"></i> هزینه‌های پروژه</a>
+                <a asp-area="Accounting" asp-controller="Expenses" asp-action="Index" asp-route-projectId="@Model.Id" class="btn btn-info btn-sm ml-1 mb-1"><i class="fa fa-money-bill-wave"></i> هزینه‌های پروژه</a>
+            }
+            @if ((await AuthorizationService.AuthorizeAsync(User, null, "StockMovement.View")).Succeeded)
+            {
+                <a asp-area="Projects" asp-controller="ProjectMaterials" asp-action="Index" asp-route-projectId="@Model.Id" class="btn btn-success btn-sm ml-1 mb-1"><i class="fa fa-box-open"></i> مصرف اقلام پروژه</a>
             }
             @if (canChangeProjectStatus)
             {
@@ -116,6 +123,52 @@
             <div class="col-md-6 mb-3"><strong>تاریخ پایان واقعی:</strong> @(PersianDate.Format(Model.ActualEndDate) ?? "-")</div>
             <div class="col-md-12 mb-3"><strong>آدرس:</strong><p class="mb-0">@(Model.Address ?? "-")</p></div>
             <div class="col-md-12 mb-3"><strong>توضیحات:</strong><p class="mb-0">@(Model.Description ?? "-")</p></div>
+
+            @if (canViewProjectExpenses)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="detail-mobile-card h-100">
+                        <strong>جمع هزینه‌های ثبت‌شده</strong>
+                        <div class="h4 mt-2 mb-0"><span class="persian-number-comma">@Model.TotalExpenses.ToString("N0")</span> ریال</div>
+                        <small class="text-muted">بر اساس هزینه‌های قطعی ثبت‌شده برای این پروژه</small>
+                    </div>
+                </div>
+            }
+
+            @if (canViewProjectMaterials)
+            {
+                <div class="col-12 mb-3">
+                    <div class="detail-mobile-card">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+                            <strong><i class="fa fa-box-open"></i> خلاصه مصرف اقلام پروژه</strong>
+                            <a asp-area="Projects" asp-controller="ProjectMaterials" asp-action="Index" asp-route-projectId="@Model.Id" class="btn btn-sm btn-outline-success">مشاهده اسناد مصرف</a>
+                        </div>
+                        @if (Model.MaterialConsumptions.Count == 0)
+                        {
+                            <div class="text-muted">هنوز مصرف قطعی ثبت نشده است.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead><tr><th>قلم مصرفی</th><th>کد</th><th>جمع مقدار مصرف‌شده</th></tr></thead>
+                                    <tbody>
+                                    @foreach (var item in Model.MaterialConsumptions)
+                                    {
+                                        <tr>
+                                            <td>@item.ProductName</td>
+                                            <td dir="ltr">@(item.ProductCode ?? "—")</td>
+                                            <td>@PersianDate.ToPersianDigits(item.TotalQuantity.ToString("0.###")) @item.UnitSymbol</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <small class="text-muted d-block mt-2">فقط حواله‌های قطعی در این جمع هستند؛ حواله‌های برگشت‌خورده محاسبه نشده‌اند.</small>
+                        }
+                    </div>
+                </div>
+            }
 
             @if (!string.IsNullOrWhiteSpace(Model.HoldReason))
             {
@@ -272,7 +325,8 @@
             const permissions = {
                 manageMembers: @(canManageMembers ? "true" : "false"),
                 manageStages: @(canManageStages ? "true" : "false"),
-                changeStageStatus: @(canChangeStageStatus ? "true" : "false")
+                changeStageStatus: @(canChangeStageStatus ? "true" : "false"),
+                reportStage: @(canReportStage ? "true" : "false")
             };
 
             const token = $('input[name="__RequestVerificationToken"]').val();
@@ -484,6 +538,11 @@
 
             function stageActions(stage) {
                 let html = '';
+                if (permissions.reportStage) {
+                    html += `<a class="btn btn-sm btn-outline-success"
+                        href="${projectManagementBase}/CreateStageReport?stageId=${stage.id}&projectId=${projectId}"
+                        title="ثبت گزارش اجرا"><i class="fa fa-clipboard-check"></i></a>`;
+                }
                 if (permissions.changeStageStatus) {
                     html += `<a class="btn btn-sm btn-outline-warning"
                         href="${projectManagementBase}/ChangeStageStatus?id=${stage.id}&projectId=${projectId}"
@@ -526,6 +585,24 @@
                 </div>`;
             }
 
+            function renderReports(stage) {
+                const reports = stage.reports || [];
+                if (!reports.length) return '<div class="text-muted small mt-2">گزارش اجرایی ثبت نشده است.</div>';
+                return `<div class="stage-history mt-2">
+                    <details>
+                        <summary class="text-success" style="cursor:pointer">گزارش‌های اجرا (${persianNumber(reports.length)})</summary>
+                        ${reports.map(report => `
+                            <div class="stage-history-item">
+                                <div><strong>تاریخ:</strong> ${esc(formatDate(report.reportDate))} — <strong>پیشرفت:</strong> ${persianNumber(report.progressPercent)}٪</div>
+                                <div><strong>گزارش:</strong> ${esc(report.workSummary || '-')}</div>
+                                ${report.reportedByUserName ? `<div><strong>ثبت‌کننده:</strong> ${esc(report.reportedByUserName)}</div>` : ''}
+                                ${report.isStopped ? `<div class="text-danger"><strong>توقف:</strong> ${esc(report.stopReason || '-')}</div>` : ''}
+                                ${report.nextFollowUpDate ? `<div><strong>پیگیری بعدی:</strong> ${esc(formatDate(report.nextFollowUpDate))}</div>` : ''}
+                            </div>`).join('')}
+                    </details>
+                </div>`;
+            }
+
             function renderStagesMobile() {
                 const host = $('#mobileStages');
                 if (!stageRows.length) {
@@ -544,12 +621,14 @@
                         </div>
                         <div class="detail-line">مسئول: ${esc(stage.assignedUserName || '-')}</div>
                         <div class="detail-line">وضعیت: ${statusBadge(stage.status)}</div>
+                        <div class="detail-line">پیشرفت: ${persianNumber(stage.reports && stage.reports.length ? stage.reports[0].progressPercent : 0)}٪</div>
                         <div class="detail-line">شروع برنامه‌ریزی‌شده: ${esc(formatDate(stage.plannedStartDate))}</div>
                         <div class="detail-line">پایان برنامه‌ریزی‌شده: ${esc(formatDate(stage.plannedEndDate))}</div>
                         <div class="detail-line">مرحله الزامی: ${stage.isRequired ? 'بله' : 'خیر'}</div>
                         ${stage.waitingReason ? `<div class="detail-line">علت انتظار: ${esc(stage.waitingReason)}</div>` : ''}
                         ${stage.nextFollowUpDate ? `<div class="detail-line">تاریخ پیگیری: ${esc(formatDate(stage.nextFollowUpDate))}</div>` : ''}
                         ${stage.notes ? `<div class="detail-line">یادداشت: ${esc(stage.notes)}</div>` : ''}
+                        ${renderReports(stage)}
                         ${renderHistory(stage)}
                     </div>`).join(''));
             }
@@ -563,6 +642,9 @@
                       valueFormatter: p => p.value || '-' },
                     { field: 'status', headerName: 'وضعیت', width: 125,
                       cellRenderer: p => statusBadge(p.value) },
+                    { headerName: 'پیشرفت', width: 100, sortable: false,
+                      valueGetter: p => (p.data.reports && p.data.reports.length ? p.data.reports[0].progressPercent : 0),
+                      valueFormatter: p => persianNumber(p.value) + '٪' },
                     { field: 'plannedStartDate', headerName: 'شروع برنامه‌ریزی‌شده', width: 155,
                       valueFormatter: p => formatDate(p.value) },
                     { field: 'plannedEndDate', headerName: 'پایان برنامه‌ریزی‌شده', width: 155,
@@ -573,6 +655,13 @@
                       valueFormatter: p => p.value || '-' },
                     { field: 'nextFollowUpDate', headerName: 'تاریخ پیگیری', width: 130,
                       valueFormatter: p => formatDate(p.value) },
+                    { headerName: 'گزارش اجرا', width: 120, sortable: false,
+                      cellRenderer: p => {
+                          const count = (p.data.reports || []).length;
+                          if (!count) return '-';
+                          return `<button type="button" class="btn btn-xs btn-outline-success"
+                              onclick="showStageReports(${Number(p.data.id)})">گزارش‌ها (${persianNumber(count)})</button>`;
+                      }},
                     { headerName: 'تاریخچه', width: 115, sortable: false,
                       cellRenderer: p => {
                           const count = (p.data.histories || []).length;
@@ -583,9 +672,9 @@
                       }}
                 ];
 
-                if (permissions.manageStages || permissions.changeStageStatus) {
+                if (permissions.manageStages || permissions.changeStageStatus || permissions.reportStage) {
                     columns.push({
-                        headerName: 'عملیات', width: 145, sortable: false, filter: false,
+                        headerName: 'عملیات', width: 185, sortable: false, filter: false,
                         cellRenderer: p => stageActions(p.data)
                     });
                 }
@@ -635,6 +724,21 @@
                     window.alert((stage.histories || []).map(h =>
                         `${projectStageStatusName(h.newStatus)} - ${h.description || ''}`
                     ).join('\n') || 'تاریخچه‌ای ثبت نشده است.');
+                }
+            };
+
+            window.showStageReports = function (stageId) {
+                const stage = stageRows.find(x => Number(x.id) === Number(stageId));
+                if (!stage) return;
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = renderReports(stage);
+                const details = wrapper.querySelector('details');
+                if (details) details.open = true;
+                const content = details ? details.parentElement.innerHTML : '<div>گزارشی ثبت نشده است.</div>';
+                if (window.Swal) {
+                    Swal.fire({ title: 'گزارش‌های اجرای مرحله', html: content, confirmButtonText: 'بستن', width: 700 });
+                } else {
+                    window.alert((stage.reports || []).map(r => `${r.progressPercent}% - ${r.workSummary}`).join('\n') || 'گزارشی ثبت نشده است.');
                 }
             };
 

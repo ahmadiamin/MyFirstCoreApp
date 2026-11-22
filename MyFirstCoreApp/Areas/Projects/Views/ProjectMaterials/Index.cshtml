@@ -1,0 +1,86 @@
+@model MyFirstCoreApp.Areas.Projects.ViewModels.ProjectMaterials.ProjectMaterialListViewModel
+
+@{
+    ViewData["Title"] = "مصرف اقلام پروژه";
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <h3 class="card-title mb-2 mb-md-0"><i class="fa fa-box-open"></i> مصرف اقلام: @Model.ProjectTitle</h3>
+        <div>
+            @if (Model.CanCreate)
+            {
+                <a asp-action="Create" asp-route-projectId="@Model.ProjectId" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> ثبت مصرف</a>
+            }
+            <a asp-area="Projects" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn btn-secondary btn-sm">بازگشت به پروژه</a>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+        @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+        <div class="alert alert-info">ثبت مصرف اختیاری است. فقط مقدار اقلامی را ثبت کنید که می‌خواهید از موجودی انبار کم شود؛ خریدهای پروژه به‌تنهایی مصرف محسوب نمی‌شوند.</div>
+        @if (Model.Movements.Count == 0)
+        {
+            <div class="text-center text-muted py-4">هنوز مصرفی برای این پروژه ثبت نشده است.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead><tr><th>شماره</th><th>تاریخ</th><th>انبار مبدأ</th><th>اقلام و مقدار</th><th>شرح</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+                    <tbody>
+                    @foreach (var movement in Model.Movements)
+                    {
+                        <tr>
+                            <td dir="ltr">@movement.Number</td>
+                            <td>@movement.Date</td>
+                            <td>@movement.Warehouse</td>
+                            <td>@movement.Items</td>
+                            <td>@(movement.Description ?? "—")</td>
+                            <td><span class="badge @(movement.IsDraft ? "badge-warning" : "badge-success")">@movement.Status</span></td>
+                            <td class="text-nowrap">
+                                @if (movement.IsDraft && Model.CanPost)
+                                {
+                                    <form asp-action="Post" method="post" class="d-inline" onsubmit="return confirm('این مصرف قطعی و از موجودی انبار کسر شود؟');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                        <input type="hidden" name="id" value="@movement.Id" />
+                                        <button class="btn btn-sm btn-success" type="submit"><i class="fa fa-check"></i> قطعی‌کردن</button>
+                                    </form>
+                                }
+                                @if (movement.IsDraft && Model.CanCreate && !movement.IsReversal)
+                                {
+                                    <form asp-action="Cancel" method="post" class="d-inline" onsubmit="return confirm('پیش‌نویس مصرف لغو شود؟');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                        <input type="hidden" name="id" value="@movement.Id" />
+                                        <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fa fa-times"></i> لغو</button>
+                                    </form>
+                                }
+                                @if (movement.CanReverse && Model.CanPost)
+                                {
+                                    <form asp-action="Reverse" method="post" class="d-inline" onsubmit="return confirm('اثر این حواله با یک سند معکوس برگردانده شود؟');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                        <input type="hidden" name="id" value="@movement.Id" />
+                                        <button class="btn btn-sm btn-warning" type="submit"><i class="fa fa-rotate-left"></i> برگشت از قطعی</button>
+                                    </form>
+                                }
+                                @if (movement.CanDelete && Model.CanDelete)
+                                {
+                                    <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('سند از فهرست حذف شود؟ سابقهٔ گردش برای حسابرسی باقی می‌ماند.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                        <input type="hidden" name="id" value="@movement.Id" />
+                                        <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fa fa-trash"></i> حذف</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

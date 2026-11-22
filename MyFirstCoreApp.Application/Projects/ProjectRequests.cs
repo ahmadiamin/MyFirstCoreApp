@@ -70,6 +70,18 @@ public sealed class ProjectStageStatusChangeRequest
     public DateOnly? NextFollowUpDate { get; set; }
 }
 
+public sealed class ProjectStageReportRequest
+{
+    public int ProjectStageId { get; set; }
+    public DateOnly ReportDate { get; set; }
+    public int ProgressPercent { get; set; }
+    public string WorkSummary { get; set; } = string.Empty;
+    public bool IsStopped { get; set; }
+    public string? StopReason { get; set; }
+    public DateOnly? NextFollowUpDate { get; set; }
+    public string? ReportedByUserId { get; set; }
+}
+
 /// <summary>
 /// تغییر وضعیت کلی پروژه.
 /// </summary>

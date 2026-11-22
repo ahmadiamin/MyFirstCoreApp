@@ -74,6 +74,8 @@ public class Product : TenantEntity
     /// برای خدمات مقدار false است.
     /// </summary>
     public bool TrackInventory { get; set; } = true;
+    public MyFirstCoreApp.Domain.Enums.ProductType ProductType { get; set; } = MyFirstCoreApp.Domain.Enums.ProductType.Goods;
+    public bool IsSaleable { get; set; } = true;
 
     // ---- Navigation ----
 

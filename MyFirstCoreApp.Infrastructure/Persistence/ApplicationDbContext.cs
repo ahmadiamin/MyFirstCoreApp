@@ -66,6 +66,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         public DbSet<ProjectMember> ProjectMembers { get; set; }
         public DbSet<ProjectStage> ProjectStages { get; set; }
         public DbSet<ProjectStageHistory> ProjectStageHistories { get; set; }
+        public DbSet<ProjectStageReport> ProjectStageReports { get; set; }
         public DbSet<ProjectStatusHistory> ProjectStatusHistories { get; set; }
         public DbSet<ProjectExpense> ProjectExpenses { get; set; }
         public DbSet<ProjectExpensePayment> ProjectExpensePayments { get; set; }
@@ -76,6 +77,8 @@ namespace MyFirstCoreApp.Infrastructure.Persistence
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
         public DbSet<ProductAttribute> ProductAttributes { get; set; }
+        public DbSet<CompanyAsset> CompanyAssets { get; set; }
+        public DbSet<CompanyAssetAssignment> CompanyAssetAssignments { get; set; }
         
         public DbSet<Warehouse> Warehouses { get; set; }
         public DbSet<StockMovement> StockMovements { get; set; }

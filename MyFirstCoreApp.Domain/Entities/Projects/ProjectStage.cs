@@ -37,4 +37,5 @@ public class ProjectStage : TenantEntity
     public string? Notes { get; set; }
 
     public ICollection<ProjectStageHistory> Histories { get; set; } = new List<ProjectStageHistory>();
+    public ICollection<ProjectStageReport> Reports { get; set; } = new List<ProjectStageReport>();
 }

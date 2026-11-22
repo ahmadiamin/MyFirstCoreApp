@@ -453,6 +453,73 @@ public class ProjectManagementController : Controller
         return RedirectToProjectDetails(model.ProjectId);
     }
 
+    [HttpGet]
+    [Authorize(Policy = "ProjectStage.Report")]
+    public async Task<IActionResult> CreateStageReport(int stageId, int projectId)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+        var project = await _projectService.GetByIdAsync(projectId, tenantId.Value);
+        if (project == null) return NotFound();
+        var stage = project.Stages.FirstOrDefault(x => x.Id == stageId);
+        if (stage == null) return NotFound();
+
+        return View(new ProjectStageReportFormViewModel
+        {
+            ProjectId = projectId,
+            ProjectStageId = stageId,
+            ReportDate = PersianDate.Format(DateOnly.FromDateTime(DateTime.Today)) ?? string.Empty,
+            ProgressPercent = stage.Reports.FirstOrDefault()?.ProgressPercent ?? 0
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = "ProjectStage.Report")]
+    public async Task<IActionResult> CreateStageReport(ProjectStageReportFormViewModel model)
+    {
+        var tenantId = _currentTenant.TenantId;
+        if (!tenantId.HasValue) return Forbid();
+        DateOnly reportDate = default;
+        DateOnly? followUpDate = null;
+
+        if (!PersianDate.TryParse(model.ReportDate, out reportDate))
+            ModelState.AddModelError(nameof(model.ReportDate), "تاریخ شمسی گزارش معتبر نیست.");
+        if (!string.IsNullOrWhiteSpace(model.NextFollowUpDate))
+        {
+            if (PersianDate.TryParse(model.NextFollowUpDate, out var parsedFollowUp)) followUpDate = parsedFollowUp;
+            else ModelState.AddModelError(nameof(model.NextFollowUpDate), "تاریخ شمسی پیگیری معتبر نیست.");
+        }
+        if (model.IsStopped && string.IsNullOrWhiteSpace(model.StopReason))
+            ModelState.AddModelError(nameof(model.StopReason), "برای گزارش توقف، علت توقف را وارد کنید.");
+        if (model.IsStopped && !followUpDate.HasValue)
+            ModelState.AddModelError(nameof(model.NextFollowUpDate), "برای گزارش توقف، تاریخ پیگیری بعدی را وارد کنید.");
+
+        if (!ModelState.IsValid) return View(model);
+
+        try
+        {
+            await _projectService.AddStageReportAsync(new ProjectStageReportRequest
+            {
+                ProjectStageId = model.ProjectStageId,
+                ReportDate = reportDate,
+                ProgressPercent = model.ProgressPercent,
+                WorkSummary = model.WorkSummary,
+                IsStopped = model.IsStopped,
+                StopReason = model.StopReason,
+                NextFollowUpDate = followUpDate,
+                ReportedByUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            }, tenantId.Value);
+            TempData["Success"] = "گزارش اجرای مرحله ثبت شد.";
+            return RedirectToProjectDetails(model.ProjectId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
+    }
+
     // ============================================
     // Project Status
     // ============================================

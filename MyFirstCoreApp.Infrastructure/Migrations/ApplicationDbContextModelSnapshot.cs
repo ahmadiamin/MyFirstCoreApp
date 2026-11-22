@@ -17,7 +17,7 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.12")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -1795,6 +1795,157 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.ToTable("UserProfileImages");
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.CompanyAsset", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("AcquisitionCost")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateOnly?>("AcquisitionDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SerialNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TenantId", "Number")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("TenantId", "ProductId");
+
+                    b.HasIndex("TenantId", "SerialNumber")
+                        .IsUnique()
+                        .HasFilter("[SerialNumber] IS NOT NULL AND [IsDeleted] = 0");
+
+                    b.ToTable("CompanyAssets", (string)null);
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.CompanyAssetAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssignedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateOnly>("AssignedDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("CompanyAssetId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReturnNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ReturnedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateOnly?>("ReturnedDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UserTenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyAssetId")
+                        .IsUnique()
+                        .HasFilter("[ReturnedDate] IS NULL AND [IsDeleted] = 0");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UserTenantId");
+
+                    b.HasIndex("TenantId", "CompanyAssetId", "AssignedDate");
+
+                    b.ToTable("CompanyAssetAssignments", (string)null);
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -1833,6 +1984,11 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsSaleable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<bool>("IsUsedInInvoices")
                         .HasColumnType("bit");
 
@@ -1854,6 +2010,11 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.Property<int?>("ProductCategoryId")
                         .HasColumnType("int");
+
+                    b.Property<int>("ProductType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
 
                     b.Property<decimal>("SalePrice")
                         .HasPrecision(18)
@@ -2114,6 +2275,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Property<DateTime?>("PostedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ReferenceInvoiceId")
                         .HasColumnType("int");
 
@@ -2139,6 +2303,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
 
                     b.HasIndex("DestinationWarehouseId");
 
+                    b.HasIndex("ProjectId");
+
                     b.HasIndex("ReferenceInvoiceId");
 
                     b.HasIndex("ReversesMovementId")
@@ -2154,6 +2320,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("TenantId", "Status", "Date");
+
+                    b.HasIndex("TenantId", "ProjectId", "MovementType", "Date");
 
                     b.ToTable("StockMovements", null, t =>
                         {
@@ -3343,6 +3511,78 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.ToTable("ProjectStageHistories", (string)null);
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.ProjectStageReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStopped")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly?>("NextFollowUpDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("ProgressPercent")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectStageId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ReportDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ReportedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("StopReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WorkSummary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectStageId");
+
+                    b.HasIndex("TenantId", "ProjectStageId", "ReportDate");
+
+                    b.ToTable("ProjectStageReports", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProjectStageReports_ProgressPercent", "[ProgressPercent] BETWEEN 0 AND 100");
+                        });
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.ProjectStatusHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -4097,6 +4337,42 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.CompanyAsset", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.CompanyAssetAssignment", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.CompanyAsset", "CompanyAsset")
+                        .WithMany("Assignments")
+                        .HasForeignKey("CompanyAssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Projects.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Tenancy.UserTenant", "UserTenant")
+                        .WithMany()
+                        .HasForeignKey("UserTenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CompanyAsset");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("UserTenant");
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.Product", b =>
                 {
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Inventory.ProductCategory", "ProductCategory")
@@ -4154,6 +4430,11 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasForeignKey("DestinationWarehouseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Projects.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Invoicing.Invoice", "ReferenceInvoice")
                         .WithMany()
                         .HasForeignKey("ReferenceInvoiceId")
@@ -4170,6 +4451,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("DestinationWarehouse");
+
+                    b.Navigation("Project");
 
                     b.Navigation("ReferenceInvoice");
 
@@ -4432,6 +4715,17 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("ProjectStage");
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.ProjectStageReport", b =>
+                {
+                    b.HasOne("MyFirstCoreApp.Domain.Entities.Projects.ProjectStage", "ProjectStage")
+                        .WithMany("Reports")
+                        .HasForeignKey("ProjectStageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProjectStage");
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.ProjectStatusHistory", b =>
                 {
                     b.HasOne("MyFirstCoreApp.Domain.Entities.Projects.Project", "Project")
@@ -4564,6 +4858,11 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                     b.Navigation("RolePermissions");
                 });
 
+            modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.CompanyAsset", b =>
+                {
+                    b.Navigation("Assignments");
+                });
+
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Inventory.Product", b =>
                 {
                     b.Navigation("Attributes");
@@ -4620,6 +4919,8 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Projects.ProjectStage", b =>
                 {
                     b.Navigation("Histories");
+
+                    b.Navigation("Reports");
                 });
 
             modelBuilder.Entity("MyFirstCoreApp.Domain.Entities.Tenancy.Tenant", b =>

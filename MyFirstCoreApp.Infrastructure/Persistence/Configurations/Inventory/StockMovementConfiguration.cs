@@ -70,6 +70,11 @@ public class StockMovementConfiguration
             .HasForeignKey(x => x.ReferenceInvoiceId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.Project)
+            .WithMany()
+            .HasForeignKey(x => x.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(x => x.Items)
             .WithOne(x => x.StockMovement)
             .HasForeignKey(x => x.StockMovementId)
@@ -86,6 +91,8 @@ public class StockMovementConfiguration
         builder.HasIndex(x => x.SourceWarehouseId);
 
         builder.HasIndex(x => x.DestinationWarehouseId);
+
+        builder.HasIndex(x => new { x.TenantId, x.ProjectId, x.MovementType, x.Date });
 
         builder.HasOne(x => x.ReversesMovement)
             .WithMany(x => x.ReversalMovements)

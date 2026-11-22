@@ -46,24 +46,22 @@
         });
 
         document.addEventListener("DOMContentLoaded", function () {
-            const trackInventory =
-                document.getElementById("TrackInventory");
+            const productType = document.getElementById("ProductType");
 
             const openingStockSection =
                 document.getElementById("openingStockSection");
 
-            if (!trackInventory || !openingStockSection)
+            if (!productType || !openingStockSection)
                 return;
 
-            function toggleOpeningStock() {
-                openingStockSection.style.display =
-                    trackInventory.checked ? "block" : "none";
+            function toggleOpeningStock(updateSaleability) {
+                openingStockSection.style.display = productType.value === "2" ? "none" : "block";
+                const isSaleable = document.getElementById("IsSaleable");
+                if (updateSaleability && isSaleable)
+                    isSaleable.checked = productType.value === "1" || productType.value === "2";
             }
 
-            trackInventory.addEventListener(
-                "change",
-                toggleOpeningStock
-            );
+            productType.addEventListener("change", function () { toggleOpeningStock(true); });
 
             toggleOpeningStock();
         });

@@ -187,10 +187,9 @@ public class TenantSecurityService : ITenantSecurityService
 
     public async Task<TenantMemberInfo?> GetMemberAsync(int tenantId, string userId)
     {
+        // فیلتر کاربر «قبل از» تبدیل به MemberRow اعمال می‌شود (روی خروجیِ ساخته‌شده با سازنده، EF نمی‌تواند فیلتر را ترجمه کند)
         var member = await QueryMembers(tenantId, userId).FirstOrDefaultAsync();
-
-        if (member == null)
-            return null;
+        if (member == null) return null;
 
         return ToInfo(member, await GetRolesByUserAsync(tenantId));
     }
@@ -294,34 +293,50 @@ public class TenantSecurityService : ITenantSecurityService
     // Helpers
     // ============================================
 
-    private sealed record MemberRow(
-        string UserId, bool IsOwner, string? FirstName, string? LastName, string? JobTitle, string? InternalPhone,
-        string FullName, string? Email, string? PhoneNumber, bool UserIsActive);
+    private sealed class MemberRow
+    {
+        public string UserId { get; set; } = string.Empty;
+        public bool IsOwner { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? JobTitle { get; set; }
+        public string? InternalPhone { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public bool UserIsActive { get; set; }
+    }
 
+    /// <summary>
+    /// اعضای یک شرکت (با مشخصات حساب). فیلتر اختیاریِ userId «قبل از» Select اعمال می‌شود؛
+    /// بعد از آن نباید روی خروجی Where گذاشت.
+    /// </summary>
     private IQueryable<MemberRow> QueryMembers(int tenantId, string? userId = null)
     {
-        var query = _context.UserTenants
+        var memberships = _context.UserTenants
             .AsNoTracking()
             .Where(ut => ut.TenantId == tenantId && !ut.IsDeleted);
 
-        if (!string.IsNullOrWhiteSpace(userId))
-            query = query.Where(ut => ut.UserId == userId);
+        if (userId != null)
+            memberships = memberships.Where(ut => ut.UserId == userId);
 
-        return query.Join(
+        return memberships.Join(
             _context.Users,
             ut => ut.UserId,
             u => u.Id,
-            (ut, u) => new MemberRow(
-                ut.UserId,
-                ut.IsOwner,
-                ut.FirstName,
-                ut.LastName,
-                ut.JobTitle,
-                ut.InternalPhone,
-                u.FullName,
-                u.Email,
-                u.PhoneNumber,
-                u.IsActive));
+            (ut, u) => new MemberRow
+            {
+                UserId = ut.UserId,
+                IsOwner = ut.IsOwner,
+                FirstName = ut.FirstName,
+                LastName = ut.LastName,
+                JobTitle = ut.JobTitle,
+                InternalPhone = ut.InternalPhone,
+                FullName = u.FullName,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                UserIsActive = u.IsActive
+            });
     }
 
     private async Task<Dictionary<string, List<TenantMemberRole>>> GetRolesByUserAsync(int tenantId)
@@ -365,7 +380,6 @@ public class TenantSecurityService : ITenantSecurityService
         return membership ?? throw new InvalidOperationException("این شخص عضو شرکت نیست.");
     }
 
-
     private async Task<(string Name, string? Description, List<string> Permissions)> ValidateRoleAsync(
         int tenantId, TenantRoleRequest request, int? excludeRoleId)
     {
@@ -373,18 +387,16 @@ public class TenantSecurityService : ITenantSecurityService
         var description = OptionalText(request.Description, "توضیحات", MaxDescriptionLength);
 
         var lowered = name.ToLower();
-
-        var rolesQuery = _context.TenantRoles
-            .Where(r => r.TenantId == tenantId);
+        var duplicateQuery = _context.TenantRoles
+            .Where(r => r.TenantId == tenantId && r.Name.ToLower() == lowered);
 
         if (excludeRoleId.HasValue)
         {
             var roleId = excludeRoleId.Value;
-            rolesQuery = rolesQuery.Where(r => r.Id != roleId);
+            duplicateQuery = duplicateQuery.Where(r => r.Id != roleId);
         }
 
-        var duplicate = await rolesQuery.AnyAsync(r =>
-            r.Name.ToLower() == lowered);
+        var duplicate = await duplicateQuery.AnyAsync();
 
         if (duplicate)
             throw new InvalidOperationException("نقشی با این نام قبلاً وجود دارد.");
@@ -397,10 +409,7 @@ public class TenantSecurityService : ITenantSecurityService
 
         var accepted = new List<string>();
 
-        foreach (var raw in request.PermissionNames
-                     .Select(p => p?.Trim())
-                     .Where(p => !string.IsNullOrEmpty(p))
-                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var raw in request.PermissionNames.Select(p => p?.Trim()).Where(p => !string.IsNullOrEmpty(p)).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var permission = raw!;
 

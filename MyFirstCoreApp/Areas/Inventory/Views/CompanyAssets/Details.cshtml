@@ -1,0 +1,157 @@
+@model MyFirstCoreApp.Application.Inventory.CompanyAssetDto
+@using MyFirstCoreApp.Application.Common.Utilities
+@using MyFirstCoreApp.Domain.Enums
+@using MyFirstCoreApp.Areas.Inventory.ViewModels.CompanyAssets
+
+@{
+    ViewData["Title"] = "جزئیات ابزار یا دارایی";
+    var assignmentForm = (CompanyAssetAssignmentFormViewModel)ViewBag.AssignmentForm;
+    var returnForm = (CompanyAssetReturnFormViewModel)ViewBag.ReturnForm;
+    var canAssign = (bool)ViewBag.CanAssign;
+    var canReturn = (bool)ViewBag.CanReturn;
+    var canDelete = (bool)ViewBag.CanDelete;
+    string TypeName(ProductType type) => type == ProductType.Tool ? "ابزار" : "دارایی ثابت";
+    string StatusName(CompanyAssetStatus status) => status switch
+    {
+        CompanyAssetStatus.Assigned => "تحویل‌شده",
+        CompanyAssetStatus.Maintenance => "در تعمیر",
+        CompanyAssetStatus.Retired => "از رده خارج",
+        _ => "موجود"
+    };
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <h3 class="card-title">جزئیات @TypeName(Model.ProductType): @Model.ProductName <small dir="ltr">(@Model.AssetTag)</small></h3>
+        <div class="d-flex align-items-center">
+            @if (canDelete && Model.Status == CompanyAssetStatus.Available)
+            {
+                <form asp-action="Delete" method="post" class="ml-2" onsubmit="return confirm('این ابزار یا دارایی حذف شود؟ سابقه تحویل‌ها برای حفظ اطلاعات باقی می‌ماند.');">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> حذف</button>
+                </form>
+            }
+            <a asp-action="Index" class="btn btn-secondary btn-sm"><i class="fa fa-arrow-right"></i> بازگشت</a>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+        @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+        <dl class="row">
+            <dt class="col-sm-3">شناسه</dt><dd class="col-sm-3" dir="ltr">@Model.AssetTag</dd>
+            <dt class="col-sm-3">نوع</dt><dd class="col-sm-3">@TypeName(Model.ProductType)</dd>
+            <dt class="col-sm-3">شماره سریال</dt><dd class="col-sm-3" dir="ltr">@(Model.SerialNumber ?? "—")</dd>
+            <dt class="col-sm-3">وضعیت</dt><dd class="col-sm-3">@StatusName(Model.Status)</dd>
+            <dt class="col-sm-3">تاریخ خرید</dt><dd class="col-sm-3">@(PersianDate.Format(Model.AcquisitionDate) ?? "—")</dd>
+            <dt class="col-sm-3">بهای خرید</dt><dd class="col-sm-3">@(Model.AcquisitionCost.HasValue ? $"{Model.AcquisitionCost.Value:N0} ریال" : "ثبت نشده")</dd>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <dt class="col-sm-3">توضیحات</dt><dd class="col-sm-9">@Model.Description</dd>
+            }
+            @if (Model.Status == CompanyAssetStatus.Assigned)
+            {
+                <dt class="col-sm-3">تحویل‌گیرنده فعلی</dt><dd class="col-sm-3">@(Model.AssignedUserName ?? "—")</dd>
+            }
+        </dl>
+    </div>
+</div>
+
+@if (Model.Status == CompanyAssetStatus.Assigned && canReturn)
+{
+    <div class="card card-outline card-warning">
+        <div class="card-header"><h3 class="card-title">ثبت برگشت</h3></div>
+        <form asp-action="Return" method="post">
+            <input type="hidden" name="assetId" value="@Model.Id" />
+            <input name="AssignmentId" value="@returnForm.AssignmentId" type="hidden" />
+            <div class="card-body">
+                <div class="row">
+                    <div class="form-group col-md-4">
+                        <label for="ReturnedDateText">تاریخ برگشت</label>
+                        <input id="ReturnedDateText" name="ReturnedDateText" value="@returnForm.ReturnedDateText" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                    </div>
+                    <div class="form-group col-md-8">
+                        <label for="ReturnNotes">وضعیت هنگام برگشت / توضیح</label>
+                        <input id="ReturnNotes" name="ReturnNotes" value="@returnForm.ReturnNotes" class="form-control" placeholder="مثلاً سالم تحویل شد" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer"><button type="submit" class="btn btn-warning"><i class="fa fa-undo"></i> ثبت برگشت</button></div>
+        </form>
+    </div>
+}
+else if (Model.Status == CompanyAssetStatus.Available && canAssign)
+{
+    <div class="card card-outline card-info">
+        <div class="card-header"><h3 class="card-title">تحویل به کارمند مسئول</h3></div>
+        <form asp-action="Assign" method="post">
+            <input name="CompanyAssetId" value="@assignmentForm.CompanyAssetId" type="hidden" />
+            <div class="card-body">
+                <div asp-validation-summary="All" class="text-danger"></div>
+                <div class="alert alert-info">این ابزار به کارمند مسئول تحویل می‌شود و می‌تواند بدون ثبت تحویل مجدد در پروژه‌های مختلف استفاده شود.</div>
+                <div class="row">
+                    <div class="form-group col-md-4">
+                        <label for="UserTenantId">کارمند</label>
+                        <select id="UserTenantId" name="UserTenantId" asp-items="assignmentForm.UserOptions" class="form-control select2">
+                            <option value="">بدون انتخاب کارمند</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-8">
+                        <label for="AssignedDateText">تاریخ تحویل</label>
+                        <input id="AssignedDateText" name="AssignedDateText" value="@assignmentForm.AssignedDateText" class="form-control datepicker" autocomplete="off" dir="ltr" />
+                    </div>
+                    <div class="form-group col-md-12">
+                        <label for="Notes">توضیحات</label>
+                        <input id="Notes" name="Notes" value="@assignmentForm.Notes" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer"><button type="submit" class="btn btn-info"><i class="fa fa-handshake"></i> ثبت تحویل</button></div>
+        </form>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header"><h3 class="card-title">سوابق تحویل و برگشت</h3></div>
+    <div class="card-body">
+        @if (Model.Assignments.Count == 0)
+        {
+            <div class="text-muted">سابقه‌ای برای این مورد ثبت نشده است.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead><tr><th>کارمند</th><th>پروژه در سابقه قبلی</th><th>تاریخ تحویل</th><th>تاریخ برگشت</th><th>توضیح تحویل</th><th>توضیح برگشت</th><th>وضعیت</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.Assignments)
+                    {
+                        <tr>
+                            <td>@(item.UserName ?? "—")</td>
+                            <td>@(item.ProjectTitle ?? "—")</td>
+                            <td>@PersianDate.Format(item.AssignedDate)</td>
+                            <td>@(PersianDate.Format(item.ReturnedDate) ?? "—")</td>
+                            <td>@(item.Notes ?? "—")</td>
+                            <td>@(item.ReturnNotes ?? "—")</td>
+                            <td>@(item.IsCurrent ? "تحویل‌شده" : "برگشت‌شده")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            $('.select2').select2({ width: '100%', dir: 'rtl', language: 'fa', allowClear: true });
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD', initialValue: true, initialValueType: 'persian', autoClose: true, observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+        });
+    </script>
+}

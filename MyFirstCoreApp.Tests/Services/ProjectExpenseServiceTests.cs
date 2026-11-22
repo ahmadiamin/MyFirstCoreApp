@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MyFirstCoreApp.Application.Projects;
 using MyFirstCoreApp.Domain.Entities.Accounting;
+using MyFirstCoreApp.Domain.Entities.Projects;
 using MyFirstCoreApp.Domain.Enums;
 using MyFirstCoreApp.Infrastructure.Services;
 using MyFirstCoreApp.Tests.TestSupport;
@@ -19,6 +20,7 @@ public sealed class ProjectExpenseServiceTests : IDisposable
     public async Task CreatesPostedExpenseAndAllowsPartialPaymentWithoutOverpaying()
     {
         int cashId;
+        int projectId;
         await using (var db = _database.NewContext())
         {
             var cashCategory = new AccountCategory { TenantId = TenantId, Name = "Cash", DefaultAccountType = AccountType.Cash, IsActive = true };
@@ -26,19 +28,26 @@ public sealed class ProjectExpenseServiceTests : IDisposable
             await db.SaveChangesAsync();
             var cash = new Account { TenantId = TenantId, Name = "صندوق", AccountType = AccountType.Cash, AccountCategoryId = cashCategory.Id, IsActive = true };
             db.Accounts.Add(cash);
+            var project = new Project { TenantId = TenantId, Title = "پروژه آزمون" };
+            db.Projects.Add(project);
             await db.SaveChangesAsync();
             cashId = cash.Id;
+            projectId = project.Id;
         }
 
         await using var context = _database.NewContext();
         var service = new ProjectExpenseService(context, new TransactionService(context), new SystemAccountService(context));
-        var id = await service.CreateAsync(new ProjectExpenseRequest { Date = new(2026, 11, 21), ExpenseAccountId = 0, Amount = 1000, Description = "اجاره دفتر" }, TenantId);
+        var id = await service.CreateAsync(new ProjectExpenseRequest { Date = new(2026, 11, 21), ProjectId = projectId, ExpenseAccountId = 0, Amount = 1000, Description = "اجاره دفتر" }, TenantId);
         var expenseDto = await service.GetByIdAsync(id, TenantId);
         Assert.NotNull(expenseDto);
         Assert.Equal(1000, expenseDto.Amount);
         Assert.Equal("هزینه‌های عمومی", expenseDto.ExpenseAccountName);
         Assert.Single(await service.GetListAsync(TenantId));
         Assert.Equal(1000, await context.Transactions.Where(x => x.ReferenceType == "ProjectExpense" && x.IsPosted).SumAsync(x => x.TotalAmount));
+
+        var projectDetails = await new ProjectService(context, _database.User).GetByIdAsync(projectId, TenantId);
+        Assert.NotNull(projectDetails);
+        Assert.Equal(1000, projectDetails.TotalExpenses);
 
         await service.AddPaymentAsync(new ProjectExpensePaymentRequest { ProjectExpenseId = id, Date = new(2026, 11, 21), Amount = 400, AccountId = cashId, PaymentMethod = PaymentMethod.Cash }, TenantId);
         expenseDto = await service.GetByIdAsync(id, TenantId);

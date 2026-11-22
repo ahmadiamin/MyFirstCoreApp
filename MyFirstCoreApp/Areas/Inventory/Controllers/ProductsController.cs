@@ -79,6 +79,8 @@ public class ProductsController : Controller
                 categoryName = x.ProductCategory != null ? x.ProductCategory.Name : null,
                 unitName = x.Unit.Name,
                 salePrice = x.SalePrice,
+                productType = ProductTypeName(x.ProductType),
+                isSaleable = x.IsSaleable,
                 isActive = x.IsActive
             })
             .ToListAsync();
@@ -121,6 +123,9 @@ public class ProductsController : Controller
         if (!tenantId.HasValue)
             return Forbid();
         model.Code = string.IsNullOrWhiteSpace(model.Code) ? null : model.Code.Trim();
+
+        if (!Enum.IsDefined(model.ProductType))
+            ModelState.AddModelError(nameof(model.ProductType), "نوع قلم معتبر نیست.");
 
         // اعتبارسنجی موجودی اولیه
         if (!model.TrackInventory && model.OpeningQuantity > 0)
@@ -170,6 +175,8 @@ public class ProductsController : Controller
             MinimumStock = model.MinimumStock,
             TaxRate = model.TaxRate,
             TrackInventory = model.TrackInventory,
+            ProductType = model.ProductType,
+            IsSaleable = model.IsSaleable,
             IsActive = model.IsActive
         };
 
@@ -277,7 +284,8 @@ public class ProductsController : Controller
             SalePrice = entity.SalePrice,
             MinimumStock = entity.MinimumStock,
             TaxRate = entity.TaxRate,
-            TrackInventory = entity.TrackInventory,
+            ProductType = entity.ProductType,
+            IsSaleable = entity.IsSaleable,
             IsActive = entity.IsActive,
             UnitOptions = await GetUnitOptionsAsync(),
             CategoryOptions = await GetCategoryOptionsAsync()
@@ -297,6 +305,9 @@ public class ProductsController : Controller
         if (id != model.Id) return BadRequest();
 
         model.Code = string.IsNullOrWhiteSpace(model.Code) ? null : model.Code.Trim();
+
+        if (!Enum.IsDefined(model.ProductType))
+            ModelState.AddModelError(nameof(model.ProductType), "نوع قلم معتبر نیست.");
 
         if (model.Code != null &&
             await _context.Products
@@ -332,6 +343,8 @@ public class ProductsController : Controller
         entity.MinimumStock = model.MinimumStock;
         entity.TaxRate = model.TaxRate;
         entity.TrackInventory = model.TrackInventory;
+        entity.ProductType = model.ProductType;
+        entity.IsSaleable = model.IsSaleable;
 
         entity.IsActive = model.IsActive;
         entity.UpdatedAt = DateTime.UtcNow;
@@ -460,4 +473,14 @@ public class ProductsController : Controller
             })
             .ToListAsync();
     }
+
+    private static string ProductTypeName(ProductType type) => type switch
+    {
+        ProductType.Service => "خدمت",
+        ProductType.Goods => "کالای عمومی",
+        ProductType.Consumable => "مصرفی",
+        ProductType.Tool => "ابزار",
+        ProductType.FixedAsset => "دارایی ثابت",
+        _ => "نامشخص"
+    };
 }

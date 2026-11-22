@@ -1,0 +1,61 @@
+@model MyFirstCoreApp.Areas.Inventory.ViewModels.CompanyAssets.CompanyAssetFormViewModel
+@using MyFirstCoreApp.Application.Common.Utilities
+
+@{ ViewData["Title"] = "ثبت ابزار یا دارایی"; }
+
+<div class="card card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fa fa-plus"></i> ثبت موردی ابزار یا دارایی</h3></div>
+    <form asp-action="Create" method="post">
+        <div class="card-body">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="alert alert-info">هر دستگاه یا قلم فیزیکی را جدا ثبت کنید؛ شماره سریال در صورت وجود برای شناسایی دقیق‌تر استفاده می‌شود.</div>
+            <div class="row">
+                <div class="form-group col-md-6">
+                    <label>ابزار یا دارایی</label>
+                    <select asp-for="ProductId" asp-items="Model.ProductOptions" class="form-control select2">
+                        <option value="">انتخاب کنید</option>
+                    </select>
+                    <span asp-validation-for="ProductId" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="SerialNumber">شماره سریال</label>
+                    <input asp-for="SerialNumber" class="form-control" dir="ltr" />
+                    <span asp-validation-for="SerialNumber" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="AcquisitionDateText">تاریخ خرید اصلی (اختیاری)</label>
+                    <input asp-for="AcquisitionDateText" class="form-control datepicker" autocomplete="off" dir="ltr" placeholder="۱۴۰۵/۰۱/۱۵" />
+                    <span asp-validation-for="AcquisitionDateText" class="text-danger"></span>
+                    <small class="form-text text-muted">تاریخی را وارد کنید که شرکت واقعاً ابزار را خریده است؛ اگر نمی‌دانید، خالی بگذارید.</small>
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="AcquisitionCostText">بهای خرید (ریال، اختیاری)</label>
+                    <input asp-for="AcquisitionCostText" class="form-control persian-number persian-number-comma" inputmode="numeric" placeholder="در صورت نیاز وارد کنید" />
+                    <span asp-validation-for="AcquisitionCostText" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-12">
+                    <label asp-for="Description">توضیحات</label>
+                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> ثبت</button>
+            <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            $('.select2').select2({ width: '100%', dir: 'rtl', language: 'fa' });
+            $('.datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD', initialValue: true, initialValueType: 'persian', autoClose: true, observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+        });
+    </script>
+}

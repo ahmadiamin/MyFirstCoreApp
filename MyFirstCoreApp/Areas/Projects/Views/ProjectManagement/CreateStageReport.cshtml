@@ -1,0 +1,75 @@
+@model MyFirstCoreApp.Areas.Projects.ViewModels.Project.ProjectStageReportFormViewModel
+
+@{
+    ViewData["Title"] = "گزارش اجرای مرحله";
+}
+
+<div class="card card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fa fa-clipboard-check"></i> گزارش اجرای مرحله</h3></div>
+    <form asp-action="CreateStageReport" method="post">
+        @Html.AntiForgeryToken()
+        <input asp-for="ProjectId" type="hidden" />
+        <input asp-for="ProjectStageId" type="hidden" />
+        <div class="card-body">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label asp-for="ReportDate">تاریخ گزارش</label>
+                    <input asp-for="ReportDate" class="form-control persian-date-picker" autocomplete="off" dir="ltr" />
+                    <span asp-validation-for="ReportDate" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="ProgressPercent">درصد پیشرفت تجمعی</label>
+                    <div class="input-group">
+                        <input asp-for="ProgressPercent" class="form-control" min="0" max="100" type="number" />
+                        <div class="input-group-append"><span class="input-group-text">٪</span></div>
+                    </div>
+                    <span asp-validation-for="ProgressPercent" class="text-danger"></span>
+                </div>
+                <div class="form-group col-12">
+                    <label asp-for="WorkSummary">کار انجام‌شده</label>
+                    <textarea asp-for="WorkSummary" class="form-control" rows="4" maxlength="2000" placeholder="شرح کوتاهی از کارهای انجام‌شده در این مرحله"></textarea>
+                    <span asp-validation-for="WorkSummary" class="text-danger"></span>
+                </div>
+                <div class="form-group col-12">
+                    <div class="custom-control custom-checkbox">
+                        <input asp-for="IsStopped" class="custom-control-input" />
+                        <label asp-for="IsStopped" class="custom-control-label">اجرای این مرحله متوقف شده است</label>
+                    </div>
+                </div>
+                <div id="stopFields" class="row col-12 @(Model.IsStopped ? "" : "d-none")">
+                    <div class="form-group col-md-6">
+                        <label asp-for="StopReason">علت توقف</label>
+                        <input asp-for="StopReason" class="form-control" maxlength="1000" />
+                        <span asp-validation-for="StopReason" class="text-danger"></span>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label asp-for="NextFollowUpDate">تاریخ پیگیری بعدی</label>
+                        <input asp-for="NextFollowUpDate" class="form-control persian-date-picker" autocomplete="off" dir="ltr" />
+                        <span asp-validation-for="NextFollowUpDate" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> ثبت گزارش</button>
+            <a asp-area="Projects" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn btn-secondary">بازگشت به پروژه</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            $('.persian-date-picker').persianDatepicker({
+                format: 'YYYY/MM/DD', initialValue: true, initialValueType: 'persian', autoClose: true, observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+            $('#IsStopped').on('change', function () {
+                $('#stopFields').toggleClass('d-none', !this.checked);
+            });
+        });
+    </script>
+}

@@ -243,6 +243,71 @@ public class InvoiceServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Create_PurchaseMarksFixedAssetProductAsCapitalAsset()
+    {
+        int productId;
+        await using (var context = _db.NewContext())
+        {
+            var unit = new Unit { TenantId = TenantA, Name = "عدد", Symbol = "عدد", IsActive = true };
+            context.Units.Add(unit);
+            await context.SaveChangesAsync();
+            var product = new Product
+            {
+                TenantId = TenantA,
+                Name = "دستگاه شرکت",
+                UnitId = unit.Id,
+                ProductType = ProductType.FixedAsset,
+                TrackInventory = true,
+                IsActive = true
+            };
+            context.Products.Add(product);
+            await context.SaveChangesAsync();
+            productId = product.Id;
+        }
+
+        var created = await CreateAsync(NewRequest(InvoiceType.Purchase, await AddContactAsync(),
+            new InvoiceItemRequest { ProductId = productId, Quantity = 1, UnitPrice = 500_000 }));
+
+        Assert.True(created.Items.Single().IsCapitalAsset);
+    }
+
+    [Fact]
+    public async Task Create_NonSaleableToolCanBePurchasedButNotSold()
+    {
+        int productId;
+        await using (var context = _db.NewContext())
+        {
+            var unit = new Unit { TenantId = TenantA, Name = "عدد", Symbol = "عدد", IsActive = true };
+            context.Units.Add(unit);
+            await context.SaveChangesAsync();
+            var tool = new Product
+            {
+                TenantId = TenantA,
+                Name = "دریل شارژی شرکت",
+                UnitId = unit.Id,
+                ProductType = ProductType.Tool,
+                IsSaleable = false,
+                TrackInventory = true,
+                IsActive = true
+            };
+            context.Products.Add(tool);
+            await context.SaveChangesAsync();
+            productId = tool.Id;
+        }
+
+        var contactId = await AddContactAsync("طرف حساب آزمایش");
+        var saleRequest = NewRequest(InvoiceType.Sale, contactId,
+            new InvoiceItemRequest { ProductId = productId, Quantity = 1, UnitPrice = 500_000 });
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateAsync(saleRequest));
+        Assert.Contains("فروش", error.Message);
+
+        var purchase = await CreateAsync(NewRequest(InvoiceType.Purchase, contactId,
+            new InvoiceItemRequest { ProductId = productId, Quantity = 1, UnitPrice = 500_000 }));
+        Assert.Equal(productId, purchase.Items.Single().ProductId);
+    }
+
+    [Fact]
     public async Task Create_InvalidRequests_AreRejected_AndLeaveNothingBehind()
     {
         var cases = new (Action<InvoiceRequest> Mutate, string Expected)[]

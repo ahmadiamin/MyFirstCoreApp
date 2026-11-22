@@ -15,6 +15,8 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.Code).HasMaxLength(50);
         builder.Property(x => x.Barcode).HasMaxLength(50);
         builder.Property(x => x.Description).HasMaxLength(2000);
+        builder.Property(x => x.ProductType).HasConversion<int>().HasDefaultValue(MyFirstCoreApp.Domain.Enums.ProductType.Goods);
+        builder.Property(x => x.IsSaleable).HasDefaultValue(true);
 
         // قیمت‌ها
         builder.Property(x => x.LastPurchasePrice).HasPrecision(18, 0);

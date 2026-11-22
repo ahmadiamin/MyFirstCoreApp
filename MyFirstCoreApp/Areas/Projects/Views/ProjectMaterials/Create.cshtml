@@ -1,0 +1,128 @@
+@model MyFirstCoreApp.Areas.Projects.ViewModels.ProjectMaterials.ProjectMaterialFormViewModel
+
+@{
+    ViewData["Title"] = "ثبت مصرف اقلام پروژه";
+}
+
+<div class="card card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fa fa-box-open"></i> ثبت مصرف برای پروژه</h3></div>
+    <form asp-action="Create" method="post" id="projectMaterialForm">
+        @Html.AntiForgeryToken()
+        <input asp-for="ProjectId" type="hidden" />
+        <div class="card-body">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="alert alert-info">این ثبت اختیاری است و فقط اقلامی را کم می‌کند که واقعاً برای پروژه مصرف شده‌اند. فاکتور خرید و موجودی باقی‌مانده تغییر نمی‌کنند.</div>
+            @if (Model.Consumables.Count == 0)
+            {
+                <div class="alert alert-warning">کالای مصرفیِ فعال با کنترل موجودی پیدا نشد. ابتدا کالا را با نوع «مصرفی» تعریف کنید.</div>
+            }
+            @if (Model.Warehouses.Count == 0)
+            {
+                <div class="alert alert-warning">انبار فعالی برای شرکت تعریف نشده است.</div>
+            }
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label asp-for="Date">تاریخ مصرف</label>
+                    <input asp-for="Date" class="form-control persian-date-picker" autocomplete="off" dir="ltr" />
+                    <span asp-validation-for="Date" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-8">
+                    <label asp-for="SourceWarehouseId">انبار</label>
+                    <select asp-for="SourceWarehouseId" asp-items="Model.Warehouses" class="form-control select2">
+                        <option value="">انتخاب انبار</option>
+                    </select>
+                </div>
+                <div class="form-group col-12">
+                    <label asp-for="Description">توضیحات</label>
+                    <input asp-for="Description" class="form-control" maxlength="2000" placeholder="مثلاً مصرف اقلام نصب تابلو برق" />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0">اقلام مصرفی</h5>
+                <button type="button" id="addItem" class="btn btn-sm btn-outline-primary"><i class="fa fa-plus"></i> افزودن قلم</button>
+            </div>
+            <span asp-validation-for="Items" class="text-danger"></span>
+            <div id="items">
+                @for (var i = 0; i < Model.Items.Count; i++)
+                {
+                    <div class="item-row row align-items-end border rounded p-2 mb-2">
+                        <div class="form-group col-md-8 mb-md-0">
+                            <label>کالای مصرفی</label>
+                            <select name="Items[@i].ProductId" class="form-control select2 product-select" required>
+                                <option value="">انتخاب قلم مصرفی</option>
+                                @foreach (var product in Model.Consumables)
+                                {
+                                    if (Model.Items[i].ProductId.ToString() == product.Value)
+                                    {
+                                        <option value="@product.Value" selected>@product.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@product.Value">@product.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group col-md-3 col-8 mb-md-0">
+                            <label>مقدار مصرف‌شده</label>
+                            <input name="Items[@i].Quantity" value="@Model.Items[i].Quantity" type="number" min="0.000001" step="any" class="form-control" required />
+                        </div>
+                        <div class="col-md-1 col-4 text-center mb-2 mb-md-0">
+                            <button type="button" class="btn btn-outline-danger remove-item" title="حذف ردیف"><i class="fa fa-trash"></i></button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> ثبت پیش‌نویس</button>
+            <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-secondary">انصراف</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            function initSelect2(root) {
+                (root || $(document)).find('.select2').each(function () {
+                    if (!$(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2({ width: '100%', dir: 'rtl', language: 'fa' });
+                    }
+                });
+            }
+            initSelect2();
+            $('.persian-date-picker').persianDatepicker({
+                format: 'YYYY/MM/DD', initialValue: true, initialValueType: 'persian', autoClose: true, observer: true,
+                calendar: { persian: { locale: 'fa', showHint: true, leapYearMode: 'algorithmic' } },
+                toolbox: { calendarSwitch: { enabled: false } }
+            });
+
+            function reindex() {
+                $('#items .item-row').each(function (index) {
+                    $(this).find('.product-select').attr('name', 'Items[' + index + '].ProductId');
+                    $(this).find('input[type=number]').attr('name', 'Items[' + index + '].Quantity');
+                });
+            }
+            $('#addItem').on('click', function () {
+                var row = $('#items .item-row:first').clone();
+                row.find('.select2-container').remove();
+                row.find('.product-select').removeClass('select2-hidden-accessible').val('');
+                row.find('input[type=number]').val('1');
+                $('#items').append(row);
+                initSelect2(row);
+                reindex();
+            });
+            $('#items').on('click', '.remove-item', function () {
+                if ($('#items .item-row').length > 1) $(this).closest('.item-row').remove();
+                else {
+                    $(this).closest('.item-row').find('.product-select').val('').trigger('change');
+                    $(this).closest('.item-row').find('input[type=number]').val('1');
+                }
+                reindex();
+            });
+        });
+    </script>
+}

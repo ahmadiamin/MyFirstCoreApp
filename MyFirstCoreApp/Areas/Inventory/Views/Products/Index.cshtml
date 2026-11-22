@@ -150,6 +150,15 @@
                 { field: 'code', headerName: 'کد', width: 120,
                     cellStyle: { direction: 'ltr', textAlign: 'right' } },
                 { field: 'categoryName', headerName: 'دسته‌بندی', width: 150 },
+                { field: 'productType', headerName: 'نوع قلم', width: 145 },
+                {
+                    field: 'isSaleable', headerName: 'قابل فروش', width: 110,
+                    cellRenderer: function (p) {
+                        return p.value
+                            ? '<span class="badge badge-success">بله</span>'
+                            : '<span class="badge badge-secondary">خیر</span>';
+                    }
+                },
                 { field: 'unitName', headerName: 'واحد', width: 100,
                     cellStyle: { textAlign: 'center' } },
                 {
@@ -365,6 +374,8 @@
                         '</div>' +
                         (d.code ? '<div class="row-line">کد: <span dir="ltr">' + d.code + '</span></div>' : '') +
                         (d.categoryName ? '<div class="row-line">دسته‌بندی: ' + d.categoryName + '</div>' : '') +
+                        (d.productType ? '<div class="row-line">نوع قلم: ' + d.productType + '</div>' : '') +
+                        '<div class="row-line">قابل فروش: ' + (d.isSaleable ? 'بله' : 'خیر') + '</div>' +
                         (d.unitName ? '<div class="row-line">واحد: ' + d.unitName + '</div>' : '') +
                         priceHtml +
                         '<div class="actions">' + buildActionButtons(d) + '</div>' +

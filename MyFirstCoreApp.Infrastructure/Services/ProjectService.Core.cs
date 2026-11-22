@@ -111,6 +111,8 @@ public partial class ProjectService : IProjectService
 			.Include(x => x.StatusHistories.OrderByDescending(h => h.ChangedAt))
 			.Include(x => x.Stages.OrderBy(s => s.SortOrder))
 				.ThenInclude(x => x.Histories.OrderByDescending(h => h.ChangedAt))
+			.Include(x => x.Stages.OrderBy(s => s.SortOrder))
+				.ThenInclude(x => x.Reports.OrderByDescending(r => r.ReportDate).ThenByDescending(r => r.Id).Take(10))
 			.FirstOrDefaultAsync(x =>
 				x.Id == id &&
 				x.TenantId == tenantId);
@@ -139,6 +141,35 @@ public partial class ProjectService : IProjectService
 			})
 			.ToListAsync();
 
+		var totalExpenses = await _context.ProjectExpenses
+			.AsNoTracking()
+			.Where(x => x.TenantId == tenantId && x.ProjectId == id && x.IsPosted)
+			.SumAsync(x => (decimal?)x.Amount) ?? 0m;
+
+		var materialConsumptions = await _context.StockMovements
+			.AsNoTracking()
+			.Where(m => m.TenantId == tenantId && m.ProjectId == id &&
+				m.MovementType == StockMovementType.Issue && m.Status == StockMovementStatus.Posted &&
+				!m.ReversalMovements.Any(r => r.Status == StockMovementStatus.Posted))
+			.SelectMany(m => m.Items)
+			.GroupBy(item => new
+			{
+				item.ProductId,
+				item.Product.Name,
+				item.Product.Code,
+				UnitSymbol = item.Product.Unit.Symbol
+			})
+			.Select(group => new ProjectMaterialSummaryDto
+			{
+				ProductId = group.Key.ProductId,
+				ProductName = group.Key.Name,
+				ProductCode = group.Key.Code,
+				UnitSymbol = group.Key.UnitSymbol ?? string.Empty,
+				TotalQuantity = group.Sum(item => item.Quantity)
+			})
+			.OrderBy(item => item.ProductName)
+			.ToListAsync();
+
 		var userTenantIds = project.Members
 			.Select(x => x.UserTenantId)
 			.Concat(project.Stages
@@ -156,6 +187,9 @@ public partial class ProjectService : IProjectService
 		var changedByIds = project.StatusHistories
 			.Where(x => !string.IsNullOrWhiteSpace(x.ChangedByUserId))
 			.Select(x => x.ChangedByUserId!)
+			.Concat(project.Stages.SelectMany(x => x.Reports)
+				.Where(x => !string.IsNullOrWhiteSpace(x.ReportedByUserId))
+				.Select(x => x.ReportedByUserId!))
 			.Distinct()
 			.ToList();
 		var changedByNames = await _context.Users.AsNoTracking()
@@ -183,6 +217,8 @@ public partial class ProjectService : IProjectService
 			ActualEndDate = project.ActualEndDate,
 			HoldReason = project.HoldReason,
 			CancellationReason = project.CancellationReason,
+			TotalExpenses = totalExpenses,
+			MaterialConsumptions = materialConsumptions,
 
 			Members = project.Members
 				.OrderBy(x => x.Id)
@@ -242,6 +278,21 @@ public partial class ProjectService : IProjectService
 								Description = h.Description,
 								ChangedByUserId = h.ChangedByUserId,
 								ChangedAt = h.ChangedAt
+							})
+							.ToList(),
+						Reports = x.Reports.OrderByDescending(r => r.ReportDate).ThenByDescending(r => r.Id)
+							.Select(r => new ProjectStageReportDto
+							{
+								Id = r.Id,
+								ReportDate = r.ReportDate,
+								ProgressPercent = r.ProgressPercent,
+								WorkSummary = r.WorkSummary,
+								IsStopped = r.IsStopped,
+								StopReason = r.StopReason,
+								NextFollowUpDate = r.NextFollowUpDate,
+								ReportedByUserName = r.ReportedByUserId != null && changedByNames.TryGetValue(r.ReportedByUserId, out var reporterName)
+									? reporterName
+									: null
 							})
 							.ToList()
 					};

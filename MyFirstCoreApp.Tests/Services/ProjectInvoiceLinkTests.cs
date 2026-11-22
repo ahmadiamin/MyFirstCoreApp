@@ -98,4 +98,62 @@ public sealed class ProjectInvoiceLinkTests : IDisposable
         Assert.Equal(500, rowProjectInvoice.AllocatedAmount);
         Assert.Equal(1, rowProjectInvoice.ProjectLineCount);
     }
+
+    [Fact]
+    public async Task StageExecutionReportsRecordProgressAndStopFollowUpHistory()
+    {
+        int projectId;
+        int stageId;
+        await using (var context = _database.NewContext())
+        {
+            var project = new Project { TenantId = TenantId, Title = "پروژه گزارش اجرا", Status = ProjectStatus.Active };
+            var stage = new ProjectStage { TenantId = TenantId, Project = project, Title = "نصب", SortOrder = 1 };
+            context.AddRange(project, stage);
+            await context.SaveChangesAsync();
+            projectId = project.Id;
+            stageId = stage.Id;
+        }
+
+        await using var serviceContext = _database.NewContext();
+        var service = new ProjectService(serviceContext, _database.User);
+        await service.AddStageReportAsync(new MyFirstCoreApp.Application.Projects.ProjectStageReportRequest
+        {
+            ProjectStageId = stageId,
+            ReportDate = new DateOnly(2026, 11, 21),
+            ProgressPercent = 40,
+            WorkSummary = "نصب کابل‌کشی انجام شد",
+            IsStopped = true,
+            StopReason = "منتظر رسیدن تابلو برق",
+            NextFollowUpDate = new DateOnly(2026, 11, 23),
+            ReportedByUserId = "project-test-user"
+        }, TenantId);
+
+        var details = await service.GetByIdAsync(projectId, TenantId);
+        Assert.NotNull(details);
+        var reportedStage = Assert.Single(details.Stages);
+        Assert.Equal(ProjectStageStatus.Waiting, reportedStage.Status);
+        var report = Assert.Single(reportedStage.Reports);
+        Assert.Equal(40, report.ProgressPercent);
+        Assert.True(report.IsStopped);
+        Assert.Equal(new DateOnly(2026, 11, 23), report.NextFollowUpDate);
+        Assert.Single(reportedStage.Histories);
+
+        await service.AddStageReportAsync(new MyFirstCoreApp.Application.Projects.ProjectStageReportRequest
+        {
+            ProjectStageId = stageId,
+            ReportDate = new DateOnly(2026, 11, 24),
+            ProgressPercent = 65,
+            WorkSummary = "نصب ادامه پیدا کرد",
+            IsStopped = false,
+            ReportedByUserId = "project-test-user"
+        }, TenantId);
+
+        details = await service.GetByIdAsync(projectId, TenantId);
+        Assert.NotNull(details);
+        reportedStage = Assert.Single(details.Stages);
+        Assert.Equal(ProjectStageStatus.InProgress, reportedStage.Status);
+        Assert.Null(reportedStage.WaitingReason);
+        Assert.Equal(65, reportedStage.Reports[0].ProgressPercent);
+        Assert.Equal(2, reportedStage.Histories.Count);
+    }
 }

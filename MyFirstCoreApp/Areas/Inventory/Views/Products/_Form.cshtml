@@ -135,11 +135,25 @@
     </div>
     <div class="col-md-6">
         <div class="form-group">
-            <label>کنترل انبار</label>
+            <label asp-for="ProductType"></label>
+            <select asp-for="ProductType" class="form-control select2" id="ProductType">
+                <option value="1">کالای عمومی</option>
+                <option value="2">خدمت</option>
+                <option value="3">قلم مصرفی</option>
+                <option value="4">ابزار</option>
+                <option value="5">دارایی ثابت</option>
+            </select>
+            <span asp-validation-for="ProductType" class="text-danger"></span>
+            <small class="form-text text-muted">برای خدمات، انتخاب انبار و کنترل موجودی غیرفعال است.</small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label>فروش</label>
             <div class="custom-control custom-checkbox mt-2">
-                <input asp-for="TrackInventory" class="custom-control-input" id="TrackInventory" />
-                <label asp-for="TrackInventory" class="custom-control-label" for="TrackInventory">
-                    آیا موجودی در انبار کنترل شود؟
+                <input asp-for="IsSaleable" class="custom-control-input" id="IsSaleable" />
+                <label asp-for="IsSaleable" class="custom-control-label" for="IsSaleable">
+                    این قلم در فاکتور فروش قابل انتخاب باشد
                 </label>
             </div>
         </div>

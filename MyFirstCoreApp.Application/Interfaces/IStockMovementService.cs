@@ -20,6 +20,10 @@ public interface IStockMovementService
         int id,
         int tenantId);
 
+    Task ReverseAsync(int id, int tenantId);
+
+    Task DeleteAsync(int id, int tenantId, string? deletedByUserId);
+
     Task CreateFromInvoiceAsync(int invoiceId, int tenantId);
     Task ReverseInvoiceAsync(int invoiceId, int tenantId);
     Task<int> AdjustBalanceAsync(

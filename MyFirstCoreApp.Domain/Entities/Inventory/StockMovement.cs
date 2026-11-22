@@ -1,5 +1,6 @@
 ﻿using MyFirstCoreApp.Domain.Common;
 using MyFirstCoreApp.Domain.Entities.Invoicing;
+using MyFirstCoreApp.Domain.Entities.Projects;
 using MyFirstCoreApp.Domain.Enums;
 
 namespace MyFirstCoreApp.Domain.Entities.Inventory;
@@ -44,6 +45,11 @@ public class StockMovement : TenantEntity
     public int? ReferenceInvoiceId { get; set; }
 
     public Invoice? ReferenceInvoice { get; set; }
+
+    /// <summary>Optional project receiving consumable materials from an issue.</summary>
+    public int? ProjectId { get; set; }
+
+    public Project? Project { get; set; }
 
     public string? Description { get; set; }
 

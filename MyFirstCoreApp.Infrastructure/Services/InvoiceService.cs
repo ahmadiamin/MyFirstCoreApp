@@ -131,7 +131,8 @@ public class InvoiceService : IInvoiceService
             var contactId = await ResolveContactAsync(request, tenantId);
             var supplierInvoiceNumber = NormalizeSupplierInvoiceNumber(request);
             await EnsureSupplierInvoiceNumberAvailableAsync(tenantId, contactId, supplierInvoiceNumber, invoice.Id);
-            var newItems = await BuildItemsAsync(request, tenantId);
+            var previouslySelectedProducts = invoice.Items.Select(x => x.ProductId).ToHashSet();
+            var newItems = await BuildItemsAsync(request, tenantId, previouslySelectedProducts);
 
             invoice.Date = request.Date;
             invoice.ContactId = contactId;
@@ -501,6 +502,11 @@ public class InvoiceService : IInvoiceService
                 throw new InvalidOperationException(
                     "فقط پیش‌فاکتور تایید شده قابل تبدیل به فاکتور است. ابتدا آن را تایید کنید.");
 
+            var preInvoiceProductIds = preInvoice.Items.Select(x => x.ProductId).Distinct().ToList();
+            if (await _context.Products.AnyAsync(p =>
+                    p.TenantId == tenantId && preInvoiceProductIds.Contains(p.Id) && !p.IsSaleable))
+                throw new InvalidOperationException("یکی از اقلام این پیش‌فاکتور دیگر برای فروش مجاز نیست.");
+
             // مبلغ‌ها عیناً کپی می‌شوند (همان مبلغی که مشتری تایید کرده)؛ مبلغ تخفیف و مالیات
             // هر قلم هم کپی می‌شود (قبلاً کپی نمی‌شد و در فاکتور صفر می‌ماند)
             var saleInvoice = new Invoice
@@ -758,7 +764,10 @@ public class InvoiceService : IInvoiceService
         return contact.Id;
     }
 
-    private async Task<List<InvoiceItem>> BuildItemsAsync(InvoiceRequest request, int tenantId)
+    private async Task<List<InvoiceItem>> BuildItemsAsync(
+        InvoiceRequest request,
+        int tenantId,
+        IReadOnlySet<int>? previouslySelectedProducts = null)
     {
         var existingIds = request.Items
             .Where(i => i.ProductId > 0)
@@ -777,6 +786,10 @@ public class InvoiceService : IInvoiceService
 
             existingProducts = products.ToDictionary(p => p.Id);
         }
+
+        if (request.InvoiceType is InvoiceType.Sale or InvoiceType.PreInvoice &&
+            existingProducts.Values.Any(p => !p.IsSaleable && !(previouslySelectedProducts?.Contains(p.Id) ?? false)))
+            throw new InvalidOperationException("یکی از اقلام انتخاب‌شده برای فروش مجاز نیست.");
 
         var warehouseIds = request.Items
             .Where(i => i.WarehouseId.HasValue &&
@@ -816,7 +829,9 @@ public class InvoiceService : IInvoiceService
                     SalePrice = item.UnitPrice,
                     LastPurchasePrice = 0,
                     IsActive = true,
-                    TrackInventory = !item.IsService
+                    TrackInventory = !item.IsService,
+                    ProductType = item.IsService ? ProductType.Service : ProductType.Goods,
+                    IsSaleable = true
                 };
                 if (request.InvoiceType == InvoiceType.Purchase)
                     product.LastPurchasePrice = item.UnitPrice;
@@ -846,7 +861,10 @@ public class InvoiceService : IInvoiceService
                 UnitPrice = item.UnitPrice,
                 DiscountPercent = item.DiscountPercent,
                 TaxRate = item.TaxRate,
-                IsCapitalAsset = request.InvoiceType == InvoiceType.Purchase && item.IsCapitalAsset
+                IsCapitalAsset = request.InvoiceType == InvoiceType.Purchase &&
+                    (item.IsCapitalAsset ||
+                     (existingProducts.TryGetValue(productId, out var selectedProduct) &&
+                      selectedProduct.ProductType == ProductType.FixedAsset))
             });
         }
 

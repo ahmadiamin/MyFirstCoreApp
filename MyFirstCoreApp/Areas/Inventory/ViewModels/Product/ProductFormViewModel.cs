@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using MyFirstCoreApp.Domain.Enums;
 
 namespace MyFirstCoreApp.Areas.Inventory.ViewModels.Product;
 
@@ -48,8 +49,14 @@ public class ProductFormViewModel
     [Display(Name = "فعال")]
     public bool IsActive { get; set; } = true;
 
-    [Display(Name = "کنترل موجودی")]
-    public bool TrackInventory { get; set; } = true;
+    [Display(Name = "نوع قلم")]
+    public ProductType ProductType { get; set; } = ProductType.Goods;
+
+    [Display(Name = "قابل فروش")]
+    public bool IsSaleable { get; set; } = true;
+
+    // Preserve existing invoice and stock workflows while classification is rolled out.
+    public bool TrackInventory => ProductType != ProductType.Service;
 
     // Dropdowns
     public List<SelectListItem> UnitOptions { get; set; } = new();

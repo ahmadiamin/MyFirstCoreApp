@@ -305,6 +305,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "StockMovement.View", DisplayName = "مشاهده انتقال‌های انبار", GroupName = "Inventory", IsActive = true },
                 new Permission { Name = "StockMovement.Create", DisplayName = "ثبت و لغو پیش‌نویس انتقال", GroupName = "Inventory", IsActive = true },
                 new Permission { Name = "StockMovement.Post", DisplayName = "قطعی‌کردن انتقال انبار", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "StockMovement.Delete", DisplayName = "حذف گردش انبار", GroupName = "Inventory", IsActive = true },
 
                 // Transaction (اسناد حسابداری)
                 new Permission { Name = "Transaction.View",   DisplayName = "مشاهده اسناد", GroupName = "Accounting", IsActive = true },
@@ -400,19 +401,30 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Permission { Name = "ProjectMember.Manage", DisplayName = "مدیریت اعضای پروژه", GroupName = "Projects", IsActive = true },
                 new Permission { Name = "ProjectStage.Manage", DisplayName = "مدیریت مراحل پروژه", GroupName = "Projects", IsActive = true },
                 new Permission { Name = "ProjectStage.Status.Change", DisplayName = "تغییر وضعیت مراحل پروژه", GroupName = "Projects", IsActive = true },
-                new Permission { Name = "ProjectExpense.View", DisplayName = "مشاهده هزینه‌های پروژه", GroupName = "Projects", IsActive = true },
-                new Permission { Name = "ProjectExpense.Create", DisplayName = "ثبت هزینه و پرداخت پروژه", GroupName = "Projects", IsActive = true },
-                new Permission { Name = "ProjectExpense.Delete", DisplayName = "حذف هزینه و پرداخت پروژه", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "ProjectStage.Report", DisplayName = "ثبت گزارش اجرای مرحله", GroupName = "Projects", IsActive = true },
+                new Permission { Name = "ProjectExpense.View", DisplayName = "مشاهده هزینه‌ها", GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "ProjectExpense.Create", DisplayName = "ثبت هزینه و پرداخت", GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "ProjectExpense.Delete", DisplayName = "حذف هزینه و پرداخت", GroupName = "Accounting", IsActive = true },
+                new Permission { Name = "CompanyAsset.View", DisplayName = "مشاهده ابزار و دارایی‌ها", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "CompanyAsset.Create", DisplayName = "ثبت ابزار و دارایی", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "CompanyAsset.Assign", DisplayName = "تحویل ابزار و دارایی", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "CompanyAsset.Return", DisplayName = "ثبت برگشت ابزار و دارایی", GroupName = "Inventory", IsActive = true },
+                new Permission { Name = "CompanyAsset.Delete", DisplayName = "حذف ابزار و دارایی", GroupName = "Inventory", IsActive = true },
             };
 
             foreach (var permission in permissions)
             {
-                var exists = await context.Permissions
-                    .AnyAsync(x => x.Name == permission.Name);
+                var existingPermission = await context.Permissions
+                    .FirstOrDefaultAsync(x => x.Name == permission.Name);
 
-                if (!exists)
+                if (existingPermission == null)
                 {
                     context.Permissions.Add(permission);
+                }
+                else if (permission.Name.StartsWith("ProjectExpense.", StringComparison.Ordinal))
+                {
+                    existingPermission.DisplayName = permission.DisplayName;
+                    existingPermission.GroupName = permission.GroupName;
                 }
             }
 
@@ -617,6 +629,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "اسناد حسابداری", Url = "/Accounting/Transactions", Icon = "fa-solid fa-file-lines", Permission = "Transaction.View", ParentId = accountingParent.Id, SortOrder = 4, IsActive = true },
                 new Menu { Title = "سال‌های مالی", Url = "/Accounting/FiscalYears", Icon = "fa-solid fa-calendar-days", Permission = "FiscalYear.View", ParentId = accountingParent.Id, SortOrder = 5, IsActive = true },
                 new Menu { Title = "قرض‌ها", Url = "/Accounting/Loans", Icon = "fa-solid fa-handshake", Permission = "Loan.View", ParentId = accountingParent.Id, SortOrder = 6, IsActive = true },
+                new Menu { Title = "هزینه‌ها", Url = "/Accounting/Expenses", Icon = "fa-solid fa-money-bill-wave", Permission = "ProjectExpense.View", ParentId = accountingParent.Id, SortOrder = 7, IsActive = true },
 
                 // طرف حساب‌ها
                 new Menu { Title = "لیست طرف حساب‌ها", Url = "/Contacts/Contacts", Icon = "fa-solid fa-address-book", Permission = "Contact.View", ParentId = contactsParent.Id, SortOrder = 1, IsActive = true },
@@ -633,6 +646,7 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                 new Menu { Title = "گزارش موجودی راکد", Url = "/Inventory/DormantStock", Icon = "fa-solid fa-box-open", Permission = "DormantStock.View", ParentId = inventoryParent.Id, SortOrder = 9, IsActive = true },
                 new Menu { Title = "هشدار حداقل موجودی", Url = "/Inventory/InventoryAnalytics/MinimumStock", Icon = "fa-solid fa-triangle-exclamation", Permission = "MinimumStock.View", ParentId = inventoryParent.Id, SortOrder = 10, IsActive = true },
                 new Menu { Title = "ارزش موجودی", Url = "/Inventory/InventoryAnalytics/Valuation", Icon = "fa-solid fa-coins", Permission = "InventoryValuation.View", ParentId = inventoryParent.Id, SortOrder = 11, IsActive = true },
+                new Menu { Title = "ابزار و دارایی‌های شرکت", Url = "/Inventory/CompanyAssets", Icon = "fa-solid fa-toolbox", Permission = "CompanyAsset.View", ParentId = inventoryParent.Id, SortOrder = 12, IsActive = true },
 
                 // گزارشات
                 new Menu { Title = "گزارش معین", Url = "/Accounting/Reports/Ledger", Icon = "fa-solid fa-book", Permission = "Report.Ledger", ParentId = reportsParent.Id, SortOrder = 1, IsActive = true },
@@ -688,8 +702,26 @@ namespace MyFirstCoreApp.Infrastructure.Persistence.Seed
                     SortOrder = 1,
                     IsActive = true
                 },
-                new Menu { Title = "هزینه‌های پروژه", Url = "/Projects/ProjectExpenses", Icon = "fa-solid fa-money-bill-wave", Permission = "ProjectExpense.View", ParentId = projectsParent.Id, SortOrder = 2, IsActive = true },
             };
+
+            var legacyProjectExpensesMenu = await context.Menus.FirstOrDefaultAsync(x => x.Url == "/Projects/ProjectExpenses");
+            var expensesMenu = await context.Menus.FirstOrDefaultAsync(x => x.Url == "/Accounting/Expenses");
+            if (legacyProjectExpensesMenu != null)
+            {
+                if (expensesMenu == null)
+                {
+                    legacyProjectExpensesMenu.Title = "هزینه‌ها";
+                    legacyProjectExpensesMenu.Url = "/Accounting/Expenses";
+                    legacyProjectExpensesMenu.ParentId = accountingParent.Id;
+                    legacyProjectExpensesMenu.SortOrder = 7;
+                    legacyProjectExpensesMenu.Permission = "ProjectExpense.View";
+                    legacyProjectExpensesMenu.IsActive = true;
+                }
+                else
+                {
+                    legacyProjectExpensesMenu.IsActive = false;
+                }
+            }
 
             foreach (var child in children)
             {
