@@ -64,7 +64,7 @@
           <value>xNeighborSubscriptionNo,System.String</value>
         </Columns>
         <Dictionary isRef="1" />
-        <Guid>b00000000000000000000000000000001</Guid>
+        <Guid>b0000000000000000000000000000001</Guid>
         <Name>DataSet1</Name>
       </DataSet1>
       <DataSet2 Ref="4" type="Stimulsoft.Report.Dictionary.StiBusinessObject" isKey="true">
@@ -82,7 +82,7 @@
           <value>xCount,System.Int32</value>
         </Columns>
         <Dictionary isRef="1" />
-        <Guid>b00000000000000000000000000000002</Guid>
+        <Guid>b0000000000000000000000000000002</Guid>
         <Name>DataSet2</Name>
       </DataSet2>
       <DataSet3 Ref="5" type="Stimulsoft.Report.Dictionary.StiBusinessObject" isKey="true">
@@ -100,7 +100,7 @@
           <value>xCount,System.Int32</value>
         </Columns>
         <Dictionary isRef="1" />
-        <Guid>b00000000000000000000000000000003</Guid>
+        <Guid>b0000000000000000000000000000003</Guid>
         <Name>DataSet3</Name>
       </DataSet3>
       <DataSet4 Ref="6" type="Stimulsoft.Report.Dictionary.StiBusinessObject" isKey="true">
@@ -113,7 +113,7 @@
           <value>xSumAdiInstallmentValue,System.Decimal</value>
         </Columns>
         <Dictionary isRef="1" />
-        <Guid>b00000000000000000000000000000004</Guid>
+        <Guid>b0000000000000000000000000000004</Guid>
         <Name>DataSet4</Name>
       </DataSet4>
       <DataSet5 Ref="7" type="Stimulsoft.Report.Dictionary.StiBusinessObject" isKey="true">
@@ -126,7 +126,7 @@
           <value>xSumDimandInstallmentValue,System.Decimal</value>
         </Columns>
         <Dictionary isRef="1" />
-        <Guid>b00000000000000000000000000000005</Guid>
+        <Guid>b0000000000000000000000000000005</Guid>
         <Name>DataSet5</Name>
       </DataSet5>
       <DataSet6 Ref="8" type="Stimulsoft.Report.Dictionary.StiBusinessObject" isKey="true">
@@ -144,7 +144,7 @@
           <value>xSaleCount,System.Int32</value>
         </Columns>
         <Dictionary isRef="1" />
-        <Guid>b00000000000000000000000000000006</Guid>
+        <Guid>b0000000000000000000000000000006</Guid>
         <Name>DataSet6</Name>
       </DataSet6>
       <DataSet7 Ref="9" type="Stimulsoft.Report.Dictionary.StiBusinessObject" isKey="true">
@@ -156,7 +156,7 @@
           <value>HeaderRegisterCodeCount,System.Int32</value>
         </Columns>
         <Dictionary isRef="1" />
-        <Guid>b00000000000000000000000000000007</Guid>
+        <Guid>b0000000000000000000000000000007</Guid>
         <Name>DataSet7</Name>
       </DataSet7>
     </BusinessObjects>
@@ -209,7 +209,7 @@
                 </Group_Tablix1>
                 <DataBand3 Ref="16" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,60,3026.63,23.62</ClientRectangle>
                   <Components isList="true" count="16">
                     <Textbox249 Ref="17" type="Text" isKey="true">
@@ -454,7 +454,7 @@
                 </DataBand3>
                 <DataBand4 Ref="33" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,123.62,3026.63,29.87</ClientRectangle>
                   <Components isList="true" count="16">
                     <Textbox233 Ref="34" type="Text" isKey="true">
@@ -698,7 +698,7 @@
                 </DataBand4>
                 <DataBand5 Ref="50" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,193.49,3026.63,23.62</ClientRectangle>
                   <Components isList="true" count="24">
                     <Textbox310 Ref="51" type="Text" isKey="true">
@@ -1099,7 +1099,7 @@
                 </DataBand5>
                 <DataBand6 Ref="75" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,257.11,3026.63,43.41</ClientRectangle>
                   <Components isList="true" count="29">
                     <Textbox1 Ref="76" type="Text" isKey="true">
@@ -1583,7 +1583,7 @@
                 </DataBand6>
                 <DataBand7 Ref="105" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,340.52,3026.63,28.83</ClientRectangle>
                   <Components isList="true" count="29">
                     <xSubscriberName Ref="106" type="Text" isKey="true">
@@ -2096,7 +2096,7 @@
                 </DataBand7>
                 <DataBand8 Ref="146" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,409.35,3026.63,23.62</ClientRectangle>
                   <Components isList="true" count="29">
                     <Textbox10 Ref="147" type="Text" isKey="true">
@@ -2651,7 +2651,7 @@
                 </Group_Tablix2>
                 <DataBand9 Ref="189" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,60,3055.06,23.62</ClientRectangle>
                   <Components isList="true" count="13">
                     <Textbox47 Ref="190" type="Text" isKey="true">
@@ -2854,7 +2854,7 @@
                 </DataBand9>
                 <DataBand10 Ref="203" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,123.62,3055.06,29.87</ClientRectangle>
                   <Components isList="true" count="11">
                     <Textbox44 Ref="204" type="Text" isKey="true">
@@ -3028,7 +3028,7 @@
                 </DataBand10>
                 <DataBand11 Ref="215" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,193.49,3055.06,23.62</ClientRectangle>
                   <Components isList="true" count="23">
                     <Textbox26 Ref="216" type="Text" isKey="true">
@@ -3396,7 +3396,7 @@
                 </DataBand11>
                 <DataBand12 Ref="239" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,257.11,3055.06,43.41</ClientRectangle>
                   <Components isList="true" count="25">
                     <Textbox101 Ref="240" type="Text" isKey="true">
@@ -3813,7 +3813,7 @@
                 </DataBand12>
                 <DataBand13 Ref="265" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,340.52,3055.06,23.62</ClientRectangle>
                   <Components isList="true" count="25">
                     <xSubscriberName2 Ref="266" type="Text" isKey="true">
@@ -4262,7 +4262,7 @@
                 </DataBand13>
                 <DataBand14 Ref="302" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000001</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000001</BusinessObjectGuid>
                   <ClientRectangle>0,404.14,3055.06,23.62</ClientRectangle>
                   <Components isList="true" count="25">
                     <Textbox72 Ref="303" type="Text" isKey="true">
@@ -4912,7 +4912,7 @@
                 </HeaderBand16>
                 <DataBand17 Ref="351" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000002</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000002</BusinessObjectGuid>
                   <ClientRectangle>0,193.64,725.61,30.02</ClientRectangle>
                   <Components isList="true" count="7">
                     <Textbox174 Ref="352" type="Text" isKey="true">
@@ -5661,7 +5661,7 @@
                 </Group_Tablix4>
                 <DataBand22 Ref="405" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000003</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000003</BusinessObjectGuid>
                   <ClientRectangle>0,60,725.61,23.62</ClientRectangle>
                   <Components isList="true" count="3">
                     <Textbox168 Ref="406" type="Text" isKey="true">
@@ -6193,7 +6193,7 @@
               <Components isList="true" count="3">
                 <DataBand26 Ref="442" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000006</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000006</BusinessObjectGuid>
                   <ClientRectangle>0,20,1001.09,23.62</ClientRectangle>
                   <Components isList="true" count="6">
                     <Textbox209 Ref="443" type="Text" isKey="true">
@@ -6304,7 +6304,7 @@
                 </DataBand26>
                 <DataBand27 Ref="449" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000006</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000006</BusinessObjectGuid>
                   <ClientRectangle>0,83.62,1001.09,30.02</ClientRectangle>
                   <Components isList="true" count="8">
                     <Textbox218 Ref="450" type="Text" isKey="true">
@@ -6454,7 +6454,7 @@
                 </DataBand27>
                 <DataBand28 Ref="458" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000006</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000006</BusinessObjectGuid>
                   <ClientRectangle>0,153.64,1001.09,21.57</ClientRectangle>
                   <Components isList="true" count="8">
                     <xRequestTypeName4 Ref="459" type="Text" isKey="true">
@@ -6652,7 +6652,7 @@
               <Components isList="true" count="3">
                 <DataBand29 Ref="468" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000007</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000007</BusinessObjectGuid>
                   <ClientRectangle>0,20,430.33,23.62</ClientRectangle>
                   <Components isList="true" count="1">
                     <Textbox339 Ref="469" type="Text" isKey="true">
@@ -6683,7 +6683,7 @@
                 </DataBand29>
                 <DataBand30 Ref="470" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000007</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000007</BusinessObjectGuid>
                   <ClientRectangle>0,83.62,430.33,23.62</ClientRectangle>
                   <Components isList="true" count="2">
                     <Textbox335 Ref="471" type="Text" isKey="true">
@@ -6731,7 +6731,7 @@
                 </DataBand30>
                 <DataBand31 Ref="473" type="DataBand" isKey="true">
                   <Brush>Transparent</Brush>
-                  <BusinessObjectGuid>b00000000000000000000000000000007</BusinessObjectGuid>
+                  <BusinessObjectGuid>b0000000000000000000000000000007</BusinessObjectGuid>
                   <ClientRectangle>0,147.24,430.33,23.62</ClientRectangle>
                   <Components isList="true" count="2">
                     <SaleMeterCounterName Ref="474" type="Text" isKey="true">
