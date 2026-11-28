@@ -19,11 +19,19 @@
                     {
                         <tr>
                             <td>
-                                <a asp-controller="Attachments" asp-action="Download" asp-route-id="@item.Id" target="_blank">
+                                @if (item.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <a asp-area="" asp-controller="Attachments" asp-action="Download" asp-route-id="@item.Id" target="_blank" class="d-inline-block mb-1">
+                                        <img src="@Url.Action("Download", "Attachments", new { area = "", id = item.Id })" alt="@item.FileName"
+                                             loading="lazy" style="max-width:140px;max-height:100px;object-fit:contain;border:1px solid #dee2e6;border-radius:4px;padding:3px;" />
+                                    </a>
+                                    <br />
+                                }
+                                <a asp-area="" asp-controller="Attachments" asp-action="Download" asp-route-id="@item.Id" target="_blank">
                                     <i class="fa @(item.ContentType == "application/pdf" ? "fa-file-pdf" : "fa-file-image")"></i>
                                     @item.FileName
                                 </a>
-                                <a asp-controller="Attachments" asp-action="Download" asp-route-id="@item.Id" asp-route-download="true"
+                                <a asp-area="" asp-controller="Attachments" asp-action="Download" asp-route-id="@item.Id" asp-route-download="true"
                                    class="text-muted mr-1" title="دانلود"><i class="fa fa-download"></i></a>
                                 @if (!string.IsNullOrEmpty(item.Description))
                                 {
@@ -37,7 +45,7 @@
                             <td class="text-left">
                                 @if (Model.CanEdit)
                                 {
-                                    <form asp-controller="Attachments" asp-action="Delete" asp-route-id="@item.Id"
+                                    <form asp-area="" asp-controller="Attachments" asp-action="Delete" asp-route-id="@item.Id"
                                           asp-route-returnUrl="@Model.ReturnUrl" method="post" class="d-inline"
                                           onsubmit="return confirm('این پیوست حذف شود؟');">
                                         <button type="submit" class="btn btn-xs btn-outline-danger" title="حذف">
@@ -60,18 +68,18 @@
     @if (Model.CanEdit)
     {
         <div class="card-footer">
-            <form asp-controller="Attachments" asp-action="Upload" method="post" enctype="multipart/form-data" class="form-inline">
+            <form asp-area="" asp-controller="Attachments" asp-action="Upload" method="post" enctype="multipart/form-data" class="form-inline">
                 <input type="hidden" name="entityType" value="@((int)Model.EntityType)" />
                 <input type="hidden" name="entityId" value="@Model.EntityId" />
                 <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
-                <input type="file" name="file" class="form-control-file ml-2" accept=".jpg,.jpeg,.png,.webp,.pdf" required />
+                <input type="file" name="file" class="form-control-file ml-2" accept="@(Model.EntityType == MyFirstCoreApp.Domain.Enums.AttachmentEntityType.Product ? ".jpg,.jpeg,.png,.webp" : ".jpg,.jpeg,.png,.webp,.pdf")" required />
                 <input type="text" name="description" class="form-control form-control-sm ml-2" placeholder="توضیح (اختیاری)" maxlength="500" />
                 <button type="submit" class="btn btn-sm btn-primary">
                     <i class="fa fa-upload"></i> افزودن
                 </button>
             </form>
-            <small class="form-text text-muted">فقط jpg، png، webp یا pdf؛ حداکثر ۵ مگابایت.</small>
+            <small class="form-text text-muted">@(Model.EntityType == MyFirstCoreApp.Domain.Enums.AttachmentEntityType.Product ? "فقط تصویر jpg، png یا webp؛ حداکثر ۵ مگابایت." : "فقط jpg، png، webp یا pdf؛ حداکثر ۵ مگابایت.")</small>
         </div>
     }
 </div>

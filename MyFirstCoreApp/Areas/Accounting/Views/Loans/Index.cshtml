@@ -154,6 +154,7 @@
                     number = l.Number,
                     isGiven = l.IsGiven,
                     date = l.Date,
+                    dueDate = l.DueDate,
                     contactName = l.ContactName,
                     amount = l.Amount,
                     repaid = l.Repaid,
@@ -200,6 +201,9 @@
                 },
                 { field: 'date', headerName: 'تاریخ', width: 120,
                     cellStyle: { direction: 'ltr', textAlign: 'right' } },
+                { field: 'dueDate', headerName: 'سررسید', width: 120,
+                    cellStyle: { direction: 'ltr', textAlign: 'right' },
+                    valueFormatter: function (p) { return p.value || '—'; } },
                 { field: 'contactName', headerName: 'طرف حساب', flex: 1, minWidth: 150 },
                 {
                     field: 'amount',
@@ -319,6 +323,7 @@
                                 : '<span class="badge badge-warning">گرفته‌شده</span>') +
                         '</div>' +
                         (l.date ? '<div class="row-line">تاریخ: <span dir="ltr">' + l.date + '</span></div>' : '') +
+                        '<div class="row-line">سررسید: <span dir="ltr">' + (l.dueDate || 'تعیین نشده') + '</span></div>' +
                         (l.contactName ? '<div class="row-line">طرف حساب: ' + l.contactName + '</div>' : '') +
                         '<div class="row-line">مبلغ: <span dir="ltr">' + amountStr + '</span></div>' +
                         '<div class="row-line">بازپرداخت‌شده: <span dir="ltr">' + repaidStr + '</span></div>' +

@@ -129,6 +129,10 @@
                     .trim();
             }
 
+            function escapeHtml(value) {
+                return $('<div>').text(value == null ? '' : value).html();
+            }
+
             function updateStockDisplay(item) {
                 var $stock = $row.find('.product-stock');
 
@@ -167,6 +171,7 @@
                                 id: p.id,
                                 name: p.name,
                                 code: p.code,
+                                imageUrl: p.imageUrl,
                                 searchText: [p.name, p.code].filter(Boolean).join(' '),
                                 salePrice: p.salePrice,
                                 unitName: p.unitName,
@@ -203,14 +208,19 @@
                                 },
 
                                 renderer: function (item) {
-                                    var txt = item.name;
+                                    var txt = '<div style="display:flex;align-items:center;gap:8px;">';
+                                    if (item.imageUrl) {
+                                        txt += '<img src="' + item.imageUrl + '" alt="" loading="lazy" ' +
+                                            'style="width:42px;height:42px;object-fit:cover;border-radius:4px;border:1px solid #ddd;flex:0 0 42px;" />';
+                                    }
+                                    txt += '<div><strong>' + escapeHtml(item.name) + '</strong>';
 
                                     if (item.code) {
-                                        txt += ' <small style="color:#666;">(' + item.code + ')</small>';
+                                        txt += ' <small style="color:#666;">(' + escapeHtml(item.code) + ')</small>';
                                     }
 
                                     if (item.unitName) {
-                                        txt += ' <small style="color:#007bff;">[' + item.unitName + ']</small>';
+                                        txt += ' <small style="color:#007bff;">[' + escapeHtml(item.unitName) + ']</small>';
                                     }
 
                                     if (showStock &&
@@ -222,7 +232,7 @@
                                             '</small>';
                                     }
 
-                                    return txt;
+                                    return txt + '</div></div>';
                                 },
 
                                 placeholder: 'نام کالا را تایپ کنید...',

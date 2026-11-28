@@ -26,6 +26,9 @@ public class LoanFormViewModel
     [Required(ErrorMessage = "تاریخ الزامی است.")]
     public string Date { get; set; } = string.Empty;
 
+    [Display(Name = "تاریخ سررسید (اختیاری)")]
+    public string? DueDate { get; set; }
+
     [Display(Name = "توضیحات")]
     [StringLength(500)]
     public string? Description { get; set; }
@@ -61,6 +64,7 @@ public class LoanListItemViewModel
     public int Id { get; set; }
     public int Number { get; set; }
     public string Date { get; set; } = string.Empty;
+    public string? DueDate { get; set; }
     public bool IsGiven { get; set; }
     public string? ContactName { get; set; }
     public decimal Amount { get; set; }

@@ -37,6 +37,7 @@ public sealed class LoanRequest
 
     public decimal Amount { get; set; }
     public DateOnly Date { get; set; }
+    public DateOnly? DueDate { get; set; }
     public string? Description { get; set; }
 }
 
@@ -54,6 +55,7 @@ public class LoanListItem
     public int Id { get; set; }
     public int Number { get; set; }
     public DateOnly Date { get; set; }
+    public DateOnly? DueDate { get; set; }
     public LoanDirection Direction { get; set; }
     public int ContactId { get; set; }
     public string? ContactName { get; set; }

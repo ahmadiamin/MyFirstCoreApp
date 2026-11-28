@@ -71,6 +71,13 @@ public class AttachmentsController : Controller
         if (!await HasAnyAsync(AttachmentPolicies.Edit(entityType)))
             return Forbid();
 
+        if (entityType == AttachmentEntityType.Product && file != null &&
+            !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(Path.GetExtension(file.FileName).ToLowerInvariant()))
+        {
+            TempData["Error"] = "برای کالا فقط فایل تصویری با پسوند jpg، png یا webp مجاز است.";
+            return RedirectBack(returnUrl);
+        }
+
         if (file == null || file.Length == 0)
         {
             TempData["Error"] = "فایلی انتخاب نشده است.";

@@ -51,6 +51,13 @@
                         <span asp-validation-for="Date" class="text-danger"></span>
                     </div>
                 </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="DueDate"></label>
+                        <input asp-for="DueDate" class="form-control datepicker" autocomplete="off" dir="ltr" placeholder="اختیاری" />
+                        <span asp-validation-for="DueDate" class="text-danger"></span>
+                    </div>
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-4">
@@ -60,7 +67,7 @@
                         <span asp-validation-for="AmountText" class="text-danger"></span>
                     </div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label asp-for="Description"></label>
                         <input asp-for="Description" class="form-control" />

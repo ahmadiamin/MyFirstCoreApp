@@ -19,6 +19,9 @@ public class Transaction : TenantEntity
     /// </summary>
     public DateOnly Date { get; set; }
 
+    /// <summary>سررسید سندهایی که موعد پرداخت/تسویه دارند؛ در حال حاضر برای قرض‌ها استفاده می‌شود.</summary>
+    public DateOnly? DueDate { get; set; }
+
     /// <summary>
     /// شرح کلی سند
     /// </summary>

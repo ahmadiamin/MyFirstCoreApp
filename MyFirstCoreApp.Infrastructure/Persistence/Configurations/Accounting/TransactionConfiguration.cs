@@ -12,6 +12,7 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Description).HasMaxLength(2000);
+        builder.Property(x => x.DueDate).HasColumnType("date");
         builder.Property(x => x.Reference).HasMaxLength(200);
         builder.Property(x => x.AttachmentPath).HasMaxLength(500);
 

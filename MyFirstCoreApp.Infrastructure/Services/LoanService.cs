@@ -42,6 +42,7 @@ public class LoanService : ILoanService
             throw new InvalidOperationException("نوع قرض نامعتبر است.");
 
         ValidateAmountAndDate(request.Amount, request.Date);
+        ValidateDueDate(request.Date, request.DueDate);
 
         // رسید «قبل از ساخت هر چیزی» سنجیده می‌شود: رسید نامعتبر یعنی هیچ قرضی ثبت نمی‌شود
         var prepared = receipt == null
@@ -58,7 +59,7 @@ public class LoanService : ILoanService
             var document = await BuildDocumentAsync(
                 request.Direction, repayment: false, loanId: null, loanNumber: null,
                 request.ContactId, contactName, request.AccountId,
-                request.Amount, request.Date, request.Description, tenantId);
+                request.Amount, request.Date, request.Description, tenantId, request.DueDate);
 
             await _transactionService.CreateAsync(document);
 
@@ -186,6 +187,7 @@ public class LoanService : ILoanService
                 t.Id,
                 t.Number,
                 t.Date,
+                t.DueDate,
                 t.ReferenceType,
                 t.TotalAmount,
                 t.Description,
@@ -214,6 +216,7 @@ public class LoanService : ILoanService
                 Id = r.Id,
                 Number = r.Number,
                 Date = r.Date,
+                DueDate = r.DueDate,
                 Direction = LoanDocumentTypes.DirectionOf(r.ReferenceType!),
                 ContactId = r.ContactId ?? 0,
                 ContactName = r.ContactId.HasValue && names.TryGetValue(r.ContactId.Value, out var name) ? name : null,
@@ -255,6 +258,7 @@ public class LoanService : ILoanService
             Id = loan.Id,
             Number = loan.Number,
             Date = loan.Date,
+            DueDate = loan.DueDate,
             Direction = loan.Direction,
             ContactId = loan.ContactId,
             ContactName = loan.ContactName,
@@ -272,7 +276,7 @@ public class LoanService : ILoanService
     private async Task<Transaction> BuildDocumentAsync(
         LoanDirection direction, bool repayment, int? loanId, int? loanNumber,
         int contactId, string contactName, int accountId,
-        decimal amount, DateOnly date, string? userDescription, int tenantId)
+        decimal amount, DateOnly date, string? userDescription, int tenantId, DateOnly? dueDate = null)
     {
         // پول وارد حساب بانک/صندوق می‌شود: قرضِ گرفته‌شده و بازپرداختِ قرضِ داده‌شده
         var cashIn = (direction == LoanDirection.Taken && !repayment)
@@ -318,6 +322,7 @@ public class LoanService : ILoanService
             TenantId = tenantId,
             Number = 0, // شماره‌گذاری خودکار در TransactionService
             Date = date,
+            DueDate = repayment ? null : dueDate,
             Description = description,
             Reference = loanNumber?.ToString(),
             IsPosted = true,
@@ -346,6 +351,12 @@ public class LoanService : ILoanService
 
         if (date == default)
             throw new InvalidOperationException("تاریخ الزامی است.");
+    }
+
+    private static void ValidateDueDate(DateOnly loanDate, DateOnly? dueDate)
+    {
+        if (dueDate.HasValue && dueDate.Value < loanDate)
+            throw new InvalidOperationException("تاریخ سررسید نباید قبل از تاریخ قرض باشد.");
     }
 
     private async Task EnsureCashOrBankAsync(int accountId)

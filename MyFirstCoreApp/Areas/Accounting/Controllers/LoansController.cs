@@ -100,8 +100,22 @@ public class LoansController : Controller
         var tenantId = _currentTenant.TenantId;
         if (!tenantId.HasValue) return Forbid();
 
-        if (!PersianDate.TryParse(model.Date, out var date))
+        var hasDate = PersianDate.TryParse(model.Date, out var date);
+        if (!hasDate)
             ModelState.AddModelError(nameof(model.Date), InvalidDateMessage);
+
+        DateOnly? dueDate = null;
+        if (!string.IsNullOrWhiteSpace(model.DueDate))
+        {
+            if (!PersianDate.TryParse(model.DueDate, out var parsedDueDate))
+                ModelState.AddModelError(nameof(model.DueDate), "تاریخ سررسید نامعتبر است.");
+            else
+            {
+                dueDate = parsedDueDate;
+                if (hasDate && parsedDueDate < date)
+                    ModelState.AddModelError(nameof(model.DueDate), "تاریخ سررسید نباید قبل از تاریخ قرض باشد.");
+            }
+        }
 
         if (!TryParseAmount(model.AmountText, out var amount))
             ModelState.AddModelError(nameof(model.AmountText), InvalidAmountMessage);
@@ -124,6 +138,7 @@ public class LoansController : Controller
                     AccountId = model.AccountId!.Value,
                     Amount = amount,
                     Date = date,
+                    DueDate = dueDate,
                     Description = model.Description
                 },
                 tenantId.Value,
@@ -298,6 +313,7 @@ public class LoansController : Controller
         Id = loan.Id,
         Number = loan.Number,
         Date = PersianDate.Format(loan.Date),
+        DueDate = loan.DueDate.HasValue ? PersianDate.Format(loan.DueDate.Value) : null,
         IsGiven = loan.Direction == LoanDirection.Given,
         ContactName = loan.ContactName,
         Amount = loan.Amount,

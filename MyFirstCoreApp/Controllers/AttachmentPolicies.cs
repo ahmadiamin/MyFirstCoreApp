@@ -14,7 +14,7 @@ public static class AttachmentPolicies
         AttachmentEntityType.Cheque => ["Cheque.View"],
         AttachmentEntityType.Payment => ["Payment.View"],
         AttachmentEntityType.Invoice => ["Invoice.View"],
-        AttachmentEntityType.Product => ["Product.View"],
+        AttachmentEntityType.Product => ["Product.View", "Invoice.View"],
         AttachmentEntityType.Contact => ["Contact.View"],
         AttachmentEntityType.ProjectExpense => ["ProjectExpense.View"],
         AttachmentEntityType.ProjectExpensePayment => ["ProjectExpense.View"],

@@ -396,6 +396,21 @@ public class InvoicesController : Controller
 
         if (entity == null) return NotFound();
 
+        var productIds = entity.Items.Select(x => x.ProductId).Distinct().ToList();
+        var productImageRows = await _context.Attachments
+            .AsNoTracking()
+            .Where(a => a.TenantId == tenantId.Value &&
+                        a.EntityType == AttachmentEntityType.Product &&
+                        productIds.Contains(a.EntityId) && a.ContentType.StartsWith("image/"))
+            .OrderBy(a => a.Id)
+            .Select(a => new { ProductId = a.EntityId, AttachmentId = a.Id })
+            .ToListAsync();
+        ViewBag.ProductImageUrls = productImageRows
+            .GroupBy(x => x.ProductId)
+            .ToDictionary(
+                x => x.Key,
+                x => Url.Action("Download", "Attachments", new { area = "", id = x.First().AttachmentId })!);
+
         // فاکتورهای برگشتی مرتبط با فاکتور اصلی (محدود به همان مستأجر)
         ViewBag.ReturnInvoices = await _context.Invoices
             .AsNoTracking()
@@ -867,6 +882,18 @@ public class InvoicesController : Controller
             })
             .ToListAsync();
 
+        var productIds = items.Select(p => p.id).ToList();
+        var productImageRows = await _context.Attachments
+            .AsNoTracking()
+            .Where(a => a.EntityType == AttachmentEntityType.Product && productIds.Contains(a.EntityId) &&
+                        a.ContentType.StartsWith("image/"))
+            .OrderBy(a => a.Id)
+            .Select(a => new { ProductId = a.EntityId, AttachmentId = a.Id })
+            .ToListAsync();
+        var productImageIds = productImageRows
+            .GroupBy(x => x.ProductId)
+            .ToDictionary(x => x.Key, x => x.First().AttachmentId);
+
         var behaviorSetting = await _context.InvoiceBehaviorSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.TenantId == tenantId.Value);
@@ -904,6 +931,9 @@ public class InvoicesController : Controller
             p.unitName,
             p.taxRate,
             p.trackInventory,
+            imageUrl = productImageIds.TryGetValue(p.id, out var imageId)
+                ? Url.Action("Download", "Attachments", new { area = "", id = imageId })
+                : null,
             stock = showStock && p.trackInventory
                 ? stockBalances.GetValueOrDefault(p.id, 0)
                 : (decimal?)null
@@ -1141,7 +1171,7 @@ public class InvoicesController : Controller
         report["SellerRegistrationNumber"] = sellerRegistrationNumber ?? "";
         report["SellerAddress"] = sellerAddress ?? "";
         report["SellerPostalCode"] = sellerPostalCode ?? "";
-        report["SellerPhone"] = sellerPhone ?? "";
+        report["SellerPhone"] = sellerPhone?.Replace("-", "") ?? "";
 
         report["BuyerName"] = buyerName ?? "";
         report["BuyerNationalId"] = buyerNationalId ?? "";
@@ -1149,7 +1179,7 @@ public class InvoicesController : Controller
         report["BuyerRegistrationNumber"] = buyerRegistrationNumber ?? "";
         report["BuyerAddress"] = buyerAddress ?? "";
         report["BuyerPostalCode"] = buyerPostalCode ?? "";
-        report["BuyerPhone"] = buyerPhone ?? "";
+        report["BuyerPhone"] = buyerPhone?.Replace("-", "") ?? "";
 
         report["InvoiceTitle"] = invoice.InvoiceType switch
         {

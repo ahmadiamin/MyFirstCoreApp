@@ -409,6 +409,9 @@ namespace MyFirstCoreApp.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date");
+
                     b.Property<int>("FiscalYearId")
                         .HasColumnType("int");
 
